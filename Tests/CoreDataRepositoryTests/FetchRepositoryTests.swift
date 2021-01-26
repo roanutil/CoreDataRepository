@@ -13,7 +13,8 @@ import XCTest
 final class FetchRepositoryTests: CoreDataXCTestCase {
 
     static var allTests = [
-        ("testFetchSuccess", testFetchSuccess)
+        ("testFetchSuccess", testFetchSuccess),
+        ("testFetchSubscriptionSuccess", testFetchSubscriptionSuccess)
     ]
 
     typealias Success = FetchRepository.Success<Movie>
