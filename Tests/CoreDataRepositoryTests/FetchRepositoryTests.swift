@@ -14,7 +14,8 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
 
     static var allTests = [
         ("testFetchSuccess", testFetchSuccess),
-        ("testFetchSubscriptionSuccess", testFetchSubscriptionSuccess)
+        ("testFetchSubscriptionSuccess", testFetchSubscriptionSuccess),
+        ("testSubscriptionSuccess", testSubscriptionSuccess)
     ]
 
     typealias Success = FetchRepository.Success<Movie>
@@ -67,5 +68,42 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
             assert(value.items == self.expectedMovies, "Result items should match expectations")
         })
         wait(for: [exp], timeout: 5)
+    }
+
+    func testFetchSubscriptionSuccess() {
+        let firstExp = expectation(description: "Fetch movies from CoreData")
+        let secondExp = expectation(description: "Fetch movies again after CoreData context is updated")
+        var resultCount = 0
+        let result: AnyPublisher<Success, Failure> = repository.fetchSubscription(fetchRequest)
+        let cancellable = result.subscribe(on: backgroundQueue)
+            .receive(on: mainQueue)
+            .sink(receiveCompletion: { completion in
+                switch completion {
+                case .finished:
+                    XCTFail("Not expecting completion since subscription finishes after subscriber cancel")
+                default:
+                    XCTFail("Not expecting failure")
+                }
+        }, receiveValue: { value in
+            resultCount += 1
+            switch resultCount {
+            case 1:
+                assert(value.items.count == 5, "Result items count should match expectation")
+                assert(value.items == self.expectedMovies, "Result items should match expectations")
+                firstExp.fulfill()
+            case 2:
+                assert(value.items.count == 4, "Result items count should match expectation")
+                assert(value.items == Array(self.expectedMovies[0...3]), "Result items should match expectations")
+                secondExp.fulfill()
+            default:
+                break
+            }
+            
+        })
+        wait(for: [firstExp], timeout: 5)
+        let crudRepository = CRUDRepository(context: self.backgroundContext)
+        let _: AnyPublisher<CRUDRepository.Success<Movie>, CRUDRepository.Failure<Movie>> = crudRepository.delete(self.expectedMovies.last!.objectID!)
+        wait(for: [secondExp], timeout: 5)
+        cancellable.cancel()
     }
 }

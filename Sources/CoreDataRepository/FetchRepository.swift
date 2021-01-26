@@ -92,4 +92,26 @@ public final class FetchRepository {
             }
         }}.eraseToAnyPublisher()
     }
+
+    public func fetchSubscription<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>) -> AnyPublisher<Success<Model>, Failure<Model>> {
+        AnyPublisher.create { [weak self] subscriber -> AnyCancellable in
+            guard let self = self else {
+                subscriber.send(completion: .failure(Failure(error: .unknown, fetchRequest: request)))
+                return AnyCancellable {}
+            }
+            let id = UUID()
+            let subscription = FetchRepository.Subscription<Model>(
+                id: id,
+                request: request,
+                context: self.context
+            )
+            subscription.subject.sink(receiveCompletion: subscriber.send, receiveValue: subscriber.send).store(in: &self.cancellables)
+            self.subscriptions.append(subscription)
+            subscription.manualFetch()
+            return AnyCancellable {
+                subscription.cancel()
+                self.subscriptions.removeAll(where: { $0.id == subscription.id })
+            }
+        }
+    }
 }

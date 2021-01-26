@@ -11,7 +11,7 @@ import XCTest
 @testable import CoreDataRepository
 
 extension FetchRepositoryTests {
-    func testFetchSubscriptionSuccess() {
+    func testSubscriptionSuccess() {
         let firstExp = expectation(description: "Fetch movies from CoreData")
         let secondExp = expectation(description: "Fetch movies again after CoreData context is updated")
         let finalExp = expectation(description: "Finish fetching movies after canceled.")
