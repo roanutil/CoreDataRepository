@@ -12,13 +12,13 @@ public final class BatchRepository {
     // MARK: Properties
     // should always be a background context
     /// The context used by the repository
-    let context: NSManagedObjectContext
+    public let context: NSManagedObjectContext
 
     // MARK: Init
     /// Initializes an instance of the repository
     /// - Parameters
     ///     - context: NSManagedObjectContext
-    init(context: NSManagedObjectContext) {
+    public init(context: NSManagedObjectContext) {
         self.context = context
     }
 

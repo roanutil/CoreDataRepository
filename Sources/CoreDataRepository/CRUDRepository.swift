@@ -11,13 +11,13 @@ import Combine
 public final class CRUDRepository {
     // MARK: Properties
     /// CoreData context the repository uses
-    let context: NSManagedObjectContext
+    public let context: NSManagedObjectContext
 
     // MARK: Init
     /// Initializes a CRUDRepository
     /// - Parameters
     ///     - context: NSManagedObjectContext
-    init(context: NSManagedObjectContext) {
+    public init(context: NSManagedObjectContext) {
         self.context = context
     }
 
