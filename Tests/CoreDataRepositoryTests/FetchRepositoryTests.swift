@@ -14,8 +14,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
 
     static var allTests = [
         ("testFetchSuccess", testFetchSuccess),
-        ("testFetchSubscriptionSuccess", testFetchSubscriptionSuccess),
-        ("testSubscriptionSuccess", testSubscriptionSuccess)
+        ("testFetchSubscriptionSuccess", testFetchSubscriptionSuccess)
     ]
 
     typealias Success = FetchRepository.Success<Movie>
@@ -74,7 +73,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         let firstExp = expectation(description: "Fetch movies from CoreData")
         let secondExp = expectation(description: "Fetch movies again after CoreData context is updated")
         var resultCount = 0
-        let result: AnyPublisher<Success, Failure> = repository.fetchSubscription(fetchRequest)
+        let result: AnyPublisher<Success, Failure> = repository.fetch(fetchRequest).subscription(repository)
         let cancellable = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -96,7 +95,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                 assert(value.items == Array(self.expectedMovies[0...3]), "Result items should match expectations")
                 secondExp.fulfill()
             default:
-                break
+                XCTFail("Not expecting any values past the first two.")
             }
             
         })

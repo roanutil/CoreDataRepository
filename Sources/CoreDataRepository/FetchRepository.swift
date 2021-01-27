@@ -93,25 +93,36 @@ public final class FetchRepository {
         }}.eraseToAnyPublisher()
     }
 
-    public func fetchSubscription<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>) -> AnyPublisher<Success<Model>, Failure<Model>> {
-        AnyPublisher.create { [weak self] subscriber -> AnyCancellable in
-            guard let self = self else {
-                subscriber.send(completion: .failure(Failure(error: .unknown, fetchRequest: request)))
-                return AnyCancellable {}
+    public func subscription<Model: UnmanagedModel>(_ publisher: AnyPublisher<Success<Model>, Failure<Model>>) -> AnyPublisher<Success<Model>, Failure<Model>> {
+        let subject = PassthroughSubject<Success<Model>, Failure<Model>>()
+        let id = UUID()
+        publisher.sink(
+            receiveCompletion: { completion in
+                if case .failure = completion {
+                    subject.send(completion: completion)
+                }
+            },
+            receiveValue: { value in
+                let subscription = RepositorySubscription(
+                    id: id,
+                    request: value.fetchRequest,
+                    context: self.context,
+                    success: { Success(items: $0.map { $0.asUnmanaged }, fetchRequest: value.fetchRequest) },
+                    failure: { Failure(error: $0, fetchRequest: value.fetchRequest) },
+                    subject: subject
+                )
+                subscription.start()
+                self.subscriptions.append(subscription)
+                subject.send(value)
             }
-            let id = UUID()
-            let subscription = FetchRepository.Subscription<Model>(
-                id: id,
-                request: request,
-                context: self.context
-            )
-            subscription.subject.sink(receiveCompletion: subscriber.send, receiveValue: subscriber.send).store(in: &self.cancellables)
-            self.subscriptions.append(subscription)
-            subscription.manualFetch()
-            return AnyCancellable {
-                subscription.cancel()
-                self.subscriptions.removeAll(where: { $0.id == subscription.id })
-            }
-        }
+        ).store(in: &self.cancellables)
+        return subject.eraseToAnyPublisher()
+    }
+}
+
+// MARK: Extensions
+extension AnyPublisher {
+    func subscription<Model: UnmanagedModel>(_ repository: FetchRepository) -> Self where Self.Output == FetchRepository.Success<Model>, Self.Failure == FetchRepository.Failure<Model> {
+        repository.subscription(self)
     }
 }

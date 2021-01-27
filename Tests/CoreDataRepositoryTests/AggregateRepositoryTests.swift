@@ -44,19 +44,21 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         Movie(id: UUID(), title: "D", releaseDate: Date(), boxOffice: 40),
         Movie(id: UUID(), title: "E", releaseDate: Date(), boxOffice: 50),
     ]
+    var objectIDs = [NSManagedObjectID]()
     var _repository: AggregateRepository?
     var repository: AggregateRepository { _repository! }
 
     override func setUp() {
         super.setUp()
         self._repository = AggregateRepository(context: self.backgroundContext)
-        _ = movies.map { $0.asRepoManaged(in: viewContext) }
+        objectIDs = movies.map { $0.asRepoManaged(in: self.viewContext).objectID }
         try! viewContext.save()
     }
 
     override func tearDown() {
         super.tearDown()
         self._repository = nil
+        self.objectIDs = []
     }
 
     func testCountSuccess() {
@@ -147,5 +149,75 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 assert(value.result.first!.values.first! == 50, "Result value should equal average of movies box office.")
             })
         wait(for: [exp], timeout: 5)
+    }
+
+    func testCountSubscriptionSuccess() {
+        let firstExp = expectation(description: "Get count of CoreData Movies boxOffice")
+        let secondExp = expectation(description: "Get count again after CoreData context is updated")
+        let result: AnyPublisher<Success<Int>, Failure> = repository.count(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity()).subscription(repository)
+        var resultCount = 0
+        let cancellable = result.subscribe(on: backgroundQueue)
+            .receive(on: mainQueue)
+            .sink(receiveCompletion: { completion in
+                switch completion {
+                case .finished:
+                    XCTFail("Not expecting completion since subscription finishes after subscriber cancel")
+                default:
+                    XCTFail("Not expecting failure")
+                }
+            }, receiveValue: { value in
+                resultCount += 1
+                let aggValue = value.result.first!.values.first!
+                switch resultCount {
+                case 1:
+                    assert(aggValue == 5, "Result value (count) should equal number of movies.")
+                    firstExp.fulfill()
+                case 2:
+                    assert(aggValue == 4, "Result value (count) should equal number of movies.")
+                    secondExp.fulfill()
+                default:
+                    break
+                }
+            })
+        wait(for: [firstExp], timeout: 5)
+        let crudRepository = CRUDRepository(context: self.backgroundContext)
+        let _: AnyPublisher<CRUDRepository.Success<Movie>, CRUDRepository.Failure<Movie>> = crudRepository.delete(self.objectIDs.last!)
+        wait(for: [secondExp], timeout: 5)
+        cancellable.cancel()
+    }
+
+    func testSumSubscriptionSuccess() {
+        let firstExp = expectation(description: "Get count of CoreData Movies boxOffice")
+        let secondExp = expectation(description: "Get count again after CoreData context is updated")
+        var resultCount = 0
+        let result: AnyPublisher<Success<Int>, Failure> = repository.sum(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity(), attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!).subscription(repository)
+        let cancellable = result.subscribe(on: backgroundQueue)
+            .receive(on: mainQueue)
+            .sink(receiveCompletion: { completion in
+                switch completion {
+                case .finished:
+                    XCTFail("Not expecting completion since subscription finishes after subscriber cancel")
+                default:
+                    XCTFail("Not expecting failure")
+                }
+            }, receiveValue: { value in
+                resultCount += 1
+                let aggValue = value.result.first!.values.first!
+                switch resultCount {
+                case 1:
+                    assert(aggValue == 150, "Result value (count) should equal number of movies.")
+                    firstExp.fulfill()
+                case 2:
+                    assert(aggValue == 150, "Result value (count) should equal number of movies.")
+                    secondExp.fulfill()
+                default:
+                    XCTFail("Not expecting any values past the first two.")
+                }
+            })
+        wait(for: [firstExp], timeout: 10)
+        let crudRepository = CRUDRepository(context: self.backgroundContext)
+        let _: AnyPublisher<CRUDRepository.Success<Movie>, CRUDRepository.Failure<Movie>> = crudRepository.delete(self.objectIDs.last!)
+        wait(for: [secondExp], timeout: 5)
+        cancellable.cancel()
     }
 }

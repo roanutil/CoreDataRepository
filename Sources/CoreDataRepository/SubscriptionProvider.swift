@@ -9,4 +9,5 @@ public protocol SubscriptionProvider {
     var id: AnyHashable { get }
     func manualFetch()
     func cancel()
+    func start()
 }

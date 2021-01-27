@@ -12,6 +12,8 @@ public final class AggregateRepository {
     // MARK: Properties
     /// The context used by the repository
     public let context: NSManagedObjectContext
+    var cancellables = [AnyCancellable]()
+    var subscriptions = [SubscriptionProvider]()
 
     // MARK: Init
     /// Initializes a repository
@@ -36,34 +38,25 @@ public final class AggregateRepository {
     public struct Success<Value: Numeric> {
         let function: Function
         let result: [[String: Value]]
-        let predicate: NSPredicate
+        let request: NSFetchRequest<NSDictionary>
+
+        var predicate: NSPredicate? {
+            request.predicate
+        }
     }
 
     /// A return type for failure to calculate
     public struct Failure: Error {
         let function: Function
-        let predicate: NSPredicate
+        let request: NSFetchRequest<NSDictionary>
         let error: RepositoryErrors
+
+        var predicate: NSPredicate? {
+            request.predicate
+        }
     }
 
-    // MARK: Private Functions
-    /// Calculates aggregate values
-    /// - Parameters
-    ///     - function: Function
-    ///     - predicate: NSPredicate
-    ///     - entityDesc: NSEntityDescription
-    ///     - attributeDesc: NSAttributeDescription
-    ///     - groupBy: NSAttributeDescription? = nil
-    /// - Returns
-    ///     - `[[String: Value]]`
-    ///
-    private func aggregate<Value: Numeric>(
-        function: Function,
-        predicate: NSPredicate,
-        entityDesc: NSEntityDescription,
-        attributeDesc: NSAttributeDescription,
-        groupBy: NSAttributeDescription? = nil
-    ) throws -> [[String: Value]] {
+    private func request(function: Function, predicate: NSPredicate, entityDesc: NSEntityDescription, attributeDesc: NSAttributeDescription, groupBy: NSAttributeDescription? = nil) -> NSFetchRequest<NSDictionary> {
         let expDesc = NSExpressionDescription.aggregate(function: function, attributeDesc: attributeDesc)
         let request = NSFetchRequest<NSDictionary>(entityName: entityDesc.className)
         request.entity = entityDesc
@@ -79,6 +72,21 @@ public final class AggregateRepository {
             request.propertiesToGroupBy = [groupBy.name]
         }
         request.sortDescriptors = [NSSortDescriptor(key: attributeDesc.name, ascending: false)]
+        return request
+    }
+
+    // MARK: Private Functions
+    /// Calculates aggregate values
+    /// - Parameters
+    ///     - function: Function
+    ///     - predicate: NSPredicate
+    ///     - entityDesc: NSEntityDescription
+    ///     - attributeDesc: NSAttributeDescription
+    ///     - groupBy: NSAttributeDescription? = nil
+    /// - Returns
+    ///     - `[[String: Value]]`
+    ///
+    private func aggregate<Value: Numeric>(request: NSFetchRequest<NSDictionary>) throws -> [[String: Value]] {
         let result = try self.context.fetch(request)
         return result as? [[String: Value]] ?? []
     }
@@ -93,14 +101,15 @@ public final class AggregateRepository {
     ///
     public func count(predicate: NSPredicate, entityDesc: NSEntityDescription) -> AnyPublisher<Success<Int>, Failure> {
         return Deferred { Future { [weak self] callback in
-            guard let self = self else { return callback(.failure(Failure(function: .count, predicate: predicate, error: .unknown))) }
-            let request = NSFetchRequest<NSFetchRequestResult>(entityName: entityDesc.name ?? "")
+            let request = NSFetchRequest<NSDictionary>(entityName: entityDesc.name ?? "")
             request.predicate = predicate
+            request.sortDescriptors = [NSSortDescriptor(key: entityDesc.attributesByName.values.first!.name, ascending: true)]
+            guard let self = self else { return callback(.failure(Failure(function: .count, request: request, error: .unknown))) }
             do {
                 let count = try self.context.count(for: request)
-                callback(.success(Success(function: .count, result: [["countOf\(entityDesc.name ?? "")": count]], predicate: predicate)))
+                callback(.success(Success(function: .count, result: [["countOf\(entityDesc.name ?? "")": count]], request: request)))
             } catch {
-                callback(.failure(Failure(function: .count, predicate: predicate, error: .cocoa(error as NSError))))
+                callback(.failure(Failure(function: .count, request: request, error: .cocoa(error as NSError))))
             }
             
         }}.eraseToAnyPublisher()
@@ -116,16 +125,17 @@ public final class AggregateRepository {
     ///     - AnyPublisher<Success<Value>, Failure<Value>>
     ///
     public func sum<Value: Numeric>(predicate: NSPredicate, entityDesc: NSEntityDescription, attributeDesc: NSAttributeDescription, groupBy: NSAttributeDescription? = nil) -> AnyPublisher<Success<Value>, Failure> {
+        let request = self.request(function: .sum, predicate: predicate, entityDesc: entityDesc, attributeDesc: attributeDesc, groupBy: groupBy)
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .sum, predicate: predicate, error: .propertyDoesNotMatchEntity)).eraseToAnyPublisher()
+            return Fail(error: Failure(function: .sum, request: request, error: .propertyDoesNotMatchEntity)).eraseToAnyPublisher()
         }
         return Deferred { Future { [weak self] callback in
-            guard let self = self else { return callback(.failure(Failure(function: .sum, predicate: predicate, error: .unknown))) }
+            guard let self = self else { return callback(.failure(Failure(function: .sum, request: request, error: .unknown))) }
             do {
-                let result: [[String: Value]] = try self.aggregate(function: .sum, predicate: predicate, entityDesc: entityDesc, attributeDesc: attributeDesc, groupBy: groupBy)
-                callback(.success(Success(function: .sum, result: result, predicate: predicate)))
+                let result: [[String: Value]] = try self.aggregate(request: request)
+                callback(.success(Success(function: .sum, result: result, request: request)))
             } catch {
-                callback(.failure(Failure(function: .sum, predicate: predicate, error: .cocoa(error as NSError))))
+                callback(.failure(Failure(function: .sum, request: request, error: .cocoa(error as NSError))))
             }
         }}.eraseToAnyPublisher()
     }
@@ -140,16 +150,17 @@ public final class AggregateRepository {
     ///     - AnyPublisher<Success<Value>, Failure<Value>>
     ///
     public func average<Value: Numeric>(predicate: NSPredicate, entityDesc: NSEntityDescription, attributeDesc: NSAttributeDescription, groupBy: NSAttributeDescription? = nil) -> AnyPublisher<Success<Value>, Failure> {
+        let request = self.request(function: .average, predicate: predicate, entityDesc: entityDesc, attributeDesc: attributeDesc, groupBy: groupBy)
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .average, predicate: predicate, error: .propertyDoesNotMatchEntity)).eraseToAnyPublisher()
+            return Fail(error: Failure(function: .average, request: request, error: .propertyDoesNotMatchEntity)).eraseToAnyPublisher()
         }
         return Deferred { Future { [weak self] callback in
-            guard let self = self else { return callback(.failure(Failure(function: .average, predicate: predicate, error: .unknown))) }
+            guard let self = self else { return callback(.failure(Failure(function: .average, request: request, error: .unknown))) }
             do {
-                let result: [[String: Value]] = try self.aggregate(function: .average, predicate: predicate, entityDesc: entityDesc, attributeDesc: attributeDesc, groupBy: groupBy)
-                callback(.success(Success(function: .average, result: result, predicate: predicate)))
+                let result: [[String: Value]] = try self.aggregate(request: request)
+                callback(.success(Success(function: .average, result: result, request: request)))
             } catch {
-                callback(.failure(Failure(function: .average, predicate: predicate, error: .cocoa(error as NSError))))
+                callback(.failure(Failure(function: .average, request: request, error: .cocoa(error as NSError))))
             }
         }}.eraseToAnyPublisher()
     }
@@ -164,16 +175,17 @@ public final class AggregateRepository {
     ///     - AnyPublisher<Success<Value>, Failure<Value>>
     ///
     public func min<Value: Numeric>(predicate: NSPredicate, entityDesc: NSEntityDescription, attributeDesc: NSAttributeDescription, groupBy: NSAttributeDescription? = nil) -> AnyPublisher<Success<Value>, Failure> {
+        let request = self.request(function: .min, predicate: predicate, entityDesc: entityDesc, attributeDesc: attributeDesc, groupBy: groupBy)
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .min, predicate: predicate, error: .propertyDoesNotMatchEntity)).eraseToAnyPublisher()
+            return Fail(error: Failure(function: .min, request: request, error: .propertyDoesNotMatchEntity)).eraseToAnyPublisher()
         }
         return Deferred { Future { [weak self] callback in
-            guard let self = self else { return callback(.failure(Failure(function: .min, predicate: predicate, error: .unknown))) }
+            guard let self = self else { return callback(.failure(Failure(function: .min, request: request, error: .unknown))) }
             do {
-                let result: [[String: Value]] = try self.aggregate(function: .min, predicate: predicate, entityDesc: entityDesc, attributeDesc: attributeDesc, groupBy: groupBy)
-                callback(.success(Success(function: .min, result: result, predicate: predicate)))
+                let result: [[String: Value]] = try self.aggregate(request: request)
+                callback(.success(Success(function: .min, result: result, request: request)))
             } catch {
-                callback(.failure(Failure(function: .min, predicate: predicate, error: .cocoa(error as NSError))))
+                callback(.failure(Failure(function: .min, request: request, error: .cocoa(error as NSError))))
             }
         }}.eraseToAnyPublisher()
     }
@@ -188,18 +200,56 @@ public final class AggregateRepository {
     ///     - AnyPublisher<Success<Value>, Failure<Value>>
     ///
     public func max<Value: Numeric>(predicate: NSPredicate, entityDesc: NSEntityDescription, attributeDesc: NSAttributeDescription, groupBy: NSAttributeDescription? = nil) -> AnyPublisher<Success<Value>, Failure> {
+        let request = self.request(function: .max, predicate: predicate, entityDesc: entityDesc, attributeDesc: attributeDesc, groupBy: groupBy)
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .max, predicate: predicate, error: .propertyDoesNotMatchEntity)).eraseToAnyPublisher()
+            return Fail(error: Failure(function: .max, request: request, error: .propertyDoesNotMatchEntity)).eraseToAnyPublisher()
         }
         return Deferred { Future { [weak self] callback in
-            guard let self = self else { return callback(.failure(Failure(function: .max, predicate: predicate, error: .unknown))) }
+            guard let self = self else { return callback(.failure(Failure(function: .max, request: request, error: .unknown))) }
             do {
-                let result: [[String: Value]] = try self.aggregate(function: .max, predicate: predicate, entityDesc: entityDesc, attributeDesc: attributeDesc, groupBy: groupBy)
-                callback(.success(Success(function: .max, result: result, predicate: predicate)))
+                let result: [[String: Value]] = try self.aggregate(request: request)
+                callback(.success(Success(function: .max, result: result, request: request)))
             } catch {
-                callback(.failure(Failure(function: .max, predicate: predicate, error: .cocoa(error as NSError))))
+                callback(.failure(Failure(function: .max, request: request, error: .cocoa(error as NSError))))
             }
         }}.eraseToAnyPublisher()
+    }
+
+    public func subscription<Value: Numeric>(_ publisher: AnyPublisher<Success<Value>, Failure>) -> AnyPublisher<Success<Value>, Failure> {
+        return AnyPublisher.create { subscriber in
+            let subject = PassthroughSubject<Success<Value>, Failure>()
+            subject.sink(receiveCompletion: subscriber.send, receiveValue: subscriber.send).store(in: &self.cancellables)
+            let id = UUID()
+            var subscription: SubscriptionProvider?
+            publisher.sink(
+                receiveCompletion: { completion in
+                    if case .failure = completion {
+                        subject.send(completion: completion)
+                    }
+                },
+                receiveValue: { value in
+                    let castValue = value.result.first!.values.first!
+                    subscription = RepositorySubscription(
+                        id: id,
+                        request: value.request,
+                        context: self.context,
+                        success: { Success(function: value.function, result: $0 as? [[String: Value]] ?? [], request: value.request) },
+                        failure: { Failure(function: value.function, request: value.request, error: $0) },
+                        subject: subject
+                    )
+                    subscription?.start()
+                    if let sub = subscription {
+                        self.subscriptions.append(sub)
+                    }
+                    subject.send(value)
+                    
+                }
+            ).store(in: &self.cancellables)
+            return AnyCancellable {
+                subscription?.cancel()
+                self.subscriptions.removeAll(where: { $0.id == id as AnyHashable })
+            }
+        }
     }
 }
 
@@ -221,5 +271,11 @@ extension NSExpressionDescription {
         expDesc.name = "\(function.rawValue)Of\(attributeDesc.name.capitalized)"
         expDesc.expressionResultType = attributeDesc.attributeType
         return expDesc
+    }
+}
+
+extension AnyPublisher where Failure == AggregateRepository.Failure {
+    func subscription<Value: Numeric>(_ repository: AggregateRepository) -> Self where Self.Output == AggregateRepository.Success<Value>, Self.Failure == AggregateRepository.Failure {
+        repository.subscription(self)
     }
 }
