@@ -12,7 +12,7 @@ public final class FetchRepository {
     // MARK: Properties
     /// The context used by the repository.
     public let context: NSManagedObjectContext
-    public var subscriptions = [SubscriptionProvider]()
+    var subscriptions = [SubscriptionProvider]()
     public var cancellables = [AnyCancellable]()
 
     // MARK: Init
@@ -122,7 +122,7 @@ public final class FetchRepository {
 
 // MARK: Extensions
 extension AnyPublisher {
-    func subscription<Model: UnmanagedModel>(_ repository: FetchRepository) -> Self where Self.Output == FetchRepository.Success<Model>, Self.Failure == FetchRepository.Failure<Model> {
+    public func subscription<Model: UnmanagedModel>(_ repository: FetchRepository) -> Self where Self.Output == FetchRepository.Success<Model>, Self.Failure == FetchRepository.Failure<Model> {
         repository.subscription(self)
     }
 }

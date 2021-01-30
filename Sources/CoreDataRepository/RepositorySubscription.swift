@@ -10,7 +10,7 @@ import CoreData
 import Combine
 
 /// Re-fetches data as the context changes until canceled
-public class RepositorySubscription<
+class RepositorySubscription<
     Success,
     Failure: Error,
     Result: NSFetchRequestResult

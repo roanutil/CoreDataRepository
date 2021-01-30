@@ -214,43 +214,6 @@ public final class AggregateRepository {
             }
         }}.eraseToAnyPublisher()
     }
-
-    public func subscription<Value: Numeric>(_ publisher: AnyPublisher<Success<Value>, Failure>) -> AnyPublisher<Success<Value>, Failure> {
-        return AnyPublisher.create { subscriber in
-            let subject = PassthroughSubject<Success<Value>, Failure>()
-            subject.sink(receiveCompletion: subscriber.send, receiveValue: subscriber.send).store(in: &self.cancellables)
-            let id = UUID()
-            var subscription: SubscriptionProvider?
-            publisher.sink(
-                receiveCompletion: { completion in
-                    if case .failure = completion {
-                        subject.send(completion: completion)
-                    }
-                },
-                receiveValue: { value in
-                    let castValue = value.result.first!.values.first!
-                    subscription = RepositorySubscription(
-                        id: id,
-                        request: value.request,
-                        context: self.context,
-                        success: { Success(function: value.function, result: $0 as? [[String: Value]] ?? [], request: value.request) },
-                        failure: { Failure(function: value.function, request: value.request, error: $0) },
-                        subject: subject
-                    )
-                    subscription?.start()
-                    if let sub = subscription {
-                        self.subscriptions.append(sub)
-                    }
-                    subject.send(value)
-                    
-                }
-            ).store(in: &self.cancellables)
-            return AnyCancellable {
-                subscription?.cancel()
-                self.subscriptions.removeAll(where: { $0.id == id as AnyHashable })
-            }
-        }
-    }
 }
 
 // MARK: Extensions
@@ -271,11 +234,5 @@ extension NSExpressionDescription {
         expDesc.name = "\(function.rawValue)Of\(attributeDesc.name.capitalized)"
         expDesc.expressionResultType = attributeDesc.attributeType
         return expDesc
-    }
-}
-
-extension AnyPublisher where Failure == AggregateRepository.Failure {
-    func subscription<Value: Numeric>(_ repository: AggregateRepository) -> Self where Self.Output == AggregateRepository.Success<Value>, Self.Failure == AggregateRepository.Failure {
-        repository.subscription(self)
     }
 }
