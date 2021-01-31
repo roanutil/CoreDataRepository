@@ -4,6 +4,7 @@ CoreDataRepository is a reactive library (Combine) for using CoreData on a backg
 
 Since ```NSManagedObject```s are not thread safe, a value type model must exist for each ```NSMangaedObject``` subclass.
 
+
 ## Why the hell did you make this?
 When I started learning more about application architecture, I ran into things like Clean Architecture that insist that the models, business logic, and views should be far away from platform specific frameworks. Your view should have no concern over the implementation details of persistence. When I compared that to how things are usually done on iOS, I noticed a big difference.
 
@@ -13,14 +14,15 @@ The result is this library which in some form is actually used in production for
 
 To give some weight to this idea, here's a quote from the Q&A portion of [this](https://academy.realm.io/posts/andy-matuschak-controlling-complexity/) talk by Andy Matuschak:
 
-"Q: How do dependencies work out? It seems like the greatest value of using values is in the model layer, yet that’s the layer at which you have the most dependencies across the rest of your app, which is probably in Objective-C.
+> Q: How do dependencies work out? It seems like the greatest value of using values is in the model layer, yet that’s the layer at which you have the most dependencies across the rest of your app, which is probably in Objective-C.
 
-Andy: In my experience, we had a CoreData stack, which is the opposite of isolation. Our strategy was putting a layer about the CoreData layer that would perform queries and return values. But where would we add functionality in the model layer? As far as using values in the view layer, we do a lot of that actually. We have a table view cell all the way down the stack that will render some icon and a label. The traditional thing to do would be to pass the ManagedObject for that content to the cell, but it doesn’t need that. There’s no reason to create this dependency between the cell and everything the model knows about, and so we make these lightweight little value types that the view needs. The owner of the view can populate that value type and give it to the view. We make these things called presenters that given some model can compute the view data. Then the thing which owns the presenter can pass the results into the view."
+> Andy: In my experience, we had a CoreData stack, which is the opposite of isolation. Our strategy was putting a layer about the CoreData layer that would perform queries and return values. But where would we add functionality in the model layer? As far as using values in the view layer, we do a lot of that actually. We have a table view cell all the way down the stack that will render some icon and a label. The traditional thing to do would be to pass the ManagedObject for that content to the cell, but it doesn’t need that. There’s no reason to create this dependency between the cell and everything the model knows about, and so we make these lightweight little value types that the view needs. The owner of the view can populate that value type and give it to the view. We make these things called presenters that given some model can compute the view data. Then the thing which owns the presenter can pass the results into the view.
+
 
 ## Basic Usage
 
 ### Model Bridging
-There are two protocols that handle briding between the value type and managed models.
+There are two protocols that handle bridging between the value type and managed models.
 
 #### RepositoryManagedModel
 ```swift
@@ -195,8 +197,10 @@ _ = self.repository.insert(request)
     )
 ```
 
+
 ## TODO
 - Add a subscription feature for aggregate functions
+
 
 ## Contributing
 I welcome any feedback or contributions. I'm not eager to mess with the API a lot but let's be honest, it could probably be better. As always more tests wouldn't hurt.
