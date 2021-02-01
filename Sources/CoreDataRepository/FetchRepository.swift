@@ -94,29 +94,37 @@ public final class FetchRepository {
     }
 
     public func subscription<Model: UnmanagedModel>(_ publisher: AnyPublisher<Success<Model>, Failure<Model>>) -> AnyPublisher<Success<Model>, Failure<Model>> {
-        let subject = PassthroughSubject<Success<Model>, Failure<Model>>()
-        let id = UUID()
-        publisher.sink(
-            receiveCompletion: { completion in
-                if case .failure = completion {
-                    subject.send(completion: completion)
+        return AnyPublisher.create { subscriber in
+            let subject = PassthroughSubject<Success<Model>, Failure<Model>>()
+            subject.sink(receiveCompletion: subscriber.send, receiveValue: subscriber.send).store(in: &self.cancellables)
+            let id = UUID()
+            var subscription: SubscriptionProvider?
+            publisher.sink(
+                receiveCompletion: { completion in
+                    if case .failure = completion {
+                        subject.send(completion: completion)
+                    }
+                },
+                receiveValue: { value in
+                    let subscriptionProvider = RepositorySubscription(
+                        id: id,
+                        request: value.fetchRequest,
+                        context: self.context,
+                        success: { Success(items: $0.map { $0.asUnmanaged }, fetchRequest: value.fetchRequest) },
+                        failure: { Failure(error: $0, fetchRequest: value.fetchRequest) },
+                        subject: subject
+                    )
+                    subscription = subscriptionProvider
+                    subscriptionProvider.start()
+                    self.subscriptions.append(subscriptionProvider)
+                    subject.send(value)
                 }
-            },
-            receiveValue: { value in
-                let subscription = RepositorySubscription(
-                    id: id,
-                    request: value.fetchRequest,
-                    context: self.context,
-                    success: { Success(items: $0.map { $0.asUnmanaged }, fetchRequest: value.fetchRequest) },
-                    failure: { Failure(error: $0, fetchRequest: value.fetchRequest) },
-                    subject: subject
-                )
-                subscription.start()
-                self.subscriptions.append(subscription)
-                subject.send(value)
+            ).store(in: &self.cancellables)
+            return AnyCancellable {
+                subscription?.cancel()
+                self.subscriptions.removeAll(where: { $0.id == id as AnyHashable })
             }
-        ).store(in: &self.cancellables)
-        return subject.eraseToAnyPublisher()
+        }
     }
 }
 

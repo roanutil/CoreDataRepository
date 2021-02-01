@@ -112,6 +112,11 @@ class RepositorySubscription<
     public func fail(_ failure: Failure) {
         self.subject.send(completion: .failure(failure))
     }
+
+    // Helps me sleep at night
+    deinit {
+        self.subject.send(completion: .finished)
+    }
 }
 
 protocol SubscriptionSuccess {
