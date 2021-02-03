@@ -1,4 +1,5 @@
 # CoreDataRepository
+[![Build Status](https://travis-ci.com/roanutil/CoreDataRepository.svg?branch=main)](https://travis-ci.com/roanutil/CoreDataRepository) [![codecov](https://codecov.io/gh/roanutil/CoreDataRepository/branch/main/graph/badge.svg?token=WRO4CXYWRG)](https://codecov.io/gh/roanutil/CoreDataRepository) 
 
 CoreDataRepository is a reactive library (Combine) for using CoreData on a background queue. It features endpoints for CRUD, batch, fetch multiple, and aggregate operations. Also, it offers a stream like subscription function for wrapping a fetch multiple call that will send updates that match the fetch request.
 

@@ -29,6 +29,10 @@ let package = Package(
             dependencies: []),
         .testTarget(
             name: "CoreDataRepositoryTests",
-            dependencies: ["CoreDataRepository"]),
+            dependencies: ["CoreDataRepository"],
+            resources: [
+                .process("Model.xcdatamodeld")
+            ]
+        ),
     ]
 )

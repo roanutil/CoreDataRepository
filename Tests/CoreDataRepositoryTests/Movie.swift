@@ -8,7 +8,7 @@
 import CoreData
 @testable import CoreDataRepository
 
-public struct Movie: Identifiable, Equatable {
+public struct Movie {
     public let id: UUID
     public var title: String = ""
     public var releaseDate: Date
@@ -27,50 +27,24 @@ extension Movie: UnmanagedModel {
     }
 }
 
-/*@objc(RepoMovie)
-final class RepoMovie: NSManagedObject, Identifiable {
-    @NSManaged var id: UUID
-    @NSManaged var title: String
-    @NSManaged var releaseDate: Date
-    @NSManaged var boxOffice: NSDecimalNumber
-}
-
-extension RepoMovie: RepositoryManagedModel {
-    var asUnmanaged: Movie {
-        return Movie(
-            id: id,
-            title: title,
-            releaseDate: releaseDate,
-            boxOffice: boxOffice as Decimal,
-            objectID: objectID
-        )
-    }
-
-    func update(from unmanaged: Movie) {
-        self.id = unmanaged.id
-        self.title = unmanaged.title
-        self.releaseDate = unmanaged.releaseDate
-        self.boxOffice = unmanaged.boxOffice as NSDecimalNumber
-    }
-
-    static func fetchRequest() -> NSFetchRequest<RepoMovie> {
-        NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-    }
-}
-*/
-
-import Foundation
-import CoreData
-
 @objc(RepoMovie)
-public class RepoMovie: NSManagedObject {
-
+public final class RepoMovie: NSManagedObject {
+    @NSManaged var id: UUID?
+    @NSManaged var title: String?
+    @NSManaged var releaseDate: Date?
+    @NSManaged var boxOffice: NSDecimalNumber?
 }
 
 extension RepoMovie: RepositoryManagedModel {
     public typealias Unmanaged = Movie
     public var asUnmanaged: Movie {
-        return Movie(id: self.id ?? UUID(), title: self.title ?? "", releaseDate: self.releaseDate ?? Date(), boxOffice: (self.boxOffice ?? 0) as Decimal, objectID: self.objectID)
+        return Movie(
+            id: self.id ?? UUID(),
+            title: self.title ?? "",
+            releaseDate: self.releaseDate ?? Date(),
+            boxOffice: (self.boxOffice ?? 0) as Decimal,
+            objectID: self.objectID
+        )
     }
 
     public func update(from unmanaged: Movie) {
@@ -78,5 +52,10 @@ extension RepoMovie: RepositoryManagedModel {
         self.title = unmanaged.title
         self.releaseDate = unmanaged.releaseDate
         self.boxOffice = NSDecimalNumber(decimal: unmanaged.boxOffice)
+    }
+
+    static func fetchRequest() -> NSFetchRequest<RepoMovie> {
+        let request = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
+        return request
     }
 }
