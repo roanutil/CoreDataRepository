@@ -134,3 +134,9 @@ extension AnyPublisher {
         repository.subscription(self)
     }
 }
+
+extension FetchRepository.Success: Equatable where Model: Equatable {}
+extension FetchRepository.Failure: Equatable where Model: Equatable {}
+
+extension FetchRepository.Success: Hashable where Model: Hashable {}
+extension FetchRepository.Failure: Hashable where Model: Hashable {}

@@ -24,14 +24,14 @@ public final class BatchRepository {
 
     // MARK: Return Types
     /// Return type for successful results
-    public enum Success: Error, Equatable {
+    public enum Success: Error, Hashable {
         case insert(NSBatchInsertRequest, NSBatchInsertResult)
         case update(NSBatchUpdateRequest, NSBatchUpdateResult)
         case delete(NSBatchDeleteRequest, NSBatchDeleteResult)
     }
 
     /// Return type for failures
-    public enum Failure: Error, Equatable {
+    public enum Failure: Error, Hashable {
         case insert(NSBatchInsertRequest, RepositoryErrors)
         case update(NSBatchUpdateRequest, RepositoryErrors)
         case delete(NSBatchDeleteRequest, RepositoryErrors)

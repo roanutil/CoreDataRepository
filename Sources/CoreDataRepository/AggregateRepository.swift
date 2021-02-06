@@ -46,7 +46,7 @@ public final class AggregateRepository {
     }
 
     /// A return type for failure to calculate
-    public struct Failure: Error {
+    public struct Failure: Error, Hashable {
         let function: Function
         let request: NSFetchRequest<NSDictionary>
         let error: RepositoryErrors
@@ -236,3 +236,5 @@ extension NSExpressionDescription {
         return expDesc
     }
 }
+
+extension AggregateRepository.Success: Equatable where Value: Equatable {}

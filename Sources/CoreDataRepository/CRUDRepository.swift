@@ -155,3 +155,9 @@ public final class CRUDRepository {
         }.eraseToAnyPublisher()
     }
 }
+
+extension CRUDRepository.Success: Equatable where Model: Equatable {}
+extension CRUDRepository.Failure: Equatable where Model: Equatable {}
+
+extension CRUDRepository.Success: Hashable where Model: Hashable {}
+extension CRUDRepository.Failure: Hashable where Model: Hashable {}
