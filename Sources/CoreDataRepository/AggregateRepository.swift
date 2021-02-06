@@ -58,7 +58,7 @@ public final class AggregateRepository {
 
     private func request(function: Function, predicate: NSPredicate, entityDesc: NSEntityDescription, attributeDesc: NSAttributeDescription, groupBy: NSAttributeDescription? = nil) -> NSFetchRequest<NSDictionary> {
         let expDesc = NSExpressionDescription.aggregate(function: function, attributeDesc: attributeDesc)
-        let request = NSFetchRequest<NSDictionary>(entityName: entityDesc.className)
+        let request = NSFetchRequest<NSDictionary>(entityName: entityDesc.managedObjectClassName)
         request.entity = entityDesc
         request.returnsObjectsAsFaults = false
         request.resultType = .dictionaryResultType
