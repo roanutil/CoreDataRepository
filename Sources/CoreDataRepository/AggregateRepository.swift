@@ -36,22 +36,22 @@ public final class AggregateRepository {
 
     /// A return type for successful calculation
     public struct Success<Value: Numeric> {
-        let function: Function
-        let result: [[String: Value]]
-        let request: NSFetchRequest<NSDictionary>
+        public let function: Function
+        public let result: [[String: Value]]
+        public let request: NSFetchRequest<NSDictionary>
 
-        var predicate: NSPredicate? {
+        public var predicate: NSPredicate? {
             request.predicate
         }
     }
 
     /// A return type for failure to calculate
     public struct Failure: Error, Hashable {
-        let function: Function
-        let request: NSFetchRequest<NSDictionary>
-        let error: RepositoryErrors
+        public let function: Function
+        public let request: NSFetchRequest<NSDictionary>
+        public let error: RepositoryErrors
 
-        var predicate: NSPredicate? {
+        public var predicate: NSPredicate? {
             request.predicate
         }
     }

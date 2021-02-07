@@ -35,10 +35,10 @@ public final class FetchRepository {
             self.fetchRequest = fetchRequest
         }
 
-        var limit: Int { fetchRequest.fetchLimit }
-        var offset: Int { fetchRequest.fetchOffset }
-        var predicate: NSPredicate? { fetchRequest.predicate }
-        var sortDesc: [NSSortDescriptor]? { fetchRequest.sortDescriptors }
+        public var limit: Int { fetchRequest.fetchLimit }
+        public var offset: Int { fetchRequest.fetchOffset }
+        public var predicate: NSPredicate? { fetchRequest.predicate }
+        public var sortDesc: [NSSortDescriptor]? { fetchRequest.sortDescriptors }
     }
 
     /// Return tpe for a failure to fetch. Includes parameters with error.
@@ -51,23 +51,23 @@ public final class FetchRepository {
             self.fetchRequest = fetchRequest
         }
 
-        var nsError: NSError? {
+        public var nsError: NSError? {
             if case let .cocoa(nsError) = error {
                 return nsError
             }
             return nil
         }
-        var localizedDescription: String? {
+        public var localizedDescription: String? {
             if let desc = nsError?.localizedDescription {
                 return desc
             }
             return nil
         }
 
-        var limit: Int { fetchRequest.fetchLimit }
-        var offset: Int { fetchRequest.fetchOffset }
-        var predicate: NSPredicate? { fetchRequest.predicate }
-        var sortDesc: [NSSortDescriptor]? { fetchRequest.sortDescriptors }
+        public var limit: Int { fetchRequest.fetchLimit }
+        public var offset: Int { fetchRequest.fetchOffset }
+        public var predicate: NSPredicate? { fetchRequest.predicate }
+        public var sortDesc: [NSSortDescriptor]? { fetchRequest.sortDescriptors }
     }
 
     // MARK: Functions/Endpoints
