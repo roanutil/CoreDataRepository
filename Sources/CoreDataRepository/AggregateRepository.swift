@@ -99,7 +99,7 @@ public final class AggregateRepository {
     /// - Returns
     ///     - AnyPublisher<Success<Int>, Failure<Int>>
     ///
-    public func count(predicate: NSPredicate, entityDesc: NSEntityDescription) -> AnyPublisher<Success<Int>, Failure> {
+    public func count<Value: Numeric>(predicate: NSPredicate, entityDesc: NSEntityDescription) -> AnyPublisher<Success<Value>, Failure> {
         return Deferred { Future { [weak self] callback in
             let request = NSFetchRequest<NSDictionary>(entityName: entityDesc.name ?? "")
             request.predicate = predicate
@@ -107,7 +107,7 @@ public final class AggregateRepository {
             guard let self = self else { return callback(.failure(Failure(function: .count, request: request, error: .unknown))) }
             do {
                 let count = try self.context.count(for: request)
-                callback(.success(Success(function: .count, result: [["countOf\(entityDesc.name ?? "")": count]], request: request)))
+                callback(.success(Success(function: .count, result: [["countOf\(entityDesc.name ?? "")": Value(exactly: count) ?? Value.zero]], request: request)))
             } catch {
                 callback(.failure(Failure(function: .count, request: request, error: .cocoa(error as NSError))))
             }
