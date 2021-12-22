@@ -1,13 +1,14 @@
+// RepositorySubscription.swift
+// CoreDataRepository
 //
-//  RepositorySubscription.swift
-//  
 //
-//  Created by Andrew Roan on 1/25/21.
+// MIT License
 //
+// Copyright © 2021 Andrew Roan
 
-import Foundation
-import CoreData
 import Combine
+import CoreData
+import Foundation
 
 /// Re-fetches data as the context changes until canceled
 class RepositorySubscription<
@@ -16,7 +17,9 @@ class RepositorySubscription<
     Result: NSFetchRequestResult
 >: NSObject, NSFetchedResultsControllerDelegate, SubscriptionProvider {
     // MARK: Properties
-    /// Enables easy cancellation and cleanup of a subscription as a repository may have multiple subscriptions running at once.
+
+    /// Enables easy cancellation and cleanup of a subscription as a repository may
+    /// have multiple subscriptions running at once.
     public let id: AnyHashable
     /// The fetch request to monitor
     private let request: NSFetchRequest<Result>
@@ -32,6 +35,7 @@ class RepositorySubscription<
     private var changeNotificationCancellable: AnyCancellable?
 
     // MARK: Init
+
     /// Initializes an instance of Subscription
     /// - Parameters
     ///     - id: AnyHashable
@@ -49,7 +53,7 @@ class RepositorySubscription<
     ) {
         self.id = id
         self.request = request
-        self.frc = NSFetchedResultsController(
+        frc = NSFetchedResultsController(
             fetchRequest: request,
             managedObjectContext: context,
             sectionNameKeyPath: nil,
@@ -60,9 +64,12 @@ class RepositorySubscription<
         self.subject = subject
         super.init()
         if request.resultType != .dictionaryResultType {
-            self.frc.delegate = self
+            frc.delegate = self
         } else {
-            self.changeNotificationCancellable = NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange, object: context).sink(receiveValue: { _ in
+            changeNotificationCancellable = NotificationCenter.default.publisher(
+                for: .NSManagedObjectContextObjectsDidChange,
+                object: context
+            ).sink(receiveValue: { _ in
                 self.fetch()
             })
         }
@@ -72,45 +79,46 @@ class RepositorySubscription<
 
     /// Get and send new data for fetch request
     private func fetch() {
-        self.frc.managedObjectContext.perform {
+        frc.managedObjectContext.perform {
             if (self.frc.fetchedObjects ?? []).isEmpty {
                 self.start()
             }
             guard let items = self.frc.fetchedObjects else { return }
             self.subject.send(self.success(items))
-            return
         }
     }
 
     // MARK: Public methods
+
     // MARK: NSFetchedResultsControllerDelegate conformance
-    public func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        self.fetch()
+
+    public func controllerDidChangeContent(_: NSFetchedResultsController<NSFetchRequestResult>) {
+        fetch()
     }
 
     public func start() {
         do {
-            try self.frc.performFetch()
+            try frc.performFetch()
         } catch {
-            self.fail(self.failure(.cocoa(error as NSError)))
+            fail(failure(.cocoa(error as NSError)))
         }
     }
 
     /// Manually initiate a fetch and publish data
     public func manualFetch() {
-        self.fetch()
+        fetch()
     }
-    
+
     /// Cancel the subscription
     public func cancel() {
-        self.subject.send(completion: .finished)
+        subject.send(completion: .finished)
     }
 
     /// Finish the subscription with a failure
     /// - Parameters
     ///     - _ failure: Failure
     public func fail(_ failure: Failure) {
-        self.subject.send(completion: .failure(failure))
+        subject.send(completion: .failure(failure))
     }
 
     // Helps me sleep at night

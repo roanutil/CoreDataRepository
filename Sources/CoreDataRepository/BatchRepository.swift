@@ -1,20 +1,24 @@
+// BatchRepository.swift
+// CoreDataRepository
 //
-//  BatchRepository.swift
 //
-//  Created by Andrew Roan on 1/16/21.
+// MIT License
 //
+// Copyright © 2021 Andrew Roan
 
-import CoreData
 import Combine
+import CoreData
 
 /// A CoreData repository that supports background batch operations
 public final class BatchRepository {
     // MARK: Properties
+
     // should always be a background context
     /// The context used by the repository
     public let context: NSManagedObjectContext
 
     // MARK: Init
+
     /// Initializes an instance of the repository
     /// - Parameters
     ///     - context: NSManagedObjectContext
@@ -23,6 +27,7 @@ public final class BatchRepository {
     }
 
     // MARK: Return Types
+
     /// Return type for successful results
     public enum Success: Error, Hashable {
         case insert(NSBatchInsertRequest, NSBatchInsertResult)
@@ -38,6 +43,7 @@ public final class BatchRepository {
     }
 
     // MARK: Functions
+
     /// Batch insert objects into CoreData
     /// - Parameters
     ///     - _ request: NSBatchInsertRequest

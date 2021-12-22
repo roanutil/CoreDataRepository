@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  library:
+    runs-on: macos-11.0
+    environment: default
+    strategy:
+      matrix:
+        xcode:
+          - '12.4'
+          - '12.5.1'
+          - '13.2'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Select Xcode ${{ matrix.xcode }}
+        run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app
+      - name: Format lint
+        run: swiftformat --lint .
+      - name: Lint
+        run: swiftlint .
+      - name: Run Tests
+        run: swift test --enable-code-coverage
+      - name: Swift Coverage Report
+        uses: maxep/spm-lcov-action@0.3.1
+      - name: Code Coverage
+        run: bash <(curl -s https://codecov.io/bash) -X xcodellvm

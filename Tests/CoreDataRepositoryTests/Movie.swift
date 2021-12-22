@@ -1,9 +1,10 @@
+// Movie.swift
+// CoreDataRepository
 //
-//  Movie.swift
-//  
 //
-//  Created by Andrew Roan on 1/22/21.
+// MIT License
 //
+// Copyright © 2021 Andrew Roan
 
 import CoreData
 @testable import CoreDataRepository
@@ -38,20 +39,20 @@ public final class RepoMovie: NSManagedObject {
 extension RepoMovie: RepositoryManagedModel {
     public typealias Unmanaged = Movie
     public var asUnmanaged: Movie {
-        return Movie(
-            id: self.id ?? UUID(),
-            title: self.title ?? "",
-            releaseDate: self.releaseDate ?? Date(),
-            boxOffice: (self.boxOffice ?? 0) as Decimal,
-            objectID: self.objectID
+        Movie(
+            id: id ?? UUID(),
+            title: title ?? "",
+            releaseDate: releaseDate ?? Date(),
+            boxOffice: (boxOffice ?? 0) as Decimal,
+            objectID: objectID
         )
     }
 
     public func update(from unmanaged: Movie) {
-        self.id = unmanaged.id
-        self.title = unmanaged.title
-        self.releaseDate = unmanaged.releaseDate
-        self.boxOffice = NSDecimalNumber(decimal: unmanaged.boxOffice)
+        id = unmanaged.id
+        title = unmanaged.title
+        releaseDate = unmanaged.releaseDate
+        boxOffice = NSDecimalNumber(decimal: unmanaged.boxOffice)
     }
 
     static func fetchRequest() -> NSFetchRequest<RepoMovie> {

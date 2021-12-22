@@ -1,20 +1,20 @@
+// FetchRepositoryTests.swift
+// CoreDataRepository
 //
-//  FetchRepositoryTests.swift
-//  
 //
-//  Created by Andrew Roan on 1/22/21.
+// MIT License
 //
+// Copyright © 2021 Andrew Roan
 
-import CoreData
 import Combine
-import XCTest
+import CoreData
 @testable import CoreDataRepository
+import XCTest
 
 final class FetchRepositoryTests: CoreDataXCTestCase {
-
     static var allTests = [
         ("testFetchSuccess", testFetchSuccess),
-        ("testFetchSubscriptionSuccess", testFetchSubscriptionSuccess)
+        ("testFetchSubscriptionSuccess", testFetchSubscriptionSuccess),
     ]
 
     typealias Success = FetchRepository.Success<Movie>
@@ -25,6 +25,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         request.sortDescriptors = [NSSortDescriptor(keyPath: \RepoMovie.title, ascending: true)]
         return request
     }()
+
     let movies = [
         Movie(id: UUID(), title: "A", releaseDate: Date()),
         Movie(id: UUID(), title: "B", releaseDate: Date()),
@@ -38,15 +39,15 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
 
     override func setUp() {
         super.setUp()
-        self._repository = FetchRepository(context: self.backgroundContext)
+        _repository = FetchRepository(context: backgroundContext)
         _ = movies.map { $0.asRepoManaged(in: viewContext) }
         try? viewContext.save()
-        expectedMovies = try! viewContext.fetch(fetchRequest).map { $0.asUnmanaged }
+        expectedMovies = try! viewContext.fetch(fetchRequest).map(\.asUnmanaged)
     }
 
     override func tearDown() {
         super.tearDown()
-        self._repository = nil
+        _repository = nil
         expectedMovies = []
     }
 
@@ -62,10 +63,10 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                 default:
                     XCTFail("Not expecting failure")
                 }
-        }, receiveValue: { value in
-            assert(value.items.count == 5, "Result items count should match expectation")
-            assert(value.items == self.expectedMovies, "Result items should match expectations")
-        })
+            }, receiveValue: { value in
+                assert(value.items.count == 5, "Result items count should match expectation")
+                assert(value.items == self.expectedMovies, "Result items should match expectations")
+            })
         wait(for: [exp], timeout: 5)
     }
 
@@ -83,25 +84,26 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                 default:
                     XCTFail("Not expecting failure")
                 }
-        }, receiveValue: { value in
-            resultCount += 1
-            switch resultCount {
-            case 1:
-                assert(value.items.count == 5, "Result items count should match expectation")
-                assert(value.items == self.expectedMovies, "Result items should match expectations")
-                firstExp.fulfill()
-            case 2:
-                assert(value.items.count == 4, "Result items count should match expectation")
-                assert(value.items == Array(self.expectedMovies[0...3]), "Result items should match expectations")
-                secondExp.fulfill()
-            default:
-                XCTFail("Not expecting any values past the first two.")
-            }
-            
-        })
+            }, receiveValue: { value in
+                resultCount += 1
+                switch resultCount {
+                case 1:
+                    assert(value.items.count == 5, "Result items count should match expectation")
+                    assert(value.items == self.expectedMovies, "Result items should match expectations")
+                    firstExp.fulfill()
+                case 2:
+                    assert(value.items.count == 4, "Result items count should match expectation")
+                    assert(value.items == Array(self.expectedMovies[0 ... 3]), "Result items should match expectations")
+                    secondExp.fulfill()
+                default:
+                    XCTFail("Not expecting any values past the first two.")
+                }
+
+            })
         wait(for: [firstExp], timeout: 5)
-        let crudRepository = CRUDRepository(context: self.backgroundContext)
-        let _: AnyPublisher<CRUDRepository.Success<Movie>, CRUDRepository.Failure<Movie>> = crudRepository.delete(self.expectedMovies.last!.objectID!)
+        let crudRepository = CRUDRepository(context: backgroundContext)
+        let _: AnyPublisher<CRUDRepository.Success<Movie>, CRUDRepository.Failure<Movie>> = crudRepository
+            .delete(expectedMovies.last!.objectID!)
         wait(for: [secondExp], timeout: 5)
         cancellable.cancel()
     }

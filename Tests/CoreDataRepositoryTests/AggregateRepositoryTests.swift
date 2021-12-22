@@ -1,31 +1,31 @@
+// AggregateRepositoryTests.swift
+// CoreDataRepository
 //
-//  AggregateRepositoryTests.swift
-//  
 //
-//  Created by Andrew Roan on 1/23/21.
+// MIT License
 //
+// Copyright © 2021 Andrew Roan
 
-import CoreData
 import Combine
-import XCTest
+import CoreData
 @testable import CoreDataRepository
+import XCTest
 
 #if !canImport(ObjectiveC)
-public func allTests() -> [XCTestCaseEntry] {
-    return [
-        testCase(CoreDataSourceTests.allTests),
-    ]
-}
+    public func allTests() -> [XCTestCaseEntry] {
+        [
+            testCase(CoreDataSourceTests.allTests),
+        ]
+    }
 #endif
 
 final class AggregateRepositoryTests: CoreDataXCTestCase {
-
     static var allTests = [
         ("testCountSuccess", testCountSuccess),
         ("testSumSuccess", testSumSuccess),
         ("testAverageSuccess", testAverageSuccess),
         ("testMinSuccess", testMinSuccess),
-        ("testMaxSuccess", testMaxSuccess)
+        ("testMaxSuccess", testMaxSuccess),
     ]
 
     typealias Success = AggregateRepository.Success
@@ -50,20 +50,21 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
 
     override func setUp() {
         super.setUp()
-        self._repository = AggregateRepository(context: self.backgroundContext)
+        _repository = AggregateRepository(context: backgroundContext)
         objectIDs = movies.map { $0.asRepoManaged(in: self.viewContext).objectID }
         try! viewContext.save()
     }
 
     override func tearDown() {
         super.tearDown()
-        self._repository = nil
-        self.objectIDs = []
+        _repository = nil
+        objectIDs = []
     }
 
     func testCountSuccess() {
         let exp = expectation(description: "Get count of movies from CoreData")
-        let result: AnyPublisher<Success<Int>, Failure> = repository.count(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity())
+        let result: AnyPublisher<Success<Int>, Failure> = repository
+            .count(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity())
         _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -81,7 +82,11 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
 
     func testSumSuccess() {
         let exp = expectation(description: "Get sum of CoreData Movies boxOffice")
-        let result: AnyPublisher<Success<Decimal>, Failure> = repository.sum(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity(), attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!)
+        let result: AnyPublisher<Success<Decimal>, Failure> = repository.sum(
+            predicate: NSPredicate(value: true),
+            entityDesc: RepoMovie.entity(),
+            attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
+        )
         _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -92,14 +97,21 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                     XCTFail("Not expecting failure")
                 }
             }, receiveValue: { value in
-                assert(value.result.first!.values.first! == 150, "Result value (sum) should equal sum of movies box office.")
+                assert(
+                    value.result.first!.values.first! == 150,
+                    "Result value (sum) should equal sum of movies box office."
+                )
             })
         wait(for: [exp], timeout: 5)
     }
 
     func testAverageSuccess() {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
-        let result: AnyPublisher<Success<Decimal>, Failure> = repository.average(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity(), attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!)
+        let result: AnyPublisher<Success<Decimal>, Failure> = repository.average(
+            predicate: NSPredicate(value: true),
+            entityDesc: RepoMovie.entity(),
+            attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
+        )
         _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -110,14 +122,21 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                     XCTFail("Not expecting failure")
                 }
             }, receiveValue: { value in
-                assert(value.result.first!.values.first! == 30, "Result value should equal average of movies box office.")
+                assert(
+                    value.result.first!.values.first! == 30,
+                    "Result value should equal average of movies box office."
+                )
             })
         wait(for: [exp], timeout: 5)
     }
 
     func testMinSuccess() {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
-        let result: AnyPublisher<Success<Decimal>, Failure> = repository.min(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity(), attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!)
+        let result: AnyPublisher<Success<Decimal>, Failure> = repository.min(
+            predicate: NSPredicate(value: true),
+            entityDesc: RepoMovie.entity(),
+            attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
+        )
         _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -128,14 +147,21 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                     XCTFail("Not expecting failure")
                 }
             }, receiveValue: { value in
-                assert(value.result.first!.values.first! == 10, "Result value should equal average of movies box office.")
+                assert(
+                    value.result.first!.values.first! == 10,
+                    "Result value should equal average of movies box office."
+                )
             })
         wait(for: [exp], timeout: 5)
     }
 
     func testMaxSuccess() {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
-        let result: AnyPublisher<Success<Decimal>, Failure> = repository.max(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity(), attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!)
+        let result: AnyPublisher<Success<Decimal>, Failure> = repository.max(
+            predicate: NSPredicate(value: true),
+            entityDesc: RepoMovie.entity(),
+            attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
+        )
         _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -146,7 +172,10 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                     XCTFail("Not expecting failure")
                 }
             }, receiveValue: { value in
-                assert(value.result.first!.values.first! == 50, "Result value should equal average of movies box office.")
+                assert(
+                    value.result.first!.values.first! == 50,
+                    "Result value should equal average of movies box office."
+                )
             })
         wait(for: [exp], timeout: 5)
     }

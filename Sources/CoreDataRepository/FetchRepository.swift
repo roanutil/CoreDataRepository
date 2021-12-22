@@ -1,21 +1,25 @@
+// FetchRepository.swift
+// CoreDataRepository
 //
-//  FetchRepository.swift
 //
-//  Created by Andrew Roan on 1/15/21.
+// MIT License
 //
+// Copyright © 2021 Andrew Roan
 
-import CoreData
 import Combine
+import CoreData
 
 /// A CoreData repository for fetching items with predicates, pagination, and sorting
 public final class FetchRepository {
     // MARK: Properties
+
     /// The context used by the repository.
     public let context: NSManagedObjectContext
     var subscriptions = [SubscriptionProvider]()
     public var cancellables = [AnyCancellable]()
 
     // MARK: Init
+
     /// Initialize a repository
     /// - Parameters
     ///     - context: NSManagedObjectContext
@@ -25,6 +29,7 @@ public final class FetchRepository {
     }
 
     // MARK: Return Types
+
     /// Return type for successful fetching. Includes parameters with items.
     public struct Success<Model: UnmanagedModel> {
         public let items: [Model]
@@ -57,6 +62,7 @@ public final class FetchRepository {
             }
             return nil
         }
+
         public var localizedDescription: String? {
             if let desc = nsError?.localizedDescription {
                 return desc
@@ -71,20 +77,23 @@ public final class FetchRepository {
     }
 
     // MARK: Functions/Endpoints
+
     /// Fetch a single array of value types corresponding to a NSManagedObject sub class.
     /// - Parameters
     ///     - _ request: NSFetchRequest<Model.RepoManaged>
     /// - Returns
     ///     - AnyPublisher<Success<Model>, Failure<Model>>
     ///
-    public func fetch<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>) -> AnyPublisher<Success<Model>, Failure<Model>> {
+    public func fetch<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>)
+        -> AnyPublisher<Success<Model>, Failure<Model>>
+    {
         Deferred { Future { [weak self] callback in
             guard let self = self else {
                 return callback(.failure(Failure<Model>(error: .unknown, fetchRequest: request)))
             }
             self.context.perform {
                 do {
-                    let items = try self.context.fetch(request).map { $0.asUnmanaged }
+                    let items = try self.context.fetch(request).map(\.asUnmanaged)
                     callback(.success(Success(items: items, fetchRequest: request)))
                 } catch {
                     callback(.failure(Failure(error: .cocoa(error as NSError), fetchRequest: request)))
@@ -93,10 +102,13 @@ public final class FetchRepository {
         }}.eraseToAnyPublisher()
     }
 
-    public func subscription<Model: UnmanagedModel>(_ publisher: AnyPublisher<Success<Model>, Failure<Model>>) -> AnyPublisher<Success<Model>, Failure<Model>> {
-        return AnyPublisher.create { subscriber in
+    public func subscription<Model: UnmanagedModel>(_ publisher: AnyPublisher<Success<Model>, Failure<Model>>)
+        -> AnyPublisher<Success<Model>, Failure<Model>>
+    {
+        AnyPublisher.create { subscriber in
             let subject = PassthroughSubject<Success<Model>, Failure<Model>>()
-            subject.sink(receiveCompletion: subscriber.send, receiveValue: subscriber.send).store(in: &self.cancellables)
+            subject.sink(receiveCompletion: subscriber.send, receiveValue: subscriber.send)
+                .store(in: &self.cancellables)
             let id = UUID()
             var subscription: SubscriptionProvider?
             publisher.sink(
@@ -110,7 +122,7 @@ public final class FetchRepository {
                         id: id,
                         request: value.fetchRequest,
                         context: self.context,
-                        success: { Success(items: $0.map { $0.asUnmanaged }, fetchRequest: value.fetchRequest) },
+                        success: { Success(items: $0.map(\.asUnmanaged), fetchRequest: value.fetchRequest) },
                         failure: { Failure(error: $0, fetchRequest: value.fetchRequest) },
                         subject: subject
                     )
@@ -129,8 +141,11 @@ public final class FetchRepository {
 }
 
 // MARK: Extensions
+
 extension AnyPublisher {
-    public func subscription<Model: UnmanagedModel>(_ repository: FetchRepository) -> Self where Self.Output == FetchRepository.Success<Model>, Self.Failure == FetchRepository.Failure<Model> {
+    public func subscription<Model: UnmanagedModel>(_ repository: FetchRepository) -> Self
+        where Self.Output == FetchRepository.Success<Model>, Self.Failure == FetchRepository.Failure<Model>
+    {
         repository.subscription(self)
     }
 }

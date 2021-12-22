@@ -1,19 +1,23 @@
+// CRUDRepository.swift
+// CoreDataRepository
 //
-//  CRUDRepository.swift
 //
-//  Created by Andrew Roan on 1/15/21.
+// MIT License
 //
+// Copyright © 2021 Andrew Roan
 
-import CoreData
 import Combine
+import CoreData
 
 /// A CoreData repository with typical create, read, update, and delete endpoints
 public final class CRUDRepository {
     // MARK: Properties
+
     /// CoreData context the repository uses
     public let context: NSManagedObjectContext
 
     // MARK: Init
+
     /// Initializes a CRUDRepository
     /// - Parameters
     ///     - context: NSManagedObjectContext
@@ -22,6 +26,7 @@ public final class CRUDRepository {
     }
 
     // MARK: Return Types
+
     /// Return type for successful completion of action for an endpoint
     public enum Success<Model: UnmanagedModel> {
         case create(Model)
@@ -39,7 +44,9 @@ public final class CRUDRepository {
     }
 
     // MARK: Functions/Endpoints
-    /// Create an instance of a NSManagedObject sub class from a corresponding value type. Supports specifying a transactionAuthor that is applied to the context before saving.
+
+    /// Create an instance of a NSManagedObject sub class from a corresponding value type.
+    /// Supports specifying a transactionAuthor that is applied to the context before saving.
     /// - Types
     ///     - Model: UnmanagedModel
     /// - Parameters
@@ -48,7 +55,11 @@ public final class CRUDRepository {
     /// - Returns
     ///     - AnyPublisher<Success<Model>.create(Model), Failure<Model>.create(Model, RepositoryErrors)>
     ///
-    public func create<Model: UnmanagedModel>(_ item: Model, transactionAuthor: String = "") -> AnyPublisher<Success<Model>, Failure<Model>> {
+    public func create<Model: UnmanagedModel>(_ item: Model,
+                                              transactionAuthor: String = "") -> AnyPublisher<
+        Success<Model>,
+        Failure<Model>
+    > {
         Future { [weak self] callback in
             guard let self = self else { return callback(.failure(.create(item, .unknown))) }
             self.context.perform {
@@ -73,14 +84,19 @@ public final class CRUDRepository {
     /// - Returns
     ///     - AnyPublisher<Success<Model>.read(Model), Failure<Model>.read(NSManagedObjectID, RepositoryErrors)>
     ///
-    public func read<Model: UnmanagedModel>(_ objectID: NSManagedObjectID) -> AnyPublisher<Success<Model>, Failure<Model>> {
+    public func read<Model: UnmanagedModel>(_ objectID: NSManagedObjectID)
+        -> AnyPublisher<Success<Model>, Failure<Model>>
+    {
         Future { [weak self] callback in
             guard let self = self else { return callback(.failure(.read(objectID, .unknown))) }
-            self.context.performAndWait { () -> Void in
+            self.context.performAndWait { () in
                 do {
-                    // Check to see if the object has been deleted. It's possible/likely that an instance of the object's NSManagedObjectID has been kept
+                    // Check to see if the object has been deleted. It's possible/likely
+                    // that an instance of the object's NSManagedObjectID has been kept
                     // so it could successfully find the object but it won't be valid.
-                    guard let object = try self.context.existingObject(with: objectID) as? Model.RepoManaged, !object.isDeleted else {
+                    guard let object = try self.context.existingObject(with: objectID) as? Model.RepoManaged,
+                          !object.isDeleted
+                    else {
                         return callback(.failure(.read(objectID, .noExistingObjectByID)))
                     }
                     callback(.success(.read(object.asUnmanaged)))
@@ -91,7 +107,8 @@ public final class CRUDRepository {
         }.eraseToAnyPublisher()
     }
 
-    /// Update an instance of a NSManagedObject sub class from a corresponding value type. Supports specifying a transactionAuthor that is applied to the context before saving.
+    /// Update an instance of a NSManagedObject sub class from a corresponding value type.
+    /// Supports specifying a transactionAuthor that is applied to the context before saving.
     /// - Types
     ///     - Model: UnmanagedModel
     /// - Parameters
@@ -109,9 +126,12 @@ public final class CRUDRepository {
         Future { [weak self] callback in
             guard let self = self else { return callback(.failure(.update(item, .unknown))) }
             self.context.perform {
-                // Check to see if the object has been deleted. It's possible/likely that an instance of the object's NSManagedObjectID has been kept
+                // Check to see if the object has been deleted. It's possible/likely
+                // that an instance of the object's NSManagedObjectID has been kept
                 // so it could successfully find the object but it won't be valid.
-                guard let object: Model.RepoManaged = try? self.context.existingObject(with: objectID) as? Model.RepoManaged, !object.isDeleted else {
+                guard let object: Model.RepoManaged = try? self.context.existingObject(with: objectID) as? Model
+                    .RepoManaged, !object.isDeleted
+                else {
                     return callback(.failure(.update(item, .noExistingObjectByID)))
                 }
                 object.update(from: item)
@@ -126,7 +146,8 @@ public final class CRUDRepository {
         }.eraseToAnyPublisher()
     }
 
-    /// Delete an instance of a NSManagedObject sub class. Supports specifying a transactionAuthor that is applied to the context before saving.
+    /// Delete an instance of a NSManagedObject sub class. Supports specifying a
+    /// transactionAuthor that is applied to the context before saving.
     /// - Types
     ///     - Model: UnmanagedModel
     /// - Parameters
@@ -135,14 +156,21 @@ public final class CRUDRepository {
     /// - Returns
     ///     - AnyPublisher<Success<Model>.delete(Model), Failure<Model>.delete(Model, RepositoryErrors)>
     ///
-    public func delete<Model: UnmanagedModel>(_ objectID: NSManagedObjectID, transactionAuthor: String = "") -> AnyPublisher<Success<Model>, Failure<Model>> {
+    public func delete<Model: UnmanagedModel>(_ objectID: NSManagedObjectID,
+                                              transactionAuthor: String = "") -> AnyPublisher<
+        Success<Model>,
+        Failure<Model>
+    > {
         Future { [weak self] callback in
             guard let self = self else { return callback(.failure(.delete(objectID, .unknown))) }
             self.context.performAndWait {
                 do {
-                    // Check to see if the object has been deleted. It's possible/likely that an instance of the object's NSManagedObjectID has been kept
+                    // Check to see if the object has been deleted. It's possible/likely that an
+                    // instance of the object's NSManagedObjectID has been kept
                     // so it could successfully find the object but it won't be valid.
-                    guard let object: Model.RepoManaged = try? self.context.existingObject(with: objectID) as? Model.RepoManaged, !object.isDeleted else { return callback(.failure(.delete(objectID, .noExistingObjectByID))) }
+                    guard let object: Model.RepoManaged = try? self.context.existingObject(with: objectID) as? Model
+                        .RepoManaged,
+                        !object.isDeleted else { return callback(.failure(.delete(objectID, .noExistingObjectByID))) }
                     object.prepareForDeletion()
                     self.context.delete(object)
                     self.context.transactionAuthor = transactionAuthor

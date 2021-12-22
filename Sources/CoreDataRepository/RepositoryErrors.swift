@@ -1,9 +1,10 @@
+// RepositoryErrors.swift
+// CoreDataRepository
 //
-//  RepositoryErrors.swift
-//  
 //
-//  Created by Andrew Roan on 1/21/21.
+// MIT License
 //
+// Copyright © 2021 Andrew Roan
 
 import Foundation
 

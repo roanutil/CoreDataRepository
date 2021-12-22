@@ -9,13 +9,14 @@ let package = Package(
         .iOS(.v13),
         .macOS(.v10_15),
         .tvOS(.v13),
-        .watchOS(.v6)
+        .watchOS(.v6),
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "CoreDataRepository",
-            targets: ["CoreDataRepository"]),
+            targets: ["CoreDataRepository"]
+        ),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -26,12 +27,13 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "CoreDataRepository",
-            dependencies: []),
+            dependencies: []
+        ),
         .testTarget(
             name: "CoreDataRepositoryTests",
             dependencies: ["CoreDataRepository"],
             resources: [
-                .process("Model.xcdatamodeld")
+                .process("Model.xcdatamodeld"),
             ]
         ),
     ]

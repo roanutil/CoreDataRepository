@@ -1,0 +1,26 @@
+disabled_rules:
+    - multiple_closures_with_trailing_closure # by SwiftUI
+    - trailing_comma # conflicts with SwiftFormat
+    - opening_brace # conflicts with SwiftFormat
+excluded: # paths to ignore during linting. Takes precedence over `included`.
+    - Carthage
+    - Pods
+    - .build/*
+    - output
+    - ./**/*Tests/*
+    - Previews
+identifier_name:
+    allowed_symbols: "_"
+    excluded: # excluded via string array
+        - id
+        - to
+        - vm
+        - vc
+        - _min
+        - _max
+        - or
+        - by
+type_name:
+    allowed_symbols: "_"
+    excluded:
+        - ID

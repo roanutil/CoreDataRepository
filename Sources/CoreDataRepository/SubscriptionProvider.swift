@@ -1,9 +1,10 @@
+// SubscriptionProvider.swift
+// CoreDataRepository
 //
-//  File.swift
-//  
 //
-//  Created by Andrew Roan on 1/25/21.
+// MIT License
 //
+// Copyright © 2021 Andrew Roan
 
 protocol SubscriptionProvider {
     var id: AnyHashable { get }

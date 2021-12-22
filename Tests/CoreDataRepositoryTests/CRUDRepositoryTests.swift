@@ -1,17 +1,17 @@
+// CRUDRepositoryTests.swift
+// CoreDataRepository
 //
-//  CRUDRepositoryTests.swift
-//  
 //
-//  Created by Andrew Roan on 1/22/21.
+// MIT License
 //
+// Copyright © 2021 Andrew Roan
 
-import CoreData
 import Combine
-import XCTest
+import CoreData
 @testable import CoreDataRepository
+import XCTest
 
 class CRUDRepositoryTests: CoreDataXCTestCase {
-
     static var allTests = [
         ("testCreateSuccess", testCreateSuccess),
         ("testReadSuccess", testReadSuccess),
@@ -19,7 +19,7 @@ class CRUDRepositoryTests: CoreDataXCTestCase {
         ("testUpdateSuccess", testUpdateSuccess),
         ("testUpdateFailure", testUpdateFailure),
         ("testDeleteSuccess", testDeleteSuccess),
-        ("testDeleteFailure", testDeleteFailure)
+        ("testDeleteFailure", testDeleteFailure),
     ]
     typealias Success = CRUDRepository.Success<Movie>
     typealias Failure = CRUDRepository.Failure<Movie>
@@ -29,22 +29,22 @@ class CRUDRepositoryTests: CoreDataXCTestCase {
 
     override func setUp() {
         super.setUp()
-        self._repository = CRUDRepository(context: self.backgroundContext)
+        _repository = CRUDRepository(context: backgroundContext)
     }
 
     override func tearDown() {
         super.tearDown()
-        self._repository = nil
+        _repository = nil
     }
 
     func testCreateSuccess() {
         let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        let count = try? self.viewContext.count(for: fetchRequest)
+        let count = try? viewContext.count(for: fetchRequest)
         assert(count == 0, "Count of objects in CoreData should be zero at the start of each test.")
-        
+
         let exp = expectation(description: "Create a RepoMovie in CoreData")
         var movie = Movie(id: UUID(), title: "Create Success", releaseDate: Date(), boxOffice: 100)
-        _ = repository.create(movie).subscribe(on: self.backgroundQueue)
+        _ = repository.create(movie).subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
                 receiveCompletion: { completion in
@@ -57,7 +57,7 @@ class CRUDRepositoryTests: CoreDataXCTestCase {
                 },
                 receiveValue: { result in
                     switch result {
-                    case .create(let resultMovie):
+                    case let .create(resultMovie):
                         assert(resultMovie == movie, "Success response should match local object.")
                     default:
                         fatalError()
@@ -66,7 +66,7 @@ class CRUDRepositoryTests: CoreDataXCTestCase {
             )
         wait(for: [exp], timeout: 5)
 
-        let all = ((try? viewContext.fetch(RepoMovie.fetchRequest())) ?? []).map { $0.asUnmanaged }
+        let all = ((try? viewContext.fetch(RepoMovie.fetchRequest())) ?? []).map(\.asUnmanaged)
         assert(all.count == 1, "There should be only one CoreData object after creating one.")
         let fetchedMovie = all.first!
         assert(fetchedMovie.objectID != nil, "CoreData object should have NSManagedObjectID")
@@ -87,26 +87,26 @@ class CRUDRepositoryTests: CoreDataXCTestCase {
 
         let exp = expectation(description: "Read a RepoMovie in CoreData")
         let result: AnyPublisher<Success, Failure> = repository.read(movie.objectID!)
-        _ = result.subscribe(on: self.backgroundQueue)
+        _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
-            receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    exp.fulfill()
-                case .failure:
-                    XCTFail("Received failure from CRUDRepository.read")
+                receiveCompletion: { completion in
+                    switch completion {
+                    case .finished:
+                        exp.fulfill()
+                    case .failure:
+                        XCTFail("Received failure from CRUDRepository.read")
+                    }
+                },
+                receiveValue: { result in
+                    switch result {
+                    case let .read(receiveMovie):
+                        assert(receiveMovie == movie, "Success response should match local object.")
+                    default:
+                        fatalError()
+                    }
                 }
-            },
-            receiveValue: { result in
-                switch result {
-                case .read(let receiveMovie):
-                    assert(receiveMovie == movie, "Success response should match local object.")
-                default:
-                    fatalError()
-                }
-            }
-        )
+            )
         wait(for: [exp], timeout: 5)
     }
 
@@ -120,25 +120,25 @@ class CRUDRepositoryTests: CoreDataXCTestCase {
         movie.objectID = repoMovie.objectID
         let countAfterCreate = try? viewContext.count(for: RepoMovie.fetchRequest())
         assert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for read test.")
-        
+
         viewContext.delete(repoMovie)
         try? viewContext.save()
 
         let exp = expectation(description: "Fail to read a RepoMovie in CoreData")
         let result: AnyPublisher<Success, Failure> = repository.read(movie.objectID!)
-        _ = result.subscribe(on: self.backgroundQueue)
+        _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
-            receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    XCTFail("Received success from CRUDRepository.read when expecting failure.")
-                case .failure:
-                    exp.fulfill()
-                }
-            },
-            receiveValue: { _ in XCTFail("Not expected to receive a value for CRUDRepository.read") }
-        )
+                receiveCompletion: { completion in
+                    switch completion {
+                    case .finished:
+                        XCTFail("Received success from CRUDRepository.read when expecting failure.")
+                    case .failure:
+                        exp.fulfill()
+                    }
+                },
+                receiveValue: { _ in XCTFail("Not expected to receive a value for CRUDRepository.read") }
+            )
         wait(for: [exp], timeout: 5)
     }
 
@@ -157,26 +157,26 @@ class CRUDRepositoryTests: CoreDataXCTestCase {
 
         let exp = expectation(description: "Read a RepoMovie in CoreData")
         let result: AnyPublisher<Success, Failure> = repository.update(movie.objectID!, with: movie)
-        _ = result.subscribe(on: self.backgroundQueue)
+        _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
-            receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    exp.fulfill()
-                case .failure:
-                    XCTFail("Received failure from CRUDRepository.update")
+                receiveCompletion: { completion in
+                    switch completion {
+                    case .finished:
+                        exp.fulfill()
+                    case .failure:
+                        XCTFail("Received failure from CRUDRepository.update")
+                    }
+                },
+                receiveValue: { result in
+                    switch result {
+                    case let .update(resultMovie):
+                        assert(resultMovie == movie, "Success response should match local object.")
+                    default:
+                        fatalError()
+                    }
                 }
-            },
-            receiveValue: { result in
-                switch result {
-                case .update(let resultMovie):
-                    assert(resultMovie == movie, "Success response should match local object.")
-                default:
-                    fatalError()
-                }
-            }
-        )
+            )
         wait(for: [exp], timeout: 10)
 
         let updatedRepoMovie = try! viewContext.existingObject(with: movie.objectID!)
@@ -194,29 +194,28 @@ class CRUDRepositoryTests: CoreDataXCTestCase {
         movie.objectID = repoMovie.objectID
         let countAfterCreate = try? viewContext.count(for: fetchRequest)
         assert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for read test.")
-        
+
         viewContext.delete(repoMovie)
         try! viewContext.save()
-        
 
         let countAfterDelete = try? viewContext.count(for: fetchRequest)
         assert(countAfterDelete == 0, "Count of objects in CoreData should be 0 after delete for read test.")
 
         let exp = expectation(description: "Fail to update a RepoMovie in CoreData")
         let result: AnyPublisher<Success, Failure> = repository.update(movie.objectID!, with: movie)
-        _ = result.subscribe(on: self.backgroundQueue)
+        _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
-            receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    XCTFail("Received success from CRUDRepository.update when expecting failure.")
-                case .failure:
-                    exp.fulfill()
-                }
-            },
-            receiveValue: { _ in XCTFail("Not expected to receive a value for CRUDRepository.update") }
-        )
+                receiveCompletion: { completion in
+                    switch completion {
+                    case .finished:
+                        XCTFail("Received success from CRUDRepository.update when expecting failure.")
+                    case .failure:
+                        exp.fulfill()
+                    }
+                },
+                receiveValue: { _ in XCTFail("Not expected to receive a value for CRUDRepository.update") }
+            )
         wait(for: [exp], timeout: 10)
     }
 
@@ -233,26 +232,26 @@ class CRUDRepositoryTests: CoreDataXCTestCase {
 
         let exp = expectation(description: "Read a RepoMovie in CoreData")
         let result: AnyPublisher<Success, Failure> = repository.delete(movie.objectID!)
-        _ = result.subscribe(on: self.backgroundQueue)
+        _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
-            receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    exp.fulfill()
-                case .failure:
-                    XCTFail("Received failure from CRUDRepository.delete")
+                receiveCompletion: { completion in
+                    switch completion {
+                    case .finished:
+                        exp.fulfill()
+                    case .failure:
+                        XCTFail("Received failure from CRUDRepository.delete")
+                    }
+                },
+                receiveValue: { result in
+                    switch result {
+                    case let .delete(resultMovie):
+                        assert(resultMovie == movie.objectID, "Success response should match local object.")
+                    default:
+                        fatalError()
+                    }
                 }
-            },
-            receiveValue: { result in
-                switch result {
-                case .delete(let resultMovie):
-                    assert(resultMovie == movie.objectID, "Success response should match local object.")
-                default:
-                    fatalError()
-                }
-            }
-        )
+            )
         wait(for: [exp], timeout: 5)
 
         let afterDeleteCount = try? viewContext.count(for: fetchRequest)
@@ -269,25 +268,25 @@ class CRUDRepositoryTests: CoreDataXCTestCase {
         movie.objectID = repoMovie.objectID
         let countAfterCreate = try? viewContext.count(for: fetchRequest)
         assert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for delete test.")
-        
+
         viewContext.delete(repoMovie)
         try? viewContext.save()
 
         let exp = expectation(description: "Fail to delete a RepoMovie in CoreData")
         let result: AnyPublisher<Success, Failure> = repository.delete(movie.objectID!)
-        _ = result.subscribe(on: self.backgroundQueue)
+        _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
-            receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    XCTFail("Received success from CRUDRepository.delete when expecting failure.")
-                case .failure:
-                    exp.fulfill()
-                }
-            },
-            receiveValue: { _ in XCTFail("Not expected to receive a value for CRUDRepository.delete")}
-        )
+                receiveCompletion: { completion in
+                    switch completion {
+                    case .finished:
+                        XCTFail("Received success from CRUDRepository.delete when expecting failure.")
+                    case .failure:
+                        exp.fulfill()
+                    }
+                },
+                receiveValue: { _ in XCTFail("Not expected to receive a value for CRUDRepository.delete") }
+            )
         wait(for: [exp], timeout: 5)
     }
 }
