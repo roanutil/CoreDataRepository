@@ -1,5 +1,8 @@
 # CoreDataRepository
-[![CI](https://github.com/roanutil/CoreDataRepository/actions/workflows/ci.yml/badge.svg)](https://github.com/roanutil/CoreDataRepository/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/roanutil/CoreDataRepository/branch/main/graph/badge.svg?token=WRO4CXYWRG)](https://codecov.io/gh/roanutil/CoreDataRepository) 
+[![CI](https://github.com/roanutil/CoreDataRepository/actions/workflows/ci.yml/badge.svg)](https://github.com/roanutil/CoreDataRepository/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/roanutil/CoreDataRepository/branch/main/graph/badge.svg?token=WRO4CXYWRG)](https://codecov.io/gh/roanutil/CoreDataRepository) 
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Froanutil%2FCoreDataRepository%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/roanutil/CoreDataRepository)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Froanutil%2FCoreDataRepository%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/roanutil/CoreDataRepository)
 
 CoreDataRepository is a reactive library (Combine) for using CoreData on a background queue. It features endpoints for CRUD, batch, fetch multiple, and aggregate operations. Also, it offers a stream like subscription function for wrapping a fetch multiple call that will send updates that match the fetch request.
 
