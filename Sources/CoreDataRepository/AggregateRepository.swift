@@ -116,22 +116,22 @@ public final class AggregateRepository {
                                       entityDesc: NSEntityDescription) -> AnyPublisher<Success<Value>, Failure>
     {
         Deferred { Future { [weak self] callback in
-            let request = NSFetchRequest<NSDictionary>(entityName: entityDesc.name ?? "")
-            request.predicate = predicate
-            request
+            let _request = NSFetchRequest<NSDictionary>(entityName: entityDesc.name ?? "")
+            _request.predicate = predicate
+            _request
                 .sortDescriptors =
                 [NSSortDescriptor(key: entityDesc.attributesByName.values.first!.name, ascending: true)]
             guard let self = self
-            else { return callback(.failure(Failure(function: .count, request: request, error: .unknown))) }
+            else { return callback(.failure(Failure(function: .count, request: _request, error: .unknown))) }
             do {
-                let count = try self.context.count(for: request)
+                let count = try self.context.count(for: _request)
                 callback(.success(Success(
                     function: .count,
                     result: [["countOf\(entityDesc.name ?? "")": Value(exactly: count) ?? Value.zero]],
-                    request: request
+                    request: _request
                 )))
             } catch {
-                callback(.failure(Failure(function: .count, request: request, error: .cocoa(error as NSError))))
+                callback(.failure(Failure(function: .count, request: _request, error: .cocoa(error as NSError))))
             }
 
         }}.eraseToAnyPublisher()
@@ -152,7 +152,7 @@ public final class AggregateRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
     ) -> AnyPublisher<Success<Value>, Failure> {
-        let request = request(
+        let _request = request(
             function: .sum,
             predicate: predicate,
             entityDesc: entityDesc,
@@ -160,17 +160,17 @@ public final class AggregateRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .sum, request: request, error: .propertyDoesNotMatchEntity))
+            return Fail(error: Failure(function: .sum, request: _request, error: .propertyDoesNotMatchEntity))
                 .eraseToAnyPublisher()
         }
         return Deferred { Future { [weak self] callback in
             guard let self = self
-            else { return callback(.failure(Failure(function: .sum, request: request, error: .unknown))) }
+            else { return callback(.failure(Failure(function: .sum, request: _request, error: .unknown))) }
             do {
-                let result: [[String: Value]] = try self.aggregate(request: request)
-                callback(.success(Success(function: .sum, result: result, request: request)))
+                let result: [[String: Value]] = try self.aggregate(request: _request)
+                callback(.success(Success(function: .sum, result: result, request: _request)))
             } catch {
-                callback(.failure(Failure(function: .sum, request: request, error: .cocoa(error as NSError))))
+                callback(.failure(Failure(function: .sum, request: _request, error: .cocoa(error as NSError))))
             }
         }}.eraseToAnyPublisher()
     }
@@ -190,7 +190,7 @@ public final class AggregateRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
     ) -> AnyPublisher<Success<Value>, Failure> {
-        let request = request(
+        let _request = request(
             function: .average,
             predicate: predicate,
             entityDesc: entityDesc,
@@ -198,17 +198,17 @@ public final class AggregateRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .average, request: request, error: .propertyDoesNotMatchEntity))
+            return Fail(error: Failure(function: .average, request: _request, error: .propertyDoesNotMatchEntity))
                 .eraseToAnyPublisher()
         }
         return Deferred { Future { [weak self] callback in
             guard let self = self
-            else { return callback(.failure(Failure(function: .average, request: request, error: .unknown))) }
+            else { return callback(.failure(Failure(function: .average, request: _request, error: .unknown))) }
             do {
-                let result: [[String: Value]] = try self.aggregate(request: request)
-                callback(.success(Success(function: .average, result: result, request: request)))
+                let result: [[String: Value]] = try self.aggregate(request: _request)
+                callback(.success(Success(function: .average, result: result, request: _request)))
             } catch {
-                callback(.failure(Failure(function: .average, request: request, error: .cocoa(error as NSError))))
+                callback(.failure(Failure(function: .average, request: _request, error: .cocoa(error as NSError))))
             }
         }}.eraseToAnyPublisher()
     }
@@ -228,7 +228,7 @@ public final class AggregateRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
     ) -> AnyPublisher<Success<Value>, Failure> {
-        let request = request(
+        let _request = request(
             function: .min,
             predicate: predicate,
             entityDesc: entityDesc,
@@ -236,17 +236,17 @@ public final class AggregateRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .min, request: request, error: .propertyDoesNotMatchEntity))
+            return Fail(error: Failure(function: .min, request: _request, error: .propertyDoesNotMatchEntity))
                 .eraseToAnyPublisher()
         }
         return Deferred { Future { [weak self] callback in
             guard let self = self
-            else { return callback(.failure(Failure(function: .min, request: request, error: .unknown))) }
+            else { return callback(.failure(Failure(function: .min, request: _request, error: .unknown))) }
             do {
-                let result: [[String: Value]] = try self.aggregate(request: request)
-                callback(.success(Success(function: .min, result: result, request: request)))
+                let result: [[String: Value]] = try self.aggregate(request: _request)
+                callback(.success(Success(function: .min, result: result, request: _request)))
             } catch {
-                callback(.failure(Failure(function: .min, request: request, error: .cocoa(error as NSError))))
+                callback(.failure(Failure(function: .min, request: _request, error: .cocoa(error as NSError))))
             }
         }}.eraseToAnyPublisher()
     }
@@ -266,7 +266,7 @@ public final class AggregateRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
     ) -> AnyPublisher<Success<Value>, Failure> {
-        let request = request(
+        let _request = request(
             function: .max,
             predicate: predicate,
             entityDesc: entityDesc,
@@ -274,17 +274,17 @@ public final class AggregateRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .max, request: request, error: .propertyDoesNotMatchEntity))
+            return Fail(error: Failure(function: .max, request: _request, error: .propertyDoesNotMatchEntity))
                 .eraseToAnyPublisher()
         }
         return Deferred { Future { [weak self] callback in
             guard let self = self
-            else { return callback(.failure(Failure(function: .max, request: request, error: .unknown))) }
+            else { return callback(.failure(Failure(function: .max, request: _request, error: .unknown))) }
             do {
-                let result: [[String: Value]] = try self.aggregate(request: request)
-                callback(.success(Success(function: .max, result: result, request: request)))
+                let result: [[String: Value]] = try self.aggregate(request: _request)
+                callback(.success(Success(function: .max, result: result, request: _request)))
             } catch {
-                callback(.failure(Failure(function: .max, request: request, error: .cocoa(error as NSError))))
+                callback(.failure(Failure(function: .max, request: _request, error: .cocoa(error as NSError))))
             }
         }}.eraseToAnyPublisher()
     }
