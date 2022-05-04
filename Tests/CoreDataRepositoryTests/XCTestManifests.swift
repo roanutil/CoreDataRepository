@@ -4,7 +4,7 @@
 //
 // MIT License
 //
-// Copyright © 2021 Andrew Roan
+// Copyright © 2022 Andrew Roan
 
 import XCTest
 

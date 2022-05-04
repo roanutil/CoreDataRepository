@@ -4,33 +4,28 @@
 //
 // MIT License
 //
-// Copyright © 2021 Andrew Roan
+// Copyright © 2022 Andrew Roan
 
 import CoreData
-@testable import CoreDataRepository
+import CoreDataRepository
 import XCTest
 
 class CoreDataXCTestCase: XCTestCase {
     var _viewContext: NSManagedObjectContext?
-    var _backgroundContext: NSManagedObjectContext?
     let mainQueue = DispatchQueue.main
     let backgroundQueue = DispatchQueue(label: "background", qos: .userInitiated)
 
     var viewContext: NSManagedObjectContext { _viewContext! }
-    var backgroundContext: NSManagedObjectContext { self._backgroundContext! }
 
-    override func setUp() {
+    override func setUpWithError() throws {
         let container = CoreDataStack.persistentContainer
         _viewContext = container.viewContext
         _viewContext?.automaticallyMergesChangesFromParent = true
-        _backgroundContext = container.newBackgroundContext()
-        _backgroundContext?.automaticallyMergesChangesFromParent = true
-        super.setUp()
+        try super.setUpWithError()
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDownWithError() throws {
+        try super.tearDownWithError()
         _viewContext = nil
-        _backgroundContext = nil
     }
 }

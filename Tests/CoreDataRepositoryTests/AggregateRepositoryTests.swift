@@ -4,20 +4,12 @@
 //
 // MIT License
 //
-// Copyright © 2021 Andrew Roan
+// Copyright © 2022 Andrew Roan
 
 import Combine
 import CoreData
-@testable import CoreDataRepository
+import CoreDataRepository
 import XCTest
-
-#if !canImport(ObjectiveC)
-    public func allTests() -> [XCTestCaseEntry] {
-        [
-            testCase(CoreDataSourceTests.allTests),
-        ]
-    }
-#endif
 
 final class AggregateRepositoryTests: CoreDataXCTestCase {
     static var allTests = [
@@ -27,9 +19,6 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         ("testMinSuccess", testMinSuccess),
         ("testMaxSuccess", testMaxSuccess),
     ]
-
-    typealias Success = AggregateRepository.Success
-    typealias Failure = AggregateRepository.Failure
 
     let fetchRequest: NSFetchRequest<RepoMovie> = {
         let request = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
@@ -45,26 +34,27 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         Movie(id: UUID(), title: "E", releaseDate: Date(), boxOffice: 50),
     ]
     var objectIDs = [NSManagedObjectID]()
-    var _repository: AggregateRepository?
-    var repository: AggregateRepository { _repository! }
+    var _repository: CoreDataRepository?
+    var repository: CoreDataRepository { _repository! }
 
-    override func setUp() {
-        super.setUp()
-        _repository = AggregateRepository(context: backgroundContext)
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        _repository = CoreDataRepository(context: viewContext)
         objectIDs = movies.map { $0.asRepoManaged(in: self.viewContext).objectID }
         try! viewContext.save()
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDownWithError() throws {
+        try super.tearDownWithError()
         _repository = nil
         objectIDs = []
     }
 
-    func testCountSuccess() {
+    func testCountSuccess() throws {
         let exp = expectation(description: "Get count of movies from CoreData")
-        let result: AnyPublisher<Success<Int>, Failure> = repository
+        let result: AnyPublisher<[[String: Int]], Error> = repository
             .count(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity())
+        var values: [[String: Int]] = []
         _ = result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -74,15 +64,18 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 default:
                     XCTFail("Not expecting failure")
                 }
-            }, receiveValue: { value in
-                assert(value.result.first!.values.first! == 5, "Result value (count) should equal number of movies.")
+            }, receiveValue: { _values in
+                values = _values
             })
         wait(for: [exp], timeout: 5)
+        let firstValue = try XCTUnwrap(values.first?.values.first)
+        XCTAssert(firstValue == 5, "Result value (count) should equal number of movies.")
     }
 
-    func testSumSuccess() {
+    func testSumSuccess() throws {
         let exp = expectation(description: "Get sum of CoreData Movies boxOffice")
-        let result: AnyPublisher<Success<Decimal>, Failure> = repository.sum(
+        var values: [[String: Decimal]] = []
+        let result: AnyPublisher<[[String: Decimal]], Error> = repository.sum(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
@@ -96,18 +89,21 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 default:
                     XCTFail("Not expecting failure")
                 }
-            }, receiveValue: { value in
-                assert(
-                    value.result.first!.values.first! == 150,
-                    "Result value (sum) should equal sum of movies box office."
-                )
+            }, receiveValue: { _values in
+                values = _values
             })
         wait(for: [exp], timeout: 5)
+        let firstValue = try XCTUnwrap(values.first?.values.first)
+        XCTAssert(
+            firstValue == 150,
+            "Result value (sum) should equal sum of movies box office."
+        )
     }
 
-    func testAverageSuccess() {
+    func testAverageSuccess() throws {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
-        let result: AnyPublisher<Success<Decimal>, Failure> = repository.average(
+        var values: [[String: Decimal]] = []
+        let result: AnyPublisher<[[String: Decimal]], Error> = repository.average(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
@@ -121,18 +117,21 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 default:
                     XCTFail("Not expecting failure")
                 }
-            }, receiveValue: { value in
-                assert(
-                    value.result.first!.values.first! == 30,
-                    "Result value should equal average of movies box office."
-                )
+            }, receiveValue: { _values in
+                values = _values
             })
         wait(for: [exp], timeout: 5)
+        let firstValue = try XCTUnwrap(values.first?.values.first)
+        XCTAssert(
+            firstValue == 30,
+            "Result value should equal average of movies box office."
+        )
     }
 
-    func testMinSuccess() {
+    func testMinSuccess() throws {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
-        let result: AnyPublisher<Success<Decimal>, Failure> = repository.min(
+        var values: [[String: Decimal]] = []
+        let result: AnyPublisher<[[String: Decimal]], Error> = repository.min(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
@@ -146,18 +145,21 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 default:
                     XCTFail("Not expecting failure")
                 }
-            }, receiveValue: { value in
-                assert(
-                    value.result.first!.values.first! == 10,
-                    "Result value should equal average of movies box office."
-                )
+            }, receiveValue: { _values in
+                values = _values
             })
         wait(for: [exp], timeout: 5)
+        let firstValue = try XCTUnwrap(values.first?.values.first)
+        XCTAssert(
+            firstValue == 10,
+            "Result value should equal average of movies box office."
+        )
     }
 
-    func testMaxSuccess() {
+    func testMaxSuccess() throws {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
-        let result: AnyPublisher<Success<Decimal>, Failure> = repository.max(
+        var values: [[String: Decimal]] = []
+        let result: AnyPublisher<[[String: Decimal]], Error> = repository.max(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
@@ -171,12 +173,14 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 default:
                     XCTFail("Not expecting failure")
                 }
-            }, receiveValue: { value in
-                assert(
-                    value.result.first!.values.first! == 50,
-                    "Result value should equal average of movies box office."
-                )
+            }, receiveValue: { _values in
+                values = _values
             })
         wait(for: [exp], timeout: 5)
+        let firstValue = try XCTUnwrap(values.first?.values.first)
+        XCTAssert(
+            firstValue == 50,
+            "Result value should equal average of movies box office."
+        )
     }
 }

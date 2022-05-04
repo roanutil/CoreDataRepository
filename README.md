@@ -4,17 +4,24 @@
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Froanutil%2FCoreDataRepository%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/roanutil/CoreDataRepository)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Froanutil%2FCoreDataRepository%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/roanutil/CoreDataRepository)
 
-CoreDataRepository is a reactive library (Combine) for using CoreData on a background queue. It features endpoints for CRUD, batch, fetch multiple, and aggregate operations. Also, it offers a stream like subscription function for wrapping a fetch multiple call that will send updates that match the fetch request.
+CoreDataRepository is a reactive library (Combine) for using CoreData on a background queue. It features endpoints for CRUD, batch, fetch, and aggregate operations. Also, it offers a stream like subscription for fetch and read.
 
 Since ```NSManagedObject```s are not thread safe, a value type model must exist for each ```NSMangaedObject``` subclass.
 
 
-## Why the hell did you make this?
-When I started learning more about application architecture, I ran into things like Clean Architecture that insist that the models, business logic, and views should be far away from platform specific frameworks. Your view should have no concern over the implementation details of persistence. When I compared that to how things are usually done on iOS, I noticed a big difference.
+## Motivation
 
-After some time passed I came across Composable Architecture which is a Swift library and seemingly meant for iOS. I was really confused how anybody could take it seriously since all of the app state is value types and the Apple frameworks are object oriented. Finally I found somebody discussing CoreData and ComposableArchitecture on the Swift Forums and they seemed to be mapping NSManagedObjects to structs which seemed insane but clever. After reading that, I did my best to suppress my inner rage at the inefficiency of it all and got to work.
+CoreData is a great framework for local persistence on Apple's platforms. However, it can be tempting to create strong dependencies on it throughout an app. Even worse, the `viewContext` runs on the main `DispatchQueue` along with the UI. Even fetching data from the store can be enough to cause performance problems.
 
-The result is this library which in some form is actually used in production for my app. Going forward, when given the choice, I will always use this library rather than the old way. NSManagedObjects can be tricky. Fetching any real number of them on the main queue freezes the UI.
+The goals of `CoreDataRepository` are:
+- Ease isolation of `CoreData` related code away from the rest of the app.
+- Improve ergonomics by providing an asynchronous API with `Combine`.
+- Improve usability of private contexts to relieve load from the main `DispatchQueue`.
+- Make local persistence with `CoreData` feel more 'Swift-like' by allowing the model layer to use value types.
+
+### Mapping `NSManagedObject`s to value types
+
+It may feel convoluted to add this layer of abstraction over local persistence and the overhead of mapping between objects and value types. Similar to the motivation for only exposing views to the minimum data they need, why should the model layer be concerned with the details of the persistence layer? `NSManagedObject`s are complicated types that really should be isolated as much as possible.
 
 To give some weight to this idea, here's a quote from the Q&A portion of [this](https://academy.realm.io/posts/andy-matuschak-controlling-complexity/) talk by Andy Matuschak:
 
@@ -31,47 +38,62 @@ There are two protocols that handle bridging between the value type and managed 
 #### RepositoryManagedModel
 ```swift
 @objc(RepoMovie)
-final class RepoMovie: NSManagedObject {
-    @NSManaged var id: UUID
-    @NSManaged var title: String
-    @NSManaged var releaseDate: Date
-    @NSManaged var boxOffice: NSDecimalNumber
+public final class RepoMovie: NSManagedObject {
+    @NSManaged var id: UUID?
+    @NSManaged var title: String?
+    @NSManaged var releaseDate: Date?
+    @NSManaged var boxOffice: NSDecimalNumber?
 }
 
 extension RepoMovie: RepositoryManagedModel {
-    var asUnmanaged: Movie {
-        return Movie(
-            id: id,
-            title: title,
-            releaseDate: releaseDate,
-            boxOffice: boxOffice as Decimal,
-            objectID: objectID
+    public func create(from unmanaged: Movie) {
+        update(from: unmanaged)
+    }
+
+    public typealias Unmanaged = Movie
+    public var asUnmanaged: Movie {
+        Movie(
+            id: id ?? UUID(),
+            title: title ?? "",
+            releaseDate: releaseDate ?? Date(),
+            boxOffice: (boxOffice ?? 0) as Decimal,
+            url: objectID.uriRepresentation()
         )
     }
 
-    func update(from unmanaged: Movie) {
-        self.id = unmanaged.id
-        self.title = unmanaged.title
-        self.releaseDate = unmanaged.releaseDate
-        self.boxOffice = unmanaged.boxOffice as NSDecimalNumber
+    public func update(from unmanaged: Movie) {
+        id = unmanaged.id
+        title = unmanaged.title
+        releaseDate = unmanaged.releaseDate
+        boxOffice = NSDecimalNumber(decimal: unmanaged.boxOffice)
     }
 
     static func fetchRequest() -> NSFetchRequest<RepoMovie> {
-        NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
+        let request = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
+        return request
     }
 }
 ```
 #### UnmanagedModel
 ```swift
-public struct Movie {
+public struct Movie: Hashable {
     public let id: UUID
     public var title: String = ""
     public var releaseDate: Date
     public var boxOffice: Decimal = 0
-    public var objectID: NSManagedObjectID?
+    public var url: URL?
 }
 
 extension Movie: UnmanagedModel {
+    public var managedRepoUrl: URL? {
+        get {
+            url
+        }
+        set(newValue) {
+            url = newValue
+        }
+    }
+
     public func asRepoManaged(in context: NSManagedObjectContext) -> RepoMovie {
         let object = RepoMovie(context: context)
         object.id = id
@@ -112,7 +134,7 @@ _ = repository.create(movie).subscribe(on: self.userInitSerialQueue)
 let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
 fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \RepoMovie.title, ascending: true)]
 fetchRequest.predicate = NSPredicate(value: true)
-let result: AnyPublisher<Success, Failure> = repository.fetch(fetchRequest)
+let result: AnyPublisher<[Movie], Error> = repository.fetch(fetchRequest)
 let cancellable = result.subscribe(on: userInitSerialQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -130,14 +152,14 @@ let cancellable = result.subscribe(on: userInitSerialQueue)
 Similar to a regular fetch:
 ```swift
 ...
-let result: AnyPublisher<Success, Failure> = repository.fetch(fetchRequest).subscription(repository)
+let result: AnyPublisher<[Movie], Error> = repository.fetchSubscription(fetchRequest)
 ...
 cancellable.cancel()
 ```
 
 ### Aggregate
 ```swift
-let result: AnyPublisher<Success<Decimal>, Failure> = repository.sum(
+let result: AnyPublisher<[[String: Decimal]], Error> = repository.sum(
     predicate: NSPredicate(value: true),
     entityDesc: RepoMovie.entity(),
     attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
@@ -201,10 +223,39 @@ _ = self.repository.insert(request)
     )
 ```
 
+#### OR
+
+```swift
+let movies: [[String: Any]] = [
+    Movie(id: UUID(), title: "A", releaseDate: Date()),
+    Movie(id: UUID(), title: "B", releaseDate: Date()),
+    Movie(id: UUID(), title: "C", releaseDate: Date()),
+    Movie(id: UUID(), title: "D", releaseDate: Date()),
+    Movie(id: UUID(), title: "E", releaseDate: Date())
+]
+let publisher: AnyPublisher<(success: [Movie], failed: [Movie]), Never> = repository.create(movies)
+_ = publisher
+    .subscribe(on: backgroundQueue)
+    .receive(on: mainQueue)
+    .sink(
+        receiveCompletion: { completion in
+            switch completion {
+            case .finished:
+                os_log("Finished inserting A LOT of movies")
+            default:
+                fatalError("Failed to insert a lot of movies")
+            }
+        },
+        receiveValue: { createdMovies in
+            os_log("Created these movies: \(createdMovies)")
+        }
+    )_
+```
+
 
 ## TODO
 - Add a subscription feature for aggregate functions
 
 
 ## Contributing
-I welcome any feedback or contributions. I'm not eager to mess with the API a lot but let's be honest, it could probably be better. As always more tests wouldn't hurt.
+I welcome any feedback or contributions. It's probably best to create an issue where any possible changes can be discussed before doing the work and creating a PR.

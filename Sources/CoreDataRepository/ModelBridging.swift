@@ -4,7 +4,7 @@
 //
 // MIT License
 //
-// Copyright © 2021 Andrew Roan
+// Copyright © 2022 Andrew Roan
 
 import CoreData
 
@@ -15,6 +15,8 @@ public protocol RepositoryManagedModel: NSManagedObject {
     associatedtype Unmanaged: UnmanagedModel where Unmanaged.RepoManaged == Self
     /// Returns a value type instance of `self`
     var asUnmanaged: Unmanaged { get }
+    /// Create `self` from a corresponding instance of `UnmanagedModel`. Should not save the context.
+    func create(from unmanaged: Unmanaged)
     /// Update `self` from a corresponding instance of `UnmanagedModel`. Should not save the context.
     func update(from unmanaged: Unmanaged)
 }
@@ -22,11 +24,11 @@ public protocol RepositoryManagedModel: NSManagedObject {
 // MARK: Unmanaged
 
 /// A protocol for a value type that corresponds to a RepositoryManagedModel
-public protocol UnmanagedModel: Hashable {
+public protocol UnmanagedModel: Equatable {
     associatedtype RepoManaged: RepositoryManagedModel where RepoManaged.Unmanaged == Self
     /// Keep an reference to the corresponding `RepositoryManagedModel` instance for getting it later.
     /// Optional since a new instance won't have a record in CoreData.
-    var objectID: NSManagedObjectID? { get set }
+    var managedRepoUrl: URL? { get set }
     /// Returns a RepositoryManagedModel instance of `self`
     func asRepoManaged(in context: NSManagedObjectContext) -> RepoManaged
 }

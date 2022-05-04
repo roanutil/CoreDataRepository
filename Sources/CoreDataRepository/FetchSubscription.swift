@@ -1,36 +1,33 @@
-// RepositorySubscription.swift
+// FetchSubscription.swift
 // CoreDataRepository
 //
 //
 // MIT License
 //
-// Copyright © 2021 Andrew Roan
+// Copyright © 2022 Andrew Roan
 
 import Combine
 import CoreData
 import Foundation
 
 /// Re-fetches data as the context changes until canceled
-class RepositorySubscription<
+final class FetchSubscription<
     Success,
-    Failure: Error,
     Result: NSFetchRequestResult
 >: NSObject, NSFetchedResultsControllerDelegate, SubscriptionProvider {
     // MARK: Properties
 
     /// Enables easy cancellation and cleanup of a subscription as a repository may
     /// have multiple subscriptions running at once.
-    public let id: AnyHashable
+    let id: AnyHashable
     /// The fetch request to monitor
     private let request: NSFetchRequest<Result>
     /// Fetched results controller that notifies the context has changed
     private let frc: NSFetchedResultsController<Result>
     /// Subject that sends data as updates happen
-    public let subject: PassthroughSubject<Success, Failure>
+    let subject: PassthroughSubject<Success, Error>
     /// Closure to construct Success
     private let success: ([Result]) -> Success
-    /// Closure to construct Failure
-    private let failure: (RepositoryErrors) -> Failure
 
     private var changeNotificationCancellable: AnyCancellable?
 
@@ -43,13 +40,12 @@ class RepositorySubscription<
     ///     - context: NSManagedObjectContext
     ///     - success: @escaping ([Result]) -> Success
     ///     - failure: @escaping (RepositoryErrors) -> Failure
-    public init(
+    init(
         id: AnyHashable,
         request: NSFetchRequest<Result>,
         context: NSManagedObjectContext,
         success: @escaping ([Result]) -> Success,
-        failure: @escaping (RepositoryErrors) -> Failure,
-        subject: PassthroughSubject<Success, Failure> = .init()
+        subject: PassthroughSubject<Success, Error> = .init()
     ) {
         self.id = id
         self.request = request
@@ -60,7 +56,6 @@ class RepositorySubscription<
             cacheName: nil
         )
         self.success = success
-        self.failure = failure
         self.subject = subject
         super.init()
         if request.resultType != .dictionaryResultType {
@@ -92,50 +87,37 @@ class RepositorySubscription<
 
     // MARK: NSFetchedResultsControllerDelegate conformance
 
-    public func controllerDidChangeContent(_: NSFetchedResultsController<NSFetchRequestResult>) {
+    func controllerDidChangeContent(_: NSFetchedResultsController<NSFetchRequestResult>) {
         fetch()
     }
 
-    public func start() {
+    func start() {
         do {
             try frc.performFetch()
         } catch {
-            fail(failure(.cocoa(error as NSError)))
+            fail(error)
         }
     }
 
     /// Manually initiate a fetch and publish data
-    public func manualFetch() {
+    func manualFetch() {
         fetch()
     }
 
     /// Cancel the subscription
-    public func cancel() {
+    func cancel() {
         subject.send(completion: .finished)
     }
 
     /// Finish the subscription with a failure
     /// - Parameters
     ///     - _ failure: Failure
-    public func fail(_ failure: Failure) {
-        subject.send(completion: .failure(failure))
+    func fail(_ error: Error) {
+        subject.send(completion: .failure(error))
     }
 
     // Helps me sleep at night
     deinit {
         self.subject.send(completion: .finished)
     }
-}
-
-protocol SubscriptionSuccess {
-    associatedtype Data
-    associatedtype RequestResult: NSFetchRequestResult
-    static func factory(from: Self) -> ((Data) -> Self)
-    var request: NSFetchRequest<RequestResult> { get }
-}
-
-protocol SubscriptionFailure: Error {
-    associatedtype RequestResult: NSFetchRequestResult
-    static func factory(from: Self) -> ((RepositoryErrors) -> Self)
-    var request: NSFetchRequest<RequestResult> { get }
 }

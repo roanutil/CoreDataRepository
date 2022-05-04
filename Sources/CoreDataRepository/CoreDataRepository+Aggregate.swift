@@ -1,37 +1,19 @@
-// AggregateRepository.swift
+// CoreDataRepository+Aggregate.swift
 // CoreDataRepository
 //
 //
 // MIT License
 //
-// Copyright © 2021 Andrew Roan
+// Copyright © 2022 Andrew Roan
 
 import Combine
 import CoreData
 
-/// A CoreData repository with functions for getting aggregate values
-public final class AggregateRepository {
-    // MARK: Properties
-
-    /// The context used by the repository
-    public let context: NSManagedObjectContext
-    var cancellables = [AnyCancellable]()
-    var subscriptions = [SubscriptionProvider]()
-
-    // MARK: Init
-
-    /// Initializes a repository
-    /// - Parameters:
-    ///     - context: NSManagedObjectContext
-    ///
-    public init(context: NSManagedObjectContext) {
-        self.context = context
-    }
-
+extension CoreDataRepository {
     // MARK: Types
 
     /// The aggregate function to be calculated
-    public enum Function: String {
+    public enum AggregateFunction: String {
         case count
         case sum
         case average
@@ -39,30 +21,10 @@ public final class AggregateRepository {
         case max
     }
 
-    /// A return type for successful calculation
-    public struct Success<Value: Numeric> {
-        public let function: Function
-        public let result: [[String: Value]]
-        public let request: NSFetchRequest<NSDictionary>
-
-        public var predicate: NSPredicate? {
-            request.predicate
-        }
-    }
-
-    /// A return type for failure to calculate
-    public struct Failure: Error, Hashable {
-        public let function: Function
-        public let request: NSFetchRequest<NSDictionary>
-        public let error: RepositoryErrors
-
-        public var predicate: NSPredicate? {
-            request.predicate
-        }
-    }
+    // MARK: Private Functions
 
     private func request(
-        function: Function,
+        function: AggregateFunction,
         predicate _: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
@@ -86,8 +48,6 @@ public final class AggregateRepository {
         return request
     }
 
-    // MARK: Private Functions
-
     /// Calculates aggregate values
     /// - Parameters
     ///     - function: Function
@@ -98,9 +58,28 @@ public final class AggregateRepository {
     /// - Returns
     ///     - `[[String: Value]]`
     ///
-    private func aggregate<Value: Numeric>(request: NSFetchRequest<NSDictionary>) throws -> [[String: Value]] {
+    private static func aggregate<Value: Numeric>(
+        context: NSManagedObjectContext,
+        request: NSFetchRequest<NSDictionary>
+    ) throws -> [[String: Value]] {
         let result = try context.fetch(request)
         return result as? [[String: Value]] ?? []
+    }
+
+    private static func send<Value>(
+        context: NSManagedObjectContext,
+        request: NSFetchRequest<NSDictionary>
+    ) -> AnyPublisher<[[String: Value]], Error> where Value: Numeric {
+        Deferred { [context] in Future { [context] promise in
+            context.performInScratchPad(promise: promise) { scratchPad in
+                do {
+                    let result: [[String: Value]] = try Self.aggregate(context: scratchPad, request: request)
+                    promise(.success(result))
+                } catch {
+                    promise(.failure(error))
+                }
+            }
+        }}.eraseToAnyPublisher()
     }
 
     // MARK: Public Functions
@@ -110,30 +89,26 @@ public final class AggregateRepository {
     ///     - predicate: NSPredicate
     ///     - entityDesc: NSEntityDescription
     /// - Returns
-    ///     - AnyPublisher<Success<Int>, Failure<Int>>
+    ///     - AnyPublisher<Success<Int>, Error>
     ///
-    public func count<Value: Numeric>(predicate: NSPredicate,
-                                      entityDesc: NSEntityDescription) -> AnyPublisher<Success<Value>, Failure>
-    {
-        Deferred { Future { [weak self] callback in
+    public func count<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription
+    ) -> AnyPublisher<[[String: Value]], Error> {
+        Deferred { [context] in Future { [context] promise in
             let _request = NSFetchRequest<NSDictionary>(entityName: entityDesc.name ?? "")
             _request.predicate = predicate
             _request
                 .sortDescriptors =
                 [NSSortDescriptor(key: entityDesc.attributesByName.values.first!.name, ascending: true)]
-            guard let self = self
-            else { return callback(.failure(Failure(function: .count, request: _request, error: .unknown))) }
-            do {
-                let count = try self.context.count(for: _request)
-                callback(.success(Success(
-                    function: .count,
-                    result: [["countOf\(entityDesc.name ?? "")": Value(exactly: count) ?? Value.zero]],
-                    request: _request
-                )))
-            } catch {
-                callback(.failure(Failure(function: .count, request: _request, error: .cocoa(error as NSError))))
+            context.performInScratchPad(promise: promise) { scratchPad in
+                do {
+                    let count = try scratchPad.count(for: _request)
+                    promise(.success([["countOf\(entityDesc.name ?? "")": Value(exactly: count) ?? Value.zero]]))
+                } catch {
+                    promise(.failure(error))
+                }
             }
-
         }}.eraseToAnyPublisher()
     }
 
@@ -144,14 +119,14 @@ public final class AggregateRepository {
     ///     - attributeDesc: NSAttributeDescription
     ///     - groupBy: NSAttributeDescription? = nil
     /// - Returns
-    ///     - AnyPublisher<Success<Value>, Failure<Value>>
+    ///     - AnyPublisher<Success<Value>, Error>
     ///
     public func sum<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) -> AnyPublisher<Success<Value>, Failure> {
+    ) -> AnyPublisher<[[String: Value]], Error> {
         let _request = request(
             function: .sum,
             predicate: predicate,
@@ -160,19 +135,10 @@ public final class AggregateRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .sum, request: _request, error: .propertyDoesNotMatchEntity))
+            return Fail(error: AggregateRepositoryFailure(code: .propertyDoesNotMatchEntity, method: .sum))
                 .eraseToAnyPublisher()
         }
-        return Deferred { Future { [weak self] callback in
-            guard let self = self
-            else { return callback(.failure(Failure(function: .sum, request: _request, error: .unknown))) }
-            do {
-                let result: [[String: Value]] = try self.aggregate(request: _request)
-                callback(.success(Success(function: .sum, result: result, request: _request)))
-            } catch {
-                callback(.failure(Failure(function: .sum, request: _request, error: .cocoa(error as NSError))))
-            }
-        }}.eraseToAnyPublisher()
+        return Self.send(context: context, request: _request)
     }
 
     /// Calculate the average for a fetchRequest
@@ -182,14 +148,14 @@ public final class AggregateRepository {
     ///     - attributeDesc: NSAttributeDescription
     ///     - groupBy: NSAttributeDescription? = nil
     /// - Returns
-    ///     - AnyPublisher<Success<Value>, Failure<Value>>
+    ///     - AnyPublisher<Success<Value>, Error>
     ///
     public func average<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) -> AnyPublisher<Success<Value>, Failure> {
+    ) -> AnyPublisher<[[String: Value]], Error> {
         let _request = request(
             function: .average,
             predicate: predicate,
@@ -198,19 +164,10 @@ public final class AggregateRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .average, request: _request, error: .propertyDoesNotMatchEntity))
+            return Fail(error: AggregateRepositoryFailure(code: .unknown, method: .average))
                 .eraseToAnyPublisher()
         }
-        return Deferred { Future { [weak self] callback in
-            guard let self = self
-            else { return callback(.failure(Failure(function: .average, request: _request, error: .unknown))) }
-            do {
-                let result: [[String: Value]] = try self.aggregate(request: _request)
-                callback(.success(Success(function: .average, result: result, request: _request)))
-            } catch {
-                callback(.failure(Failure(function: .average, request: _request, error: .cocoa(error as NSError))))
-            }
-        }}.eraseToAnyPublisher()
+        return Self.send(context: context, request: _request)
     }
 
     /// Calculate the min for a fetchRequest
@@ -220,14 +177,14 @@ public final class AggregateRepository {
     ///     - attributeDesc: NSAttributeDescription
     ///     - groupBy: NSAttributeDescription? = nil
     /// - Returns
-    ///     - AnyPublisher<Success<Value>, Failure<Value>>
+    ///     - AnyPublisher<Success<Value>, Error>
     ///
     public func min<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) -> AnyPublisher<Success<Value>, Failure> {
+    ) -> AnyPublisher<[[String: Value]], Error> {
         let _request = request(
             function: .min,
             predicate: predicate,
@@ -236,19 +193,10 @@ public final class AggregateRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .min, request: _request, error: .propertyDoesNotMatchEntity))
+            return Fail(error: AggregateRepositoryFailure(code: .propertyDoesNotMatchEntity, method: .min))
                 .eraseToAnyPublisher()
         }
-        return Deferred { Future { [weak self] callback in
-            guard let self = self
-            else { return callback(.failure(Failure(function: .min, request: _request, error: .unknown))) }
-            do {
-                let result: [[String: Value]] = try self.aggregate(request: _request)
-                callback(.success(Success(function: .min, result: result, request: _request)))
-            } catch {
-                callback(.failure(Failure(function: .min, request: _request, error: .cocoa(error as NSError))))
-            }
-        }}.eraseToAnyPublisher()
+        return Self.send(context: context, request: _request)
     }
 
     /// Calculate the max for a fetchRequest
@@ -258,14 +206,14 @@ public final class AggregateRepository {
     ///     - attributeDesc: NSAttributeDescription
     ///     - groupBy: NSAttributeDescription? = nil
     /// - Returns
-    ///     - AnyPublisher<Success<Value>, Failure<Value>>
+    ///     - AnyPublisher<Success<Value>, Error>
     ///
     public func max<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) -> AnyPublisher<Success<Value>, Failure> {
+    ) -> AnyPublisher<[[String: Value]], Error> {
         let _request = request(
             function: .max,
             predicate: predicate,
@@ -274,19 +222,10 @@ public final class AggregateRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: Failure(function: .max, request: _request, error: .propertyDoesNotMatchEntity))
+            return Fail(error: AggregateRepositoryFailure(code: .unknown, method: .max))
                 .eraseToAnyPublisher()
         }
-        return Deferred { Future { [weak self] callback in
-            guard let self = self
-            else { return callback(.failure(Failure(function: .max, request: _request, error: .unknown))) }
-            do {
-                let result: [[String: Value]] = try self.aggregate(request: _request)
-                callback(.success(Success(function: .max, result: result, request: _request)))
-            } catch {
-                callback(.failure(Failure(function: .max, request: _request, error: .cocoa(error as NSError))))
-            }
-        }}.eraseToAnyPublisher()
+        return Self.send(context: context, request: _request)
     }
 }
 
@@ -294,7 +233,10 @@ public final class AggregateRepository {
 
 extension NSExpression {
     /// Convenience initializer for NSExpression that represent an aggregate function on a keypath
-    fileprivate convenience init(function: AggregateRepository.Function, attributeDesc: NSAttributeDescription) {
+    fileprivate convenience init(
+        function: CoreDataRepository.AggregateFunction,
+        attributeDesc: NSAttributeDescription
+    ) {
         let keyPathExp = NSExpression(forKeyPath: attributeDesc.name)
         self.init(forFunction: "\(function.rawValue):", arguments: [keyPathExp])
     }
@@ -302,9 +244,10 @@ extension NSExpression {
 
 extension NSExpressionDescription {
     /// Convenience initializer for NSExpressionDescription that represent the properties to fetch in NSFetchRequest
-    fileprivate static func aggregate(function: AggregateRepository.Function,
-                                      attributeDesc: NSAttributeDescription) -> NSExpressionDescription
-    {
+    fileprivate static func aggregate(
+        function: CoreDataRepository.AggregateFunction,
+        attributeDesc: NSAttributeDescription
+    ) -> NSExpressionDescription {
         let expression = NSExpression(function: function, attributeDesc: attributeDesc)
         let expDesc = NSExpressionDescription()
         expDesc.expression = expression
@@ -313,5 +256,3 @@ extension NSExpressionDescription {
         return expDesc
     }
 }
-
-extension AggregateRepository.Success: Equatable where Value: Equatable {}
