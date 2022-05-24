@@ -4,20 +4,29 @@
 //
 // MIT License
 //
-// Copyright © 2021 Andrew Roan
+// Copyright © 2022 Andrew Roan
 
 import CoreData
-@testable import CoreDataRepository
+import CoreDataRepository
 
-public struct Movie {
+public struct Movie: Hashable {
     public let id: UUID
     public var title: String = ""
     public var releaseDate: Date
     public var boxOffice: Decimal = 0
-    public var objectID: NSManagedObjectID?
+    public var url: URL?
 }
 
 extension Movie: UnmanagedModel {
+    public var managedRepoUrl: URL? {
+        get {
+            url
+        }
+        set(newValue) {
+            url = newValue
+        }
+    }
+
     public func asRepoManaged(in context: NSManagedObjectContext) -> RepoMovie {
         let object = RepoMovie(context: context)
         object.id = id
@@ -37,6 +46,10 @@ public final class RepoMovie: NSManagedObject {
 }
 
 extension RepoMovie: RepositoryManagedModel {
+    public func create(from unmanaged: Movie) {
+        update(from: unmanaged)
+    }
+
     public typealias Unmanaged = Movie
     public var asUnmanaged: Movie {
         Movie(
@@ -44,7 +57,7 @@ extension RepoMovie: RepositoryManagedModel {
             title: title ?? "",
             releaseDate: releaseDate ?? Date(),
             boxOffice: (boxOffice ?? 0) as Decimal,
-            objectID: objectID
+            url: objectID.uriRepresentation()
         )
     }
 

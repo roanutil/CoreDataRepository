@@ -4,11 +4,11 @@
 //
 // MIT License
 //
-// Copyright © 2021 Andrew Roan
+// Copyright © 2022 Andrew Roan
 
 import Combine
 import CoreData
-@testable import CoreDataRepository
+import CoreDataRepository
 import XCTest
 
 final class FetchRepositoryTests: CoreDataXCTestCase {
@@ -16,9 +16,6 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         ("testFetchSuccess", testFetchSuccess),
         ("testFetchSubscriptionSuccess", testFetchSubscriptionSuccess),
     ]
-
-    typealias Success = FetchRepository.Success<Movie>
-    typealias Failure = FetchRepository.Failure<Movie>
 
     let fetchRequest: NSFetchRequest<RepoMovie> = {
         let request = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
@@ -34,27 +31,27 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         Movie(id: UUID(), title: "E", releaseDate: Date()),
     ]
     var expectedMovies = [Movie]()
-    var _repository: FetchRepository?
-    var repository: FetchRepository { _repository! }
+    var _repository: CoreDataRepository?
+    var repository: CoreDataRepository { _repository! }
 
-    override func setUp() {
-        super.setUp()
-        _repository = FetchRepository(context: backgroundContext)
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        _repository = CoreDataRepository(context: viewContext)
         _ = movies.map { $0.asRepoManaged(in: viewContext) }
-        try? viewContext.save()
-        expectedMovies = try! viewContext.fetch(fetchRequest).map(\.asUnmanaged)
+        try viewContext.save()
+        expectedMovies = try viewContext.fetch(fetchRequest).map(\.asUnmanaged)
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDownWithError() throws {
+        try super.tearDownWithError()
         _repository = nil
         expectedMovies = []
     }
 
-    func testFetchSuccess() {
+    func testFetchSuccess() throws {
         let exp = expectation(description: "Fetch movies from CoreData")
-        let result: AnyPublisher<Success, Failure> = repository.fetch(fetchRequest)
-        _ = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<[Movie], CoreDataRepositoryError> = repository.fetch(fetchRequest)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
@@ -63,19 +60,20 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                 default:
                     XCTFail("Not expecting failure")
                 }
-            }, receiveValue: { value in
-                assert(value.items.count == 5, "Result items count should match expectation")
-                assert(value.items == self.expectedMovies, "Result items should match expectations")
+            }, receiveValue: { items in
+                XCTAssert(items.count == 5, "Result items count should match expectation")
+                XCTAssert(items == self.expectedMovies, "Result items should match expectations")
             })
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
     }
 
-    func testFetchSubscriptionSuccess() {
+    func testFetchSubscriptionSuccess() throws {
         let firstExp = expectation(description: "Fetch movies from CoreData")
         let secondExp = expectation(description: "Fetch movies again after CoreData context is updated")
         var resultCount = 0
-        let result: AnyPublisher<Success, Failure> = repository.fetch(fetchRequest).subscription(repository)
-        let cancellable = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<[Movie], CoreDataRepositoryError> = repository.fetchSubscription(fetchRequest)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
@@ -84,27 +82,27 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                 default:
                     XCTFail("Not expecting failure")
                 }
-            }, receiveValue: { value in
+            }, receiveValue: { items in
                 resultCount += 1
                 switch resultCount {
                 case 1:
-                    assert(value.items.count == 5, "Result items count should match expectation")
-                    assert(value.items == self.expectedMovies, "Result items should match expectations")
+                    XCTAssert(items.count == 5, "Result items count should match expectation")
+                    XCTAssert(items == self.expectedMovies, "Result items should match expectations")
                     firstExp.fulfill()
                 case 2:
-                    assert(value.items.count == 4, "Result items count should match expectation")
-                    assert(value.items == Array(self.expectedMovies[0 ... 3]), "Result items should match expectations")
+                    XCTAssert(items.count == 4, "Result items count should match expectation")
+                    XCTAssert(items == Array(self.expectedMovies[0 ... 3]), "Result items should match expectations")
                     secondExp.fulfill()
                 default:
                     XCTFail("Not expecting any values past the first two.")
                 }
 
             })
+            .store(in: &cancellables)
         wait(for: [firstExp], timeout: 5)
-        let crudRepository = CRUDRepository(context: backgroundContext)
-        let _: AnyPublisher<CRUDRepository.Success<Movie>, CRUDRepository.Failure<Movie>> = crudRepository
-            .delete(expectedMovies.last!.objectID!)
+        let crudRepository = CoreDataRepository(context: viewContext)
+        let _: AnyPublisher<Void, CoreDataRepositoryError> = crudRepository
+            .delete(try XCTUnwrap(expectedMovies.last?.url))
         wait(for: [secondExp], timeout: 5)
-        cancellable.cancel()
     }
 }

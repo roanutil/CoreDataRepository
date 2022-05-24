@@ -10,14 +10,13 @@ on:
 
 jobs:
   library:
-    runs-on: macos-11.0
+    runs-on: macos-11
     environment: default
     strategy:
       matrix:
-        xcode:
-          - '12.4'
-          - '12.5.1'
-          - '13.2'
+        platform: [macOS]
+        xcode: [12.4, 12.5.1, 13.2]
+        # Swift: 5.3, 5.4.2, 5.5.2
     steps:
       - uses: actions/checkout@v2
       - name: Select Xcode ${{ matrix.xcode }}

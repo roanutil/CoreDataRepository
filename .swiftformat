@@ -4,3 +4,5 @@
 --maxwidth 120
 --header "{file}\nCoreDataRepository\n\n\nMIT License\n\nCopyright © {year} Andrew Roan"
 --allman false
+--wraparguments before-first
+--wrapcollections before-first

@@ -4,9 +4,9 @@
 //
 // MIT License
 //
-// Copyright © 2021 Andrew Roan
+// Copyright © 2022 Andrew Roan
 
-protocol SubscriptionProvider {
+public protocol SubscriptionProvider {
     var id: AnyHashable { get }
     func manualFetch()
     func cancel()

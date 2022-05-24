@@ -4,20 +4,12 @@
 //
 // MIT License
 //
-// Copyright © 2021 Andrew Roan
+// Copyright © 2022 Andrew Roan
 
 import CoreData
 
 class CoreDataStack: NSObject {
     private static let model: NSManagedObjectModel = {
-        // Manually build model entities. Having trouble with the package loading the model from bundle.
-        /* guard let modelURL = Bundle.module.url(forResource: "Model", withExtension: "momd") else {
-              fatalError("Failed to create bundle URL for CoreData model.")
-          }
-
-          guard let model = NSManagedObjectModel(contentsOf: modelURL) else {
-              fatalError("Failed to init CoreData model from URL.")
-         } */
         let model = NSManagedObjectModel()
         model.entities = [MovieDescription]
         return model
@@ -31,11 +23,11 @@ class CoreDataStack: NSObject {
         let container = NSPersistentContainer(name: "Model", managedObjectModel: model)
         container.persistentStoreDescriptions = [desc]
         container.loadPersistentStores { _, error in
-            // precondition( description.type == NSInMemoryStoreType )
             if let error = error {
                 fatalError("Unable to load persistent stores: \(error)")
             }
         }
+        container.viewContext.automaticallyMergesChangesFromParent = true
         return container
     }
 
@@ -50,7 +42,7 @@ class CoreDataStack: NSObject {
             movieReleaseDateDescription,
             movieBoxOfficeDescription,
         ]
-        desc.uniquenessConstraints = [["id"]]
+        desc.uniquenessConstraints = [[movieIDDescription]]
         return desc
     }
 
