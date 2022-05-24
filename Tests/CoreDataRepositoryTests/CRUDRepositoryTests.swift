@@ -44,22 +44,28 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
 
         let exp = expectation(description: "Create a RepoMovie in CoreData")
         var movie = Movie(id: UUID(), title: "Create Success", releaseDate: Date(), boxOffice: 100)
-        _ = repository.create(movie).subscribe(on: backgroundQueue)
+        repository.create(movie).subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
+                        break
                     case .failure:
                         XCTFail("Received failure from CRUDRepository.create")
+                        exp.fulfill()
                     }
                 },
-                receiveValue: { resultMovie in
+                receiveValue: { _resultMovie in
+                    var resultMovie = _resultMovie
+                    XCTAssertNotNil(resultMovie.url)
+                    resultMovie.url = nil
                     let diff = CustomDump.diff(resultMovie, movie)
                     XCTAssertNil(diff, "Success response should match local object but found diff \(diff ?? "").")
+                    exp.fulfill()
                 }
             )
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
         let all = ((try? viewContext.fetch(RepoMovie.fetchRequest())) ?? []).map(\.asUnmanaged)
         XCTAssert(
@@ -85,23 +91,26 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         XCTAssert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for read test.")
 
         let exp = expectation(description: "Read a RepoMovie in CoreData")
-        let result: AnyPublisher<Movie, Error> = repository.read(try XCTUnwrap(movie.url))
-        _ = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<Movie, CoreDataRepositoryError> = repository.read(try XCTUnwrap(movie.url))
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
+                        break
                     case .failure:
                         XCTFail("Received failure from CRUDRepository.read")
+                        exp.fulfill()
                     }
                 },
                 receiveValue: { resultMovie in
                     let diff = CustomDump.diff(resultMovie, movie)
                     XCTAssertNil(diff, "Success response should match local object, but found diff \(diff ?? "").")
+                    exp.fulfill()
                 }
             )
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
     }
 
@@ -120,20 +129,24 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         try? viewContext.save()
 
         let exp = expectation(description: "Fail to read a RepoMovie in CoreData")
-        let result: AnyPublisher<Movie, Error> = repository.read(try XCTUnwrap(movie.url))
-        _ = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<Movie, CoreDataRepositoryError> = repository.read(try XCTUnwrap(movie.url))
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        XCTFail("Received success from CRUDRepository.read when expecting failure.")
+                        XCTFail("Not expected to successfully finish.")
                     case .failure:
                         exp.fulfill()
                     }
                 },
-                receiveValue: { _ in XCTFail("Not expected to receive a value for CRUDRepository.read") }
+                receiveValue: { _ in
+                    XCTFail("Not expected to receive a value for CRUDRepository.read")
+                    exp.fulfill()
+                }
             )
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
     }
 
@@ -151,22 +164,26 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         movie.title = "Update Success - Edited"
 
         let exp = expectation(description: "Update a RepoMovie in CoreData")
-        let result: AnyPublisher<Movie, Error> = repository.update(try XCTUnwrap(movie.url), with: movie)
-        _ = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<Movie, CoreDataRepositoryError> = repository
+            .update(try XCTUnwrap(movie.url), with: movie)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
+                        break
                     case .failure:
                         XCTFail("Received failure from CRUDRepository.update")
+                        exp.fulfill()
                     }
                 },
                 receiveValue: { resultMovie in
                     XCTAssert(resultMovie == movie, "Success response should match local object.")
+                    exp.fulfill()
                 }
             )
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 10)
 
         let objectId = try XCTUnwrap(
@@ -197,8 +214,9 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         XCTAssert(countAfterDelete == 0, "Count of objects in CoreData should be 0 after delete for read test.")
 
         let exp = expectation(description: "Fail to update a RepoMovie in CoreData")
-        let result: AnyPublisher<Movie, Error> = repository.update(try XCTUnwrap(movie.url), with: movie)
-        _ = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<Movie, CoreDataRepositoryError> = repository
+            .update(try XCTUnwrap(movie.url), with: movie)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
                 receiveCompletion: { completion in
@@ -209,8 +227,12 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                         exp.fulfill()
                     }
                 },
-                receiveValue: { _ in XCTFail("Not expected to receive a value for CRUDRepository.update") }
+                receiveValue: { _ in
+                    XCTFail("Not expected to receive a value for CRUDRepository.update")
+                    exp.fulfill()
+                }
             )
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 10)
     }
 
@@ -226,20 +248,24 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         XCTAssert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for read test.")
 
         let exp = expectation(description: "Delete a RepoMovie in CoreData")
-        let result: AnyPublisher<Void, Error> = repository.delete(try XCTUnwrap(movie.url))
-        _ = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<Void, CoreDataRepositoryError> = repository.delete(try XCTUnwrap(movie.url))
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
+                        break
                     case .failure:
                         XCTFail("Received failure from CRUDRepository.delete")
+                        exp.fulfill()
                     }
                 },
-                receiveValue: { _ in }
+                receiveValue: { _ in
+                    exp.fulfill()
+                }
             )
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
 
         let afterDeleteCount = try viewContext.count(for: fetchRequest)
@@ -261,8 +287,8 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         try? viewContext.save()
 
         let exp = expectation(description: "Fail to delete a RepoMovie in CoreData")
-        let result: AnyPublisher<Void, Error> = repository.delete(try XCTUnwrap(movie.url))
-        _ = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<Void, CoreDataRepositoryError> = repository.delete(try XCTUnwrap(movie.url))
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(
                 receiveCompletion: { completion in
@@ -273,8 +299,12 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                         exp.fulfill()
                     }
                 },
-                receiveValue: { _ in XCTFail("Not expected to receive a value for CRUDRepository.delete") }
+                receiveValue: { _ in
+                    XCTFail("Not expected to receive a value for CRUDRepository.delete")
+                    exp.fulfill()
+                }
             )
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
     }
 
@@ -295,14 +325,14 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let firstExp = expectation(description: "Read a movie from CoreData")
         let secondExp = expectation(description: "Read a movie again after CoreData context is updated")
         var resultCount = 0
-        let result: AnyPublisher<Movie, Error> = repository.readSubscription(try XCTUnwrap(movie.url))
-        let cancellable = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<Movie, CoreDataRepositoryError> = repository.readSubscription(try XCTUnwrap(movie.url))
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
                     XCTFail("Not expecting completion since subscription finishes after subscriber cancel")
-                default:
+                case .failure:
                     XCTFail("Not expecting failure")
                 }
             }, receiveValue: { receiveMovie in
@@ -319,8 +349,9 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                 }
 
             })
+            .store(in: &cancellables)
         wait(for: [firstExp], timeout: 5)
-        let editCancellable = repository.update(try XCTUnwrap(movie.url), with: editedMovie).sink(
+        repository.update(try XCTUnwrap(movie.url), with: editedMovie).sink(
             receiveCompletion: { completion in
                 if case .failure = completion {
                     XCTFail("Update should not fail")
@@ -330,8 +361,8 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                 XCTAssert(resultMovie == editedMovie)
             }
         )
+        .store(in: &cancellables)
         wait(for: [secondExp], timeout: 5)
-        cancellable.cancel()
-        editCancellable.cancel()
+        cancellables.forEach { $0.cancel() }
     }
 }

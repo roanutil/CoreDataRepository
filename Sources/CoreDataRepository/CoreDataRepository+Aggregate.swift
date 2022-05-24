@@ -69,17 +69,17 @@ extension CoreDataRepository {
     private static func send<Value>(
         context: NSManagedObjectContext,
         request: NSFetchRequest<NSDictionary>
-    ) -> AnyPublisher<[[String: Value]], Error> where Value: Numeric {
-        Deferred { [context] in Future { [context] promise in
+    ) -> AnyPublisher<[[String: Value]], CoreDataRepositoryError> where Value: Numeric {
+        Future { [context] promise in
             context.performInScratchPad(promise: promise) { scratchPad in
                 do {
                     let result: [[String: Value]] = try Self.aggregate(context: scratchPad, request: request)
-                    promise(.success(result))
+                    return .success(result)
                 } catch {
-                    promise(.failure(error))
+                    return .failure(.coreData(error as NSError))
                 }
             }
-        }}.eraseToAnyPublisher()
+        }.eraseToAnyPublisher()
     }
 
     // MARK: Public Functions
@@ -89,13 +89,13 @@ extension CoreDataRepository {
     ///     - predicate: NSPredicate
     ///     - entityDesc: NSEntityDescription
     /// - Returns
-    ///     - AnyPublisher<Success<Int>, Error>
+    ///     - AnyPublisher<[[String: Value]], CoreDataRepositoryError>
     ///
     public func count<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription
-    ) -> AnyPublisher<[[String: Value]], Error> {
-        Deferred { [context] in Future { [context] promise in
+    ) -> AnyPublisher<[[String: Value]], CoreDataRepositoryError> {
+        Future { [context] promise in
             let _request = NSFetchRequest<NSDictionary>(entityName: entityDesc.name ?? "")
             _request.predicate = predicate
             _request
@@ -104,12 +104,12 @@ extension CoreDataRepository {
             context.performInScratchPad(promise: promise) { scratchPad in
                 do {
                     let count = try scratchPad.count(for: _request)
-                    promise(.success([["countOf\(entityDesc.name ?? "")": Value(exactly: count) ?? Value.zero]]))
+                    return .success([["countOf\(entityDesc.name ?? "")": Value(exactly: count) ?? Value.zero]])
                 } catch {
-                    promise(.failure(error))
+                    return .failure(.coreData(error as NSError))
                 }
             }
-        }}.eraseToAnyPublisher()
+        }.eraseToAnyPublisher()
     }
 
     /// Calculate the sum for a fetchRequest
@@ -119,14 +119,14 @@ extension CoreDataRepository {
     ///     - attributeDesc: NSAttributeDescription
     ///     - groupBy: NSAttributeDescription? = nil
     /// - Returns
-    ///     - AnyPublisher<Success<Value>, Error>
+    ///     - AnyPublisher<[[String: Value]], CoreDataRepositoryError>
     ///
     public func sum<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) -> AnyPublisher<[[String: Value]], Error> {
+    ) -> AnyPublisher<[[String: Value]], CoreDataRepositoryError> {
         let _request = request(
             function: .sum,
             predicate: predicate,
@@ -135,7 +135,7 @@ extension CoreDataRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: AggregateRepositoryFailure(code: .propertyDoesNotMatchEntity, method: .sum))
+            return Fail(error: .propertyDoesNotMatchEntity)
                 .eraseToAnyPublisher()
         }
         return Self.send(context: context, request: _request)
@@ -148,14 +148,14 @@ extension CoreDataRepository {
     ///     - attributeDesc: NSAttributeDescription
     ///     - groupBy: NSAttributeDescription? = nil
     /// - Returns
-    ///     - AnyPublisher<Success<Value>, Error>
+    ///     - AnyPublisher<[[String: Value]], CoreDataRepositoryError>
     ///
     public func average<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) -> AnyPublisher<[[String: Value]], Error> {
+    ) -> AnyPublisher<[[String: Value]], CoreDataRepositoryError> {
         let _request = request(
             function: .average,
             predicate: predicate,
@@ -164,7 +164,7 @@ extension CoreDataRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: AggregateRepositoryFailure(code: .unknown, method: .average))
+            return Fail(error: .propertyDoesNotMatchEntity)
                 .eraseToAnyPublisher()
         }
         return Self.send(context: context, request: _request)
@@ -177,14 +177,14 @@ extension CoreDataRepository {
     ///     - attributeDesc: NSAttributeDescription
     ///     - groupBy: NSAttributeDescription? = nil
     /// - Returns
-    ///     - AnyPublisher<Success<Value>, Error>
+    ///     - AnyPublisher<[[String: Value]], CoreDataRepositoryError>
     ///
     public func min<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) -> AnyPublisher<[[String: Value]], Error> {
+    ) -> AnyPublisher<[[String: Value]], CoreDataRepositoryError> {
         let _request = request(
             function: .min,
             predicate: predicate,
@@ -193,7 +193,7 @@ extension CoreDataRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: AggregateRepositoryFailure(code: .propertyDoesNotMatchEntity, method: .min))
+            return Fail(error: .propertyDoesNotMatchEntity)
                 .eraseToAnyPublisher()
         }
         return Self.send(context: context, request: _request)
@@ -206,14 +206,14 @@ extension CoreDataRepository {
     ///     - attributeDesc: NSAttributeDescription
     ///     - groupBy: NSAttributeDescription? = nil
     /// - Returns
-    ///     - AnyPublisher<Success<Value>, Error>
+    ///     - AnyPublisher<[[String: Value]], CoreDataRepositoryError>
     ///
     public func max<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) -> AnyPublisher<[[String: Value]], Error> {
+    ) -> AnyPublisher<[[String: Value]], CoreDataRepositoryError> {
         let _request = request(
             function: .max,
             predicate: predicate,
@@ -222,7 +222,7 @@ extension CoreDataRepository {
             groupBy: groupBy
         )
         guard entityDesc == attributeDesc.entity else {
-            return Fail(error: AggregateRepositoryFailure(code: .unknown, method: .max))
+            return Fail(error: .propertyDoesNotMatchEntity)
                 .eraseToAnyPublisher()
         }
         return Self.send(context: context, request: _request)

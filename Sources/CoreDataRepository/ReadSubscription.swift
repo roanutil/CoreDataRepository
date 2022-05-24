@@ -12,31 +12,48 @@ import Foundation
 
 final class ReadSubscription<Model: UnmanagedModel> {
     let id: AnyHashable
-    private var object: Model.RepoManaged
-    let subject: PassthroughSubject<Model, Error>
-    private var cancellable: AnyCancellable?
+    private let objectId: NSManagedObjectID
+    private let context: NSManagedObjectContext
+    let subject: PassthroughSubject<Model, CoreDataRepositoryError>
+    private var cancellables: Set<AnyCancellable> = []
 
-    init(id: AnyHashable, object: Model.RepoManaged, subject: PassthroughSubject<Model, Error>) {
+    init(
+        id: AnyHashable,
+        objectId: NSManagedObjectID,
+        context: NSManagedObjectContext,
+        subject: PassthroughSubject<Model, CoreDataRepositoryError>
+    ) {
         self.id = id
         self.subject = subject
-        self.object = object
+        self.objectId = objectId
+        self.context = context
     }
 }
 
 extension ReadSubscription: SubscriptionProvider {
     func manualFetch() {
-        subject.send(object.asUnmanaged)
+        context.perform { [weak self, context, objectId] in
+            guard let object = context.object(with: objectId) as? Model.RepoManaged else {
+                return
+            }
+            self?.subject.send(object.asUnmanaged)
+        }
     }
 
     func cancel() {
         subject.send(completion: .finished)
+        cancellables.forEach { $0.cancel() }
     }
 
     func start() {
-        cancellable = object.objectWillChange.sink { [weak self] _ in
-            if let unmanaged = self?.object.asUnmanaged {
-                self?.subject.send(unmanaged)
+        context.perform { [weak self, context, objectId] in
+            guard let object = context.object(with: objectId) as? Model.RepoManaged else {
+                return
             }
+            let startCancellable = object.objectWillChange.sink { [weak self] _ in
+                self?.subject.send(object.asUnmanaged)
+            }
+            self?.cancellables.insert(startCancellable)
         }
     }
 }

@@ -52,21 +52,23 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
 
     func testCountSuccess() throws {
         let exp = expectation(description: "Get count of movies from CoreData")
-        let result: AnyPublisher<[[String: Int]], Error> = repository
+        let result: AnyPublisher<[[String: Int]], CoreDataRepositoryError> = repository
             .count(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity())
         var values: [[String: Int]] = []
-        _ = result.subscribe(on: backgroundQueue)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
-                    exp.fulfill()
-                default:
+                    break
+                case .failure:
                     XCTFail("Not expecting failure")
                 }
             }, receiveValue: { _values in
                 values = _values
+                exp.fulfill()
             })
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
         let firstValue = try XCTUnwrap(values.first?.values.first)
         XCTAssert(firstValue == 5, "Result value (count) should equal number of movies.")
@@ -75,23 +77,25 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testSumSuccess() throws {
         let exp = expectation(description: "Get sum of CoreData Movies boxOffice")
         var values: [[String: Decimal]] = []
-        let result: AnyPublisher<[[String: Decimal]], Error> = repository.sum(
+        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = repository.sum(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
         )
-        _ = result.subscribe(on: backgroundQueue)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
-                    exp.fulfill()
-                default:
+                    break
+                case .failure:
                     XCTFail("Not expecting failure")
                 }
             }, receiveValue: { _values in
                 values = _values
+                exp.fulfill()
             })
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
         let firstValue = try XCTUnwrap(values.first?.values.first)
         XCTAssert(
@@ -103,23 +107,25 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testAverageSuccess() throws {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
         var values: [[String: Decimal]] = []
-        let result: AnyPublisher<[[String: Decimal]], Error> = repository.average(
+        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = repository.average(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
         )
-        _ = result.subscribe(on: backgroundQueue)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
-                    exp.fulfill()
-                default:
+                    break
+                case .failure:
                     XCTFail("Not expecting failure")
                 }
             }, receiveValue: { _values in
                 values = _values
+                exp.fulfill()
             })
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
         let firstValue = try XCTUnwrap(values.first?.values.first)
         XCTAssert(
@@ -131,23 +137,25 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testMinSuccess() throws {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
         var values: [[String: Decimal]] = []
-        let result: AnyPublisher<[[String: Decimal]], Error> = repository.min(
+        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = repository.min(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
         )
-        _ = result.subscribe(on: backgroundQueue)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
-                    exp.fulfill()
-                default:
+                    break
+                case .failure:
                     XCTFail("Not expecting failure")
                 }
             }, receiveValue: { _values in
                 values = _values
+                exp.fulfill()
             })
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
         let firstValue = try XCTUnwrap(values.first?.values.first)
         XCTAssert(
@@ -159,23 +167,25 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testMaxSuccess() throws {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
         var values: [[String: Decimal]] = []
-        let result: AnyPublisher<[[String: Decimal]], Error> = repository.max(
+        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = repository.max(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
         )
-        _ = result.subscribe(on: backgroundQueue)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
-                    exp.fulfill()
-                default:
+                    break
+                case .failure:
                     XCTFail("Not expecting failure")
                 }
             }, receiveValue: { _values in
                 values = _values
+                exp.fulfill()
             })
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
         let firstValue = try XCTUnwrap(values.first?.values.first)
         XCTAssert(

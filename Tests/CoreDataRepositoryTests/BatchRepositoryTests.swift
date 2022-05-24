@@ -13,7 +13,6 @@ import CustomDump
 import XCTest
 
 final class BatchRepositoryTests: CoreDataXCTestCase {
-    var cancellables = Set<AnyCancellable>()
     static var allTests = [
         ("testInsertSuccess", testInsertSuccess),
         ("testInsertFailure", testInsertFailure),

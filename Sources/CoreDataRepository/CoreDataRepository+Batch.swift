@@ -17,20 +17,22 @@ extension CoreDataRepository {
     ///     - _ request: NSBatchInsertRequest
     ///     - transactionAuthor: String
     /// - Returns
-    ///     - AnyPublisher<Success, Error>
+    ///     - AnyPublisher<NSBatchInsertResult, CoreDataRepositoryError>
     public func insert(
         _ request: NSBatchInsertRequest,
-        transactionAuthor: String = ""
-    ) -> AnyPublisher<NSBatchInsertResult, Error> {
+        transactionAuthor: String? = nil
+    ) -> AnyPublisher<NSBatchInsertResult, CoreDataRepositoryError> {
         Deferred { [context] in Future { [context] promise in
             context.performInScratchPad(promise: promise) { scratchPad in
                 scratchPad.transactionAuthor = transactionAuthor
                 do {
                     if let result = try scratchPad.execute(request) as? NSBatchInsertResult {
-                        promise(.success(result))
+                        return .success(result)
+                    } else {
+                        return .failure(.fetchedObjectFailedToCastToExpectedType)
                     }
                 } catch {
-                    promise(.failure(error))
+                    return .failure(.coreData(error as NSError))
                 }
             }
         }}.eraseToAnyPublisher()
@@ -44,13 +46,16 @@ extension CoreDataRepository {
     ///     - AnyPublisher<(success: [Model, failed: [Model]), Never>
     public func create<Model: UnmanagedModel>(
         _ items: [Model],
-        transactionAuthor: String = ""
+        transactionAuthor: String? = nil
     )
         -> AnyPublisher<(success: [Model], failed: [Model]), Never>
     {
         Publishers.MergeMany<AnyPublisher<_Result<Model, Model>, Never>>(
             items.map { item -> AnyPublisher<_Result<Model, Model>, Never> in
-                let createPub: AnyPublisher<Model, Error> = create(item, transactionAuthor: transactionAuthor)
+                let createPub: AnyPublisher<Model, CoreDataRepositoryError> = create(
+                    item,
+                    transactionAuthor: transactionAuthor
+                )
                 return createPub
                     .map(_Result<Model, Model>.success)
                     .catch { _ in
@@ -78,13 +83,13 @@ extension CoreDataRepository {
 
     /// Batch update objects in CoreData
     /// - Parameters
-    ///     - _ items: [Model]
+    ///     - urls: [URL]
     /// - Returns
     ///     - AnyPublisher<(success: [Model, failed: [Model]), Never>
     public func read<Model: UnmanagedModel>(urls: [URL]) -> AnyPublisher<(success: [Model], failed: [URL]), Never> {
         Publishers.MergeMany<AnyPublisher<_Result<Model, URL>, Never>>(
             urls.map { url -> AnyPublisher<_Result<Model, URL>, Never> in
-                let readPub: AnyPublisher<Model, Error> = read(url)
+                let readPub: AnyPublisher<Model, CoreDataRepositoryError> = read(url)
                 return readPub
                     .map(_Result<Model, URL>.success)
                     .catch { _ in
@@ -115,29 +120,25 @@ extension CoreDataRepository {
     ///     - _ request: NSBatchInsertRequest
     ///     - transactionAuthor: String
     /// - Returns
-    ///     - AnyPublisher<Success, Error>
+    ///     - AnyPublisher<NSBatchUpdateResult, CoreDataRepositoryError>
     public func update(
         _ request: NSBatchUpdateRequest,
-        transactionAuthor: String = ""
-    ) -> AnyPublisher<NSBatchUpdateResult, Error> {
+        transactionAuthor: String? = nil
+    ) -> AnyPublisher<NSBatchUpdateResult, CoreDataRepositoryError> {
         Deferred { [context] in Future { [context] promise in
             context.performInScratchPad(promise: promise) { scratchPad in
                 scratchPad.transactionAuthor = transactionAuthor
                 do {
                     if let result = try scratchPad.execute(request) as? NSBatchUpdateResult {
-                        promise(.success(result))
+                        return .success(result)
+                    } else {
+                        return .failure(.fetchedObjectFailedToCastToExpectedType)
                     }
                 } catch {
-                    promise(.failure(error))
+                    return .failure(.coreData(error as NSError))
                 }
             }
         }}.eraseToAnyPublisher()
-    }
-
-    /// Wrapper for success/failure output where failure does not confrom to `Error`
-    private enum _Result<Success, Failure> {
-        case success(Success)
-        case failure(Failure)
     }
 
     /// Batch update objects in CoreData
@@ -148,7 +149,7 @@ extension CoreDataRepository {
     ///     - AnyPublisher<(success: [Model, failed: [Model]), Never>
     public func update<Model: UnmanagedModel>(
         _ items: [Model],
-        transactionAuthor: String = ""
+        transactionAuthor: String? = nil
     )
         -> AnyPublisher<(success: [Model], failed: [Model]), Never>
     {
@@ -158,7 +159,7 @@ extension CoreDataRepository {
                     return Just(_Result<Model, Model>.failure(item))
                         .eraseToAnyPublisher()
                 }
-                let updatePub: AnyPublisher<Model, Error> = update(
+                let updatePub: AnyPublisher<Model, CoreDataRepositoryError> = update(
                     url,
                     with: item,
                     transactionAuthor: transactionAuthor
@@ -197,20 +198,22 @@ extension CoreDataRepository {
     ///     - _ request: NSBatchInsertRequest
     ///     - transactionAuthor: String
     /// - Returns
-    ///     - AnyPublisher<Success, Error>
+    ///     - AnyPublisher<NSBatchDeleteResult, CoreDataRepositoryError>
     public func delete(
         _ request: NSBatchDeleteRequest,
-        transactionAuthor: String = ""
-    ) -> AnyPublisher<NSBatchDeleteResult, Error> {
+        transactionAuthor: String? = nil
+    ) -> AnyPublisher<NSBatchDeleteResult, CoreDataRepositoryError> {
         Deferred { [context] in Future { [context] promise in
             context.performInScratchPad(promise: promise) { scratchPad in
                 scratchPad.transactionAuthor = transactionAuthor
                 do {
                     if let result = try scratchPad.execute(request) as? NSBatchDeleteResult {
-                        promise(.success(result))
+                        return .success(result)
+                    } else {
+                        return .failure(.fetchedObjectFailedToCastToExpectedType)
                     }
                 } catch {
-                    promise(.failure(error))
+                    return .failure(.coreData(error as NSError))
                 }
             }
         }}.eraseToAnyPublisher()
@@ -223,11 +226,14 @@ extension CoreDataRepository {
     ///     - AnyPublisher<(success: [Model, failed: [Model]), Never>
     public func delete(
         urls: [URL],
-        transactionAuthor: String = ""
+        transactionAuthor: String? = nil
     ) -> AnyPublisher<(success: [URL], failed: [URL]), Never> {
         Publishers.MergeMany<AnyPublisher<_Result<URL, URL>, Never>>(
             urls.map { url -> AnyPublisher<_Result<URL, URL>, Never> in
-                let deletePub: AnyPublisher<Void, Error> = delete(url, transactionAuthor: transactionAuthor)
+                let deletePub: AnyPublisher<Void, CoreDataRepositoryError> = delete(
+                    url,
+                    transactionAuthor: transactionAuthor
+                )
                 return deletePub
                     .map { _ in .success(url) }
                     .catch { _ in

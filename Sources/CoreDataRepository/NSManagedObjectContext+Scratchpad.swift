@@ -12,32 +12,30 @@ import Foundation
 
 extension NSManagedObjectContext {
     func performInScratchPad<Output>(
-        promise: @escaping Future<Output, Error>.Promise,
-        _ block: @escaping (NSManagedObjectContext) throws -> Void
+        promise: @escaping Future<Output, CoreDataRepositoryError>.Promise,
+        _ block: @escaping (NSManagedObjectContext) -> Result<Output, CoreDataRepositoryError>
     ) {
         let scratchPad = scratchPadContext()
         scratchPad.perform {
-            do {
-                try block(scratchPad)
-            } catch {
+            let result = block(scratchPad)
+            if case .failure = result {
                 scratchPad.rollback()
-                promise(.failure(error))
             }
+            promise(result)
         }
     }
 
     func performAndWaitInScratchPad<Output>(
-        promise: @escaping Future<Output, Error>.Promise,
-        _ block: @escaping (NSManagedObjectContext) throws -> Void
+        promise: @escaping Future<Output, CoreDataRepositoryError>.Promise,
+        _ block: @escaping (NSManagedObjectContext) -> Result<Output, CoreDataRepositoryError>
     ) throws {
         let scratchPad = scratchPadContext()
         scratchPad.performAndWait {
-            do {
-                try block(scratchPad)
-            } catch {
+            let result = block(scratchPad)
+            if case .failure = result {
                 scratchPad.rollback()
-                promise(.failure(error))
             }
+            promise(result)
         }
     }
 

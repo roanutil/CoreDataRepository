@@ -50,8 +50,8 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
 
     func testFetchSuccess() throws {
         let exp = expectation(description: "Fetch movies from CoreData")
-        let result: AnyPublisher<[Movie], Error> = repository.fetch(fetchRequest)
-        _ = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<[Movie], CoreDataRepositoryError> = repository.fetch(fetchRequest)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
@@ -64,6 +64,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                 XCTAssert(items.count == 5, "Result items count should match expectation")
                 XCTAssert(items == self.expectedMovies, "Result items should match expectations")
             })
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
     }
 
@@ -71,8 +72,8 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         let firstExp = expectation(description: "Fetch movies from CoreData")
         let secondExp = expectation(description: "Fetch movies again after CoreData context is updated")
         var resultCount = 0
-        let result: AnyPublisher<[Movie], Error> = repository.fetchSubscription(fetchRequest)
-        let cancellable = result.subscribe(on: backgroundQueue)
+        let result: AnyPublisher<[Movie], CoreDataRepositoryError> = repository.fetchSubscription(fetchRequest)
+        result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
@@ -97,11 +98,11 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                 }
 
             })
+            .store(in: &cancellables)
         wait(for: [firstExp], timeout: 5)
         let crudRepository = CoreDataRepository(context: viewContext)
-        let _: AnyPublisher<Void, Error> = crudRepository
+        let _: AnyPublisher<Void, CoreDataRepositoryError> = crudRepository
             .delete(try XCTUnwrap(expectedMovies.last?.url))
         wait(for: [secondExp], timeout: 5)
-        cancellable.cancel()
     }
 }

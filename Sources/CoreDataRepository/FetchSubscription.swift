@@ -25,7 +25,7 @@ final class FetchSubscription<
     /// Fetched results controller that notifies the context has changed
     private let frc: NSFetchedResultsController<Result>
     /// Subject that sends data as updates happen
-    let subject: PassthroughSubject<Success, Error>
+    let subject: PassthroughSubject<Success, CoreDataRepositoryError>
     /// Closure to construct Success
     private let success: ([Result]) -> Success
 
@@ -45,7 +45,7 @@ final class FetchSubscription<
         request: NSFetchRequest<Result>,
         context: NSManagedObjectContext,
         success: @escaping ([Result]) -> Success,
-        subject: PassthroughSubject<Success, Error> = .init()
+        subject: PassthroughSubject<Success, CoreDataRepositoryError> = .init()
     ) {
         self.id = id
         self.request = request
@@ -95,7 +95,7 @@ final class FetchSubscription<
         do {
             try frc.performFetch()
         } catch {
-            fail(error)
+            fail(.coreData(error as NSError))
         }
     }
 
@@ -112,7 +112,7 @@ final class FetchSubscription<
     /// Finish the subscription with a failure
     /// - Parameters
     ///     - _ failure: Failure
-    func fail(_ error: Error) {
+    func fail(_ error: CoreDataRepositoryError) {
         subject.send(completion: .failure(error))
     }
 

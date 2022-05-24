@@ -17,35 +17,34 @@ extension CoreDataRepository {
     /// - Parameters
     ///     - _ request: NSFetchRequest<Model.RepoManaged>
     /// - Returns
-    ///     - AnyPublisher<Success<Model>, Failure<Model>>
+    ///     - AnyPublisher<[Model], CoreDataRepositoryError>
     ///
     public func fetch<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>)
-        -> AnyPublisher<[Model], Error>
+        -> AnyPublisher<[Model], CoreDataRepositoryError>
     {
-        Deferred { [context] in Future { [context] promise in
-            context.performInScratchPad(promise: promise) { scratchPad in
-                do {
-                    let items = try scratchPad.fetch(request).map(\.asUnmanaged)
-                    promise(.success(items))
-                } catch {
-                    promise(.failure(error))
-                }
-            }
-
-        }}.eraseToAnyPublisher()
+        let fetchContext = context.childContext()
+        return _fetch(request, fetchContext: fetchContext)
     }
 
+    /// Fetch an array of value types corresponding to a NSManagedObject sub class and receive
+    /// updates for changes in the context.
+    /// - Parameters
+    ///     - _request: NSFetchRequest<Model.RepoManaged>
+    /// - Returns
+    ///     - AnyPublisher<[Model], CoreDataRepositoryError>
     public func fetchSubscription<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>)
-        -> AnyPublisher<[Model], Error>
+        -> AnyPublisher<[Model], CoreDataRepositoryError>
     {
-        let publisher: AnyPublisher<[Model], Error> = fetch(request)
-        return AnyPublisher.create { subscriber in
-            let subject = PassthroughSubject<[Model], Error>()
-            subject.sink(receiveCompletion: subscriber.send, receiveValue: subscriber.send)
-                .store(in: &self.cancellables)
+        let fetchContext = context.childContext()
+        let fetchPublisher: AnyPublisher<[Model], CoreDataRepositoryError> = _fetch(request, fetchContext: fetchContext)
+        var subjectCancellable: AnyCancellable?
+        var fetchCancellable: AnyCancellable?
+        return AnyPublisher.create { [weak self] subscriber in
+            let subject = PassthroughSubject<[Model], CoreDataRepositoryError>()
+            subjectCancellable = subject.sink(receiveCompletion: subscriber.send, receiveValue: subscriber.send)
             let id = UUID()
             var subscription: SubscriptionProvider?
-            publisher.sink(
+            fetchCancellable = fetchPublisher.sink(
                 receiveCompletion: { completion in
                     if case .failure = completion {
                         subject.send(completion: completion)
@@ -55,20 +54,49 @@ extension CoreDataRepository {
                     let subscriptionProvider = FetchSubscription(
                         id: id,
                         request: request,
-                        context: self.context,
+                        context: fetchContext,
                         success: { $0.map(\.asUnmanaged) },
                         subject: subject
                     )
                     subscription = subscriptionProvider
                     subscriptionProvider.start()
-                    self.subscriptions.append(subscriptionProvider)
+                    if let _self = self,
+                       let _subjectCancellable = subjectCancellable,
+                       let _fetchCancellable = fetchCancellable
+                    {
+                        _self.subscriptions.append(subscriptionProvider)
+                        _self.cancellables.insert(_subjectCancellable)
+                        _self.cancellables.insert(_fetchCancellable)
+                    } else {
+                        subjectCancellable?.cancel()
+                        fetchCancellable?.cancel()
+                        subscription?.cancel()
+                    }
                     subject.send(value)
                 }
-            ).store(in: &self.cancellables)
+            )
             return AnyCancellable {
                 subscription?.cancel()
-                self.subscriptions.removeAll(where: { $0.id == id as AnyHashable })
+                self?.subscriptions.removeAll(where: { $0.id == id as AnyHashable })
             }
         }
+    }
+
+    private func _fetch<Model: UnmanagedModel>(
+        _ request: NSFetchRequest<Model.RepoManaged>,
+        fetchContext: NSManagedObjectContext
+    )
+        -> AnyPublisher<[Model], CoreDataRepositoryError>
+    {
+        Future { promise in
+            fetchContext.perform {
+                do {
+                    let items = try fetchContext.fetch(request).map(\.asUnmanaged)
+                    promise(.success(items))
+                } catch {
+                    promise(.failure(.coreData(error as NSError)))
+                }
+            }
+        }.eraseToAnyPublisher()
     }
 }
