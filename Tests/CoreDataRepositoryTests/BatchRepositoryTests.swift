@@ -88,12 +88,15 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
-                    default:
+                        break
+                    case .failure:
                         XCTFail("Not expecting failure")
+                        exp.fulfill()
                     }
                 },
-                receiveValue: { _ in }
+                receiveValue: { _ in
+                    exp.fulfill()
+                }
             )
             .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
@@ -152,12 +155,15 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
-                    default:
+                        break
+                    case .failure:
                         XCTFail("Not expecting failure")
+                        exp.fulfill()
                     }
                 },
-                receiveValue: { _ in }
+                receiveValue: { _ in
+                    exp.fulfill()
+                }
             )
             .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
@@ -189,8 +195,8 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
-                    default:
+                        break
+                    case .failure:
                         XCTFail("Not expecting Failure")
                         exp.fulfill()
                     }
@@ -198,6 +204,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
                 receiveValue: { result in
                     XCTAssert(result.failed.isEmpty, "None should fail")
                     resultingMovies = result.success
+                    exp.fulfill()
                 }
             )
             .store(in: &cancellables)
@@ -227,12 +234,15 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
-                    default:
+                        break
+                    case .failure:
                         XCTFail("Not expecting Failure")
+                        exp.fulfill()
                     }
                 },
-                receiveValue: { _ in }
+                receiveValue: { _ in
+                    exp.fulfill()
+                }
             )
             .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
@@ -265,8 +275,8 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
-                    default:
+                        break
+                    case .failure:
                         XCTFail("Not expecting Failure")
                         exp.fulfill()
                     }
@@ -274,6 +284,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
                 receiveValue: { result in
                     XCTAssert(result.failed.isEmpty, "None should fail")
                     resultingMovies = result.success
+                    exp.fulfill()
                 }
             )
             .store(in: &cancellables)
@@ -304,12 +315,15 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
-                    default:
+                        break
+                    case .failure:
                         XCTFail("Not expecting failure")
+                        exp.fulfill()
                     }
                 },
-                receiveValue: { _ in }
+                receiveValue: { _ in
+                    exp.fulfill()
+                }
             )
             .store(in: &cancellables)
         wait(for: [exp], timeout: 5)
@@ -339,14 +353,15 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        exp.fulfill()
-                    default:
+                        break
+                    case .failure:
                         XCTFail("Not expecting Failure")
                         exp.fulfill()
                     }
                 },
                 receiveValue: { result in
                     XCTAssert(result.failed.isEmpty, "None should fail")
+                    exp.fulfill()
                 }
             )
             .store(in: &cancellables)
