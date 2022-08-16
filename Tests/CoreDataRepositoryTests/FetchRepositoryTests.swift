@@ -96,12 +96,12 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
             })
             .store(in: &cancellables)
         wait(for: [firstExp], timeout: 5)
-        try viewContext().performAndWait {
+        try repositoryContext().performAndWait {
             do {
                 let objectId = try container().persistentStoreCoordinator
                     .managedObjectID(forURIRepresentation: try XCTUnwrap(expectedMovies.last?.url))
-                try viewContext().delete(try viewContext().object(with: try XCTUnwrap(objectId)))
-                try viewContext().save()
+                try repositoryContext().delete(try repositoryContext().object(with: try XCTUnwrap(objectId)))
+                try repositoryContext().save()
             } catch {
                 XCTFail("Failed to update repository: \(error.localizedDescription)")
             }
