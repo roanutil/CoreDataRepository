@@ -26,7 +26,7 @@ extension Result where Success == NSManagedObjectID, Failure == CoreDataReposito
 }
 
 extension Result where Success == NSManagedObject, Failure == CoreDataRepositoryError {
-    func map<T>(to _: T.Type, context _: NSManagedObjectContext) -> Result<T, CoreDataRepositoryError>
+    func map<T>(to _: T.Type) -> Result<T, CoreDataRepositoryError>
         where T: RepositoryManagedModel
     {
         flatMap { _object in
@@ -44,9 +44,15 @@ extension Result where Failure == CoreDataRepositoryError {
             do {
                 try context.save()
                 if let parentContext = context.parent {
-                    try DispatchQueue.main.sync {
-                        try parentContext.save()
+                    var result: Result<Success, CoreDataRepositoryError> = .success(success)
+                    parentContext.performAndWait {
+                        do {
+                            try parentContext.save()
+                        } catch {
+                            result = .failure(.coreData(error as NSError))
+                        }
                     }
+                    return result
                 }
                 return .success(success)
             } catch {

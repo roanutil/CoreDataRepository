@@ -31,26 +31,22 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         Movie(id: UUID(), title: "E", releaseDate: Date()),
     ]
     var expectedMovies = [Movie]()
-    var _repository: CoreDataRepository?
-    var repository: CoreDataRepository { _repository! }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        _repository = CoreDataRepository(context: viewContext)
-        _ = movies.map { $0.asRepoManaged(in: viewContext) }
-        try viewContext.save()
-        expectedMovies = try viewContext.fetch(fetchRequest).map(\.asUnmanaged)
+        _ = try movies.map { $0.asRepoManaged(in: try viewContext()) }
+        try viewContext().save()
+        expectedMovies = try viewContext().fetch(fetchRequest).map(\.asUnmanaged)
     }
 
     override func tearDownWithError() throws {
         try super.tearDownWithError()
-        _repository = nil
         expectedMovies = []
     }
 
     func testFetchSuccess() throws {
         let exp = expectation(description: "Fetch movies from CoreData")
-        let result: AnyPublisher<[Movie], CoreDataRepositoryError> = repository.fetch(fetchRequest)
+        let result: AnyPublisher<[Movie], CoreDataRepositoryError> = try repository().fetch(fetchRequest)
         result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -72,7 +68,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         let firstExp = expectation(description: "Fetch movies from CoreData")
         let secondExp = expectation(description: "Fetch movies again after CoreData context is updated")
         var resultCount = 0
-        let result: AnyPublisher<[Movie], CoreDataRepositoryError> = repository.fetchSubscription(fetchRequest)
+        let result: AnyPublisher<[Movie], CoreDataRepositoryError> = try repository().fetchSubscription(fetchRequest)
         result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -100,9 +96,16 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
             })
             .store(in: &cancellables)
         wait(for: [firstExp], timeout: 5)
-        let crudRepository = CoreDataRepository(context: viewContext)
-        let _: AnyPublisher<Void, CoreDataRepositoryError> = crudRepository
-            .delete(try XCTUnwrap(expectedMovies.last?.url))
+        try viewContext().performAndWait {
+            do {
+                let objectId = try container().persistentStoreCoordinator
+                    .managedObjectID(forURIRepresentation: try XCTUnwrap(expectedMovies.last?.url))
+                try viewContext().delete(try viewContext().object(with: try XCTUnwrap(objectId)))
+                try viewContext().save()
+            } catch {
+                XCTFail("Failed to update repository: \(error.localizedDescription)")
+            }
+        }
         wait(for: [secondExp], timeout: 5)
     }
 }

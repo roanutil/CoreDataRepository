@@ -195,7 +195,7 @@ extension CoreDataRepository {
             readContext.performAndWait {
                 let result = Self.getObjectId(fromUrl: url, context: readContext)
                     .mapToNSManagedObject(context: readContext)
-                    .map(to: T.self, context: readContext)
+                    .map(to: T.self)
                 promise(result)
             }
         }.eraseToAnyPublisher()
