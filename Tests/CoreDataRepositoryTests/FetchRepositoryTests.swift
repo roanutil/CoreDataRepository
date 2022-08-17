@@ -34,9 +34,16 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        _ = try movies.map { $0.asRepoManaged(in: try viewContext()) }
-        try viewContext().save()
-        expectedMovies = try viewContext().fetch(fetchRequest).map(\.asUnmanaged)
+        try repositoryContext().performAndWait {
+            do {
+                _ = try movies.map { $0.asRepoManaged(in: try repositoryContext()) }
+                try repositoryContext().save()
+                expectedMovies = try repositoryContext().fetch(fetchRequest).map(\.asUnmanaged)
+            } catch {
+                XCTFail("Failed to setup context")
+            }
+            
+        }
     }
 
     override func tearDownWithError() throws {
