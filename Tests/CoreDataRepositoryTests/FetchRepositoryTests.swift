@@ -42,7 +42,6 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
             } catch {
                 XCTFail("Failed to setup context")
             }
-            
         }
     }
 
