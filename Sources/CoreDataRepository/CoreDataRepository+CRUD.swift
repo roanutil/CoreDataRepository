@@ -33,7 +33,7 @@ extension CoreDataRepository {
                 object.create(from: item)
                 let result: Result<NSManagedObject, CoreDataRepositoryError> = .success(object)
                 return result
-                    .map(to: Model.RepoManaged.self, context: scratchPad)
+                    .map(to: Model.RepoManaged.self)
                     .save(context: scratchPad)
                     .map(\.asUnmanaged)
             }
@@ -55,7 +55,7 @@ extension CoreDataRepository {
                 promise(
                     Self.getObjectId(fromUrl: url, context: readContext)
                         .mapToNSManagedObject(context: readContext)
-                        .map(to: Model.RepoManaged.self, context: readContext)
+                        .map(to: Model.RepoManaged.self)
                         .map(\.asUnmanaged)
                 )
             }
@@ -83,7 +83,7 @@ extension CoreDataRepository {
                 scratchPad.transactionAuthor = transactionAuthor
                 return Self.getObjectId(fromUrl: url, context: scratchPad)
                     .mapToNSManagedObject(context: scratchPad)
-                    .map(to: Model.RepoManaged.self, context: scratchPad)
+                    .map(to: Model.RepoManaged.self)
                     .map { repoManaged -> Model.RepoManaged in
                         repoManaged.update(from: item)
                         return repoManaged
@@ -195,7 +195,7 @@ extension CoreDataRepository {
             readContext.performAndWait {
                 let result = Self.getObjectId(fromUrl: url, context: readContext)
                     .mapToNSManagedObject(context: readContext)
-                    .map(to: T.self, context: readContext)
+                    .map(to: T.self)
                 promise(result)
             }
         }.eraseToAnyPublisher()

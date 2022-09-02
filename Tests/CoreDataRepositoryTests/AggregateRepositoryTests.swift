@@ -34,25 +34,21 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         Movie(id: UUID(), title: "E", releaseDate: Date(), boxOffice: 50),
     ]
     var objectIDs = [NSManagedObjectID]()
-    var _repository: CoreDataRepository?
-    var repository: CoreDataRepository { _repository! }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        _repository = CoreDataRepository(context: viewContext)
-        objectIDs = movies.map { $0.asRepoManaged(in: self.viewContext).objectID }
-        try! viewContext.save()
+        objectIDs = try movies.map { $0.asRepoManaged(in: try self.viewContext()).objectID }
+        try viewContext().save()
     }
 
     override func tearDownWithError() throws {
         try super.tearDownWithError()
-        _repository = nil
         objectIDs = []
     }
 
     func testCountSuccess() throws {
         let exp = expectation(description: "Get count of movies from CoreData")
-        let result: AnyPublisher<[[String: Int]], CoreDataRepositoryError> = repository
+        let result: AnyPublisher<[[String: Int]], CoreDataRepositoryError> = try repository()
             .count(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity())
         var values: [[String: Int]] = []
         result.subscribe(on: backgroundQueue)
@@ -77,7 +73,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testSumSuccess() throws {
         let exp = expectation(description: "Get sum of CoreData Movies boxOffice")
         var values: [[String: Decimal]] = []
-        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = repository.sum(
+        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = try repository().sum(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
@@ -107,7 +103,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testAverageSuccess() throws {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
         var values: [[String: Decimal]] = []
-        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = repository.average(
+        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = try repository().average(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
@@ -137,7 +133,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testMinSuccess() throws {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
         var values: [[String: Decimal]] = []
-        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = repository.min(
+        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = try repository().min(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
@@ -167,7 +163,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testMaxSuccess() throws {
         let exp = expectation(description: "Get average of CoreData Movies boxOffice")
         var values: [[String: Decimal]] = []
-        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = repository.max(
+        let result: AnyPublisher<[[String: Decimal]], CoreDataRepositoryError> = try repository().max(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
             attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
