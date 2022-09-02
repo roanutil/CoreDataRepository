@@ -17,13 +17,14 @@ extension CoreDataRepository {
     /// - Parameters
     ///     - _ request: NSFetchRequest<Model.RepoManaged>
     /// - Returns
-    ///     - AnyPublisher<[Model], CoreDataRepositoryError>
+    ///     - Result<[Model], CoreDataRepositoryError>
     ///
-    public func fetch<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>)
-        -> AnyPublisher<[Model], CoreDataRepositoryError>
+    public func fetch<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>) async
+        -> Result<[Model], CoreDataRepositoryError>
     {
-        let fetchContext = context.childContext()
-        return _fetch(request, fetchContext: fetchContext)
+        await context.performInChild { fetchContext in
+            try fetchContext.fetch(request).map(\.asUnmanaged)
+        }
     }
 
     /// Fetch an array of value types corresponding to a NSManagedObject sub class and receive

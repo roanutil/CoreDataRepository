@@ -12,11 +12,6 @@ import CoreDataRepository
 import XCTest
 
 final class FetchRepositoryTests: CoreDataXCTestCase {
-    static var allTests = [
-        ("testFetchSuccess", testFetchSuccess),
-        ("testFetchSubscriptionSuccess", testFetchSubscriptionSuccess),
-    ]
-
     let fetchRequest: NSFetchRequest<RepoMovie> = {
         let request = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
         request.sortDescriptors = [NSSortDescriptor(keyPath: \RepoMovie.title, ascending: true)]
@@ -34,14 +29,10 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        try repositoryContext().performAndWait {
-            do {
-                _ = try movies.map { $0.asRepoManaged(in: try repositoryContext()) }
-                try repositoryContext().save()
-                expectedMovies = try repositoryContext().fetch(fetchRequest).map(\.asUnmanaged)
-            } catch {
-                XCTFail("Failed to setup context")
-            }
+        expectedMovies = try repositoryContext().performAndWait {
+            _ = try self.movies.map { $0.asRepoManaged(in: try repositoryContext()) }
+            try self.repositoryContext().save()
+            return try self.repositoryContext().fetch(fetchRequest).map(\.asUnmanaged)
         }
     }
 
@@ -50,27 +41,18 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         expectedMovies = []
     }
 
-    func testFetchSuccess() throws {
-        let exp = expectation(description: "Fetch movies from CoreData")
-        let result: AnyPublisher<[Movie], CoreDataRepositoryError> = try repository().fetch(fetchRequest)
-        result.subscribe(on: backgroundQueue)
-            .receive(on: mainQueue)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    exp.fulfill()
-                default:
-                    XCTFail("Not expecting failure")
-                }
-            }, receiveValue: { items in
-                XCTAssert(items.count == 5, "Result items count should match expectation")
-                XCTAssert(items == self.expectedMovies, "Result items should match expectations")
-            })
-            .store(in: &cancellables)
-        wait(for: [exp], timeout: 5)
+    func testFetchSuccess() async throws {
+        let result: Result<[Movie], CoreDataRepositoryError> = try await repository().fetch(fetchRequest)
+        switch result {
+        case let .success(movies):
+            XCTAssertEqual(movies.count, 5, "Result items count should match expectation")
+            XCTAssertEqual(movies, expectedMovies, "Result items should match expectations")
+        case .failure:
+            XCTFail("Not expecting failure")
+        }
     }
 
-    func testFetchSubscriptionSuccess() throws {
+    func testFetchSubscriptionSuccess() async throws {
         let firstExp = expectation(description: "Fetch movies from CoreData")
         let secondExp = expectation(description: "Fetch movies again after CoreData context is updated")
         var resultCount = 0
@@ -88,12 +70,12 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                 resultCount += 1
                 switch resultCount {
                 case 1:
-                    XCTAssert(items.count == 5, "Result items count should match expectation")
-                    XCTAssert(items == self.expectedMovies, "Result items should match expectations")
+                    XCTAssertEqual(items.count, 5, "Result items count should match expectation")
+                    XCTAssertEqual(items, self.expectedMovies, "Result items should match expectations")
                     firstExp.fulfill()
                 case 2:
-                    XCTAssert(items.count == 4, "Result items count should match expectation")
-                    XCTAssert(items == Array(self.expectedMovies[0 ... 3]), "Result items should match expectations")
+                    XCTAssertEqual(items.count, 4, "Result items count should match expectation")
+                    XCTAssertEqual(items, Array(self.expectedMovies[0 ... 3]), "Result items should match expectations")
                     secondExp.fulfill()
                 default:
                     XCTFail("Not expecting any values past the first two.")
@@ -102,16 +84,17 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
             })
             .store(in: &cancellables)
         wait(for: [firstExp], timeout: 5)
-        try repositoryContext().performAndWait {
-            do {
-                let objectId = try container().persistentStoreCoordinator
-                    .managedObjectID(forURIRepresentation: try XCTUnwrap(expectedMovies.last?.url))
-                try repositoryContext().delete(try repositoryContext().object(with: try XCTUnwrap(objectId)))
-                try repositoryContext().save()
-            } catch {
-                XCTFail("Failed to update repository: \(error.localizedDescription)")
-            }
+        let crudRepository = CoreDataRepository(context: try repositoryContext())
+        _ = try await repositoryContext().perform { [self] in
+            let url = try XCTUnwrap(expectedMovies.last?.url)
+            let coordinator = try XCTUnwrap(try repositoryContext().persistentStoreCoordinator)
+            let objectId = try XCTUnwrap(coordinator.managedObjectID(forURIRepresentation: url))
+            let object = try repositoryContext().existingObject(with: objectId)
+            try repositoryContext().delete(object)
+            try repositoryContext().save()
         }
+        let _: Result<Void, CoreDataRepositoryError> = await crudRepository
+            .delete(try XCTUnwrap(expectedMovies.last?.url))
         wait(for: [secondExp], timeout: 5)
     }
 }

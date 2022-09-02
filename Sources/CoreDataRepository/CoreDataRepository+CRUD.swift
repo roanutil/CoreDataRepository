@@ -20,24 +20,19 @@ extension CoreDataRepository {
     ///     -   _ item: Model
     ///     - transactionAuthor: String? = nil
     /// - Returns
-    ///     - AnyPublisher<Model, CoreDataRepositoryError>
+    ///     - Result<Model, CoreDataRepositoryError>
     ///
     public func create<Model: UnmanagedModel>(
         _ item: Model,
         transactionAuthor: String? = nil
-    ) -> AnyPublisher<Model, CoreDataRepositoryError> {
-        Future { [context] promise in
-            context.performInScratchPad(promise: promise) { scratchPad in
-                scratchPad.transactionAuthor = transactionAuthor
-                let object = Model.RepoManaged(context: scratchPad)
-                object.create(from: item)
-                let result: Result<NSManagedObject, CoreDataRepositoryError> = .success(object)
-                return result
-                    .map(to: Model.RepoManaged.self)
-                    .save(context: scratchPad)
-                    .map(\.asUnmanaged)
-            }
-        }.eraseToAnyPublisher()
+    ) async -> Result<Model, CoreDataRepositoryError> {
+        await context.performInScratchPad(schedule: .enqueued) { scratchPad in
+            scratchPad.transactionAuthor = transactionAuthor
+            let object = Model.RepoManaged(context: scratchPad)
+            object.create(from: item)
+            try scratchPad.save()
+            return object.asUnmanaged
+        }
     }
 
     /// Read an instance of a NSManagedObject sub class as a corresponding value type
@@ -46,20 +41,15 @@ extension CoreDataRepository {
     /// - Parameters
     ///     -   _ objectID: NSManagedObjectID
     /// - Returns
-    ///     - AnyPublisher<Model, CoreDataRepositoryError>
+    ///     - Result<Model, CoreDataRepositoryError>
     ///
-    public func read<Model: UnmanagedModel>(_ url: URL) -> AnyPublisher<Model, CoreDataRepositoryError> {
-        let readContext = context.childContext()
-        return Future { promise in
-            readContext.perform {
-                promise(
-                    Self.getObjectId(fromUrl: url, context: readContext)
-                        .mapToNSManagedObject(context: readContext)
-                        .map(to: Model.RepoManaged.self)
-                        .map(\.asUnmanaged)
-                )
-            }
-        }.eraseToAnyPublisher()
+    public func read<Model: UnmanagedModel>(_ url: URL) async -> Result<Model, CoreDataRepositoryError> {
+        await context.performInChild(schedule: .enqueued) { readContext in
+            let id = try readContext.tryObjectId(from: url)
+            let object = try readContext.notDeletedObject(for: id)
+            let repoManaged: Model.RepoManaged = try object.asRepoManaged()
+            return repoManaged.asUnmanaged
+        }
     }
 
     /// Update an instance of a NSManagedObject sub class from a corresponding value type.
@@ -71,27 +61,21 @@ extension CoreDataRepository {
     ///     - with  item: Model
     ///     - transactionAuthor: String? = nil
     /// - Returns
-    ///     - AnyPublisher<Model, CoreDataRepositoryError>
+    ///     - Result<Model, CoreDataRepositoryError>
     ///
     public func update<Model: UnmanagedModel>(
         _ url: URL,
         with item: Model,
-        transactionAuthor: String? = nil
-    ) -> AnyPublisher<Model, CoreDataRepositoryError> {
-        Future { [context] promise in
-            context.performInScratchPad(promise: promise) { scratchPad in
-                scratchPad.transactionAuthor = transactionAuthor
-                return Self.getObjectId(fromUrl: url, context: scratchPad)
-                    .mapToNSManagedObject(context: scratchPad)
-                    .map(to: Model.RepoManaged.self)
-                    .map { repoManaged -> Model.RepoManaged in
-                        repoManaged.update(from: item)
-                        return repoManaged
-                    }
-                    .save(context: scratchPad)
-                    .map(\.asUnmanaged)
-            }
-        }.eraseToAnyPublisher()
+        transactionAuthor _: String? = nil
+    ) async -> Result<Model, CoreDataRepositoryError> {
+        await context.performInScratchPad(schedule: .enqueued) { scratchPad in
+            let id = try scratchPad.tryObjectId(from: url)
+            let object = try scratchPad.notDeletedObject(for: id)
+            let repoManaged: Model.RepoManaged = try object.asRepoManaged()
+            repoManaged.update(from: item)
+            try scratchPad.save()
+            return repoManaged.asUnmanaged
+        }
     }
 
     /// Delete an instance of a NSManagedObject sub class. Supports specifying a
@@ -102,25 +86,20 @@ extension CoreDataRepository {
     ///     - objectID: NSManagedObjectID
     ///     - transactionAuthor: String? = nil
     /// - Returns
-    ///     - AnyPublisher<Void, CoreDataRepositoryError>
+    ///     - Result<Void, CoreDataRepositoryError>
     ///
     public func delete(
         _ url: URL,
-        transactionAuthor: String? = nil
-    ) -> AnyPublisher<Void, CoreDataRepositoryError> {
-        Future { [context] promise in
-            context.performInScratchPad(promise: promise) { scratchPad in
-                scratchPad.transactionAuthor = transactionAuthor
-                return Self.getObjectId(fromUrl: url, context: scratchPad)
-                    .mapToNSManagedObject(context: scratchPad)
-                    .map { repoManaged in
-                        repoManaged.prepareForDeletion()
-                        scratchPad.delete(repoManaged)
-                        return ()
-                    }
-                    .save(context: scratchPad)
-            }
-        }.eraseToAnyPublisher()
+        transactionAuthor _: String? = nil
+    ) async -> Result<Void, CoreDataRepositoryError> {
+        await context.performInScratchPad(schedule: .enqueued) { scratchPad in
+            let id = try scratchPad.tryObjectId(from: url)
+            let object = try scratchPad.notDeletedObject(for: id)
+            object.prepareForDeletion()
+            scratchPad.delete(object)
+            try scratchPad.save()
+            return ()
+        }
     }
 
     /// Subscribe to updates for an instance of a NSManagedObject subclass.
@@ -173,8 +152,6 @@ extension CoreDataRepository {
         }.eraseToAnyPublisher()
     }
 
-    // MARK: Private Functions
-
     private static func getObjectId(
         fromUrl url: URL,
         context: NSManagedObjectContext
@@ -193,9 +170,10 @@ extension CoreDataRepository {
     {
         Future { promise in
             readContext.performAndWait {
-                let result = Self.getObjectId(fromUrl: url, context: readContext)
+                let result: Result<T, CoreDataRepositoryError> = readContext.objectId(from: url)
                     .mapToNSManagedObject(context: readContext)
                     .map(to: T.self)
+                    .mapToRepoError()
                 promise(result)
             }
         }.eraseToAnyPublisher()

@@ -9,31 +9,24 @@
 import CoreData
 import Foundation
 
-extension Result where Success == NSManagedObjectID, Failure == CoreDataRepositoryError {
-    func mapToNSManagedObject(context: NSManagedObjectContext) -> Result<NSManagedObject, CoreDataRepositoryError> {
-        flatMap { objectId in
-            do {
-                let object: NSManagedObject = try context.existingObject(with: objectId)
-                guard !object.isDeleted else {
-                    return .failure(.fetchedObjectIsFlaggedAsDeleted)
-                }
-                return .success(object)
-            } catch {
-                return .failure(.coreData(error as NSError))
+extension Result where Success == NSManagedObjectID, Failure == Error {
+    func mapToNSManagedObject(context: NSManagedObjectContext) -> Result<NSManagedObject, Error> {
+        flatMap { objectId -> Result<NSManagedObject, Error> in
+            Result<NSManagedObject, Error> {
+                try context.notDeletedObject(for: objectId)
             }
         }
     }
 }
 
-extension Result where Success == NSManagedObject, Failure == CoreDataRepositoryError {
-    func map<T>(to _: T.Type) -> Result<T, CoreDataRepositoryError>
+extension Result where Success == NSManagedObject, Failure == Error {
+    func map<T>(to _: T.Type) -> Result<T, Error>
         where T: RepositoryManagedModel
     {
-        flatMap { _object in
-            guard let object = _object as? T else {
-                return .failure(.fetchedObjectFailedToCastToExpectedType)
+        flatMap { object -> Result<T, Error> in
+            Result<T, Error> {
+                try object.asRepoManaged()
             }
-            return .success(object)
         }
     }
 }
@@ -57,6 +50,18 @@ extension Result where Failure == CoreDataRepositoryError {
                 return .success(success)
             } catch {
                 return .failure(.coreData(error as NSError))
+            }
+        }
+    }
+}
+
+extension Result where Failure == Error {
+    func mapToRepoError() -> Result<Success, CoreDataRepositoryError> {
+        mapError { error in
+            if let repoError = error as? CoreDataRepositoryError {
+                return repoError
+            } else {
+                return .coreData(error as NSError)
             }
         }
     }

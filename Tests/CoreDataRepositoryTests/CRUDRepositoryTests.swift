@@ -13,298 +13,193 @@ import CustomDump
 import XCTest
 
 final class CRUDRepositoryTests: CoreDataXCTestCase {
-    static var allTests = [
-        ("testCreateSuccess", testCreateSuccess),
-        ("testReadSuccess", testReadSuccess),
-        ("testReadFailure", testReadFailure),
-        ("testUpdateSuccess", testUpdateSuccess),
-        ("testUpdateFailure", testUpdateFailure),
-        ("testDeleteSuccess", testDeleteSuccess),
-        ("testDeleteFailure", testDeleteFailure),
-        ("testReadSubscriptionSuccess", testReadSubscriptionSuccess),
-    ]
+    func testCreateSuccess() async throws {
+        let movie = Movie(id: UUID(), title: "Create Success", releaseDate: Date(), boxOffice: 100)
+        let result: Result<Movie, CoreDataRepositoryError> = try await repository().create(movie)
+        guard case var .success(resultMovie) = result else {
+            XCTFail("Not expecting a failed result")
+            return
+        }
 
-    func testCreateSuccess() throws {
-        let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        let count = try viewContext().count(for: fetchRequest)
-        XCTAssert(count == 0, "Count of objects in CoreData should be zero at the start of each test.")
-
-        let exp = expectation(description: "Create a RepoMovie in CoreData")
-        var movie = Movie(id: UUID(), title: "Create Success", releaseDate: Date(), boxOffice: 100)
-        try repository().create(movie).subscribe(on: backgroundQueue)
-            .receive(on: mainQueue)
-            .sink(
-                receiveCompletion: { completion in
-                    switch completion {
-                    case .finished:
-                        break
-                    case .failure:
-                        XCTFail("Received failure from CRUDRepository.create")
-                        exp.fulfill()
-                    }
-                },
-                receiveValue: { _resultMovie in
-                    var resultMovie = _resultMovie
-                    XCTAssertNotNil(resultMovie.url)
-                    resultMovie.url = nil
-                    let diff = CustomDump.diff(resultMovie, movie)
-                    XCTAssertNil(diff, "Success response should match local object but found diff \(diff ?? "").")
-                    exp.fulfill()
-                }
-            )
-            .store(in: &cancellables)
-        wait(for: [exp], timeout: 5)
-        let all = (try viewContext().fetch(RepoMovie.fetchRequest())).map(\.asUnmanaged)
-        XCTAssert(
-            all.count == 1,
-            "There should be only one CoreData object after creating one, but found \(all.count)."
-        )
-        let fetchedMovie = try XCTUnwrap(all.first)
-        XCTAssert(fetchedMovie.url != nil, "CoreData object should have NSManagedObjectID")
-        movie.url = fetchedMovie.url
-        let diff = CustomDump.diff(fetchedMovie, movie)
-        XCTAssertNil(diff, "CoreData object should match the one created but found diff \(diff ?? "").")
+        XCTAssertNotNil(resultMovie.url)
+        resultMovie.url = nil
+        let diff = CustomDump.diff(resultMovie, movie)
+        XCTAssertNil(diff)
     }
 
-    func testReadSuccess() throws {
-        var movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
-        let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        let count = try viewContext().count(for: fetchRequest)
-        XCTAssert(count == 0, "Count of objects in CoreData should be zero at the start of each test.")
-        let repoMovie = movie.asRepoManaged(in: try viewContext())
-        try viewContext().save()
-        movie.url = repoMovie.objectID.uriRepresentation()
-        let countAfterCreate = try viewContext().count(for: RepoMovie.fetchRequest())
-        XCTAssert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for read test.")
+    func testReadSuccess() async throws {
+        let movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
+        let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
+            let object = RepoMovie(context: try self.repositoryContext())
+            object.create(from: movie)
+            try self.repositoryContext().save()
+            return object.asUnmanaged
+        }
 
-        let exp = expectation(description: "Read a RepoMovie in CoreData")
-        let result: AnyPublisher<Movie, CoreDataRepositoryError> = try repository().read(try XCTUnwrap(movie.url))
-        result.subscribe(on: backgroundQueue)
-            .receive(on: mainQueue)
-            .sink(
-                receiveCompletion: { completion in
-                    switch completion {
-                    case .finished:
-                        break
-                    case .failure:
-                        XCTFail("Received failure from CRUDRepository.read")
-                        exp.fulfill()
-                    }
-                },
-                receiveValue: { resultMovie in
-                    let diff = CustomDump.diff(resultMovie, movie)
-                    XCTAssertNil(diff, "Success response should match local object, but found diff \(diff ?? "").")
-                    exp.fulfill()
-                }
-            )
-            .store(in: &cancellables)
-        wait(for: [exp], timeout: 5)
+        let result: Result<Movie, CoreDataRepositoryError> = try await repository()
+            .read(try XCTUnwrap(createdMovie.url))
+
+        guard case var .success(resultMovie) = result else {
+            XCTFail("Not expecting a failed result")
+            return
+        }
+
+        XCTAssertNotNil(resultMovie.url)
+        resultMovie.url = nil
+        let diff = CustomDump.diff(resultMovie, movie)
+        XCTAssertNil(diff)
     }
 
-    func testReadFailure() throws {
-        var movie = Movie(id: UUID(), title: "Read Failure", releaseDate: Date(), boxOffice: 100)
-        let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        let count = try viewContext().count(for: fetchRequest)
-        XCTAssert(count == 0, "Count of objects in CoreData should be zero at the start of each test.")
-        let repoMovie = movie.asRepoManaged(in: try viewContext())
-        try viewContext().save()
-        movie.url = repoMovie.objectID.uriRepresentation()
-        let countAfterCreate = try viewContext().count(for: RepoMovie.fetchRequest())
-        XCTAssert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for read test.")
+    func testReadFailure() async throws {
+        let movie = Movie(id: UUID(), title: "Read Failure", releaseDate: Date(), boxOffice: 100)
+        let createdMovie: Movie = try await repositoryContext().perform {
+            let object = RepoMovie(context: try self.repositoryContext())
+            object.create(from: movie)
+            try self.repositoryContext().save()
+            return object.asUnmanaged
+        }
+        _ = try await repositoryContext().perform {
+            let objectID = try self.repositoryContext().persistentStoreCoordinator?
+                .managedObjectID(forURIRepresentation: try XCTUnwrap(createdMovie.url))
+            let object = try self.repositoryContext().existingObject(with: try XCTUnwrap(objectID))
+            try self.repositoryContext().delete(object)
+            try self.repositoryContext().save()
+        }
 
-        try viewContext().delete(repoMovie)
-        try viewContext().save()
+        let result: Result<Movie, CoreDataRepositoryError> = try await repository()
+            .read(try XCTUnwrap(createdMovie.url))
 
-        let exp = expectation(description: "Fail to read a RepoMovie in CoreData")
-        let result: AnyPublisher<Movie, CoreDataRepositoryError> = try repository().read(try XCTUnwrap(movie.url))
-        result.subscribe(on: backgroundQueue)
-            .receive(on: mainQueue)
-            .sink(
-                receiveCompletion: { completion in
-                    switch completion {
-                    case .finished:
-                        XCTFail("Not expected to successfully finish.")
-                    case .failure:
-                        exp.fulfill()
-                    }
-                },
-                receiveValue: { _ in
-                    XCTFail("Not expected to receive a value for CRUDRepository.read")
-                    exp.fulfill()
-                }
-            )
-            .store(in: &cancellables)
-        wait(for: [exp], timeout: 5)
+        switch result {
+        case .success:
+            XCTFail("Not expecting a successful result")
+        case .failure:
+            XCTAssert(true)
+        }
     }
 
-    func testUpdateSuccess() throws {
+    func testUpdateSuccess() async throws {
         var movie = Movie(id: UUID(), title: "Update Success", releaseDate: Date(), boxOffice: 100)
-        let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        let count = try viewContext().count(for: fetchRequest)
-        XCTAssert(count == 0, "Count of objects in CoreData should be zero at the start of each test.")
-        let repoMovie = movie.asRepoManaged(in: try viewContext())
-        try viewContext().save()
-        movie.url = repoMovie.objectID.uriRepresentation()
-        let countAfterCreate = try viewContext().count(for: RepoMovie.fetchRequest())
-        XCTAssert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for read test.")
+        let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
+            let object = RepoMovie(context: try self.repositoryContext())
+            object.create(from: movie)
+            try self.repositoryContext().save()
+            return object.asUnmanaged
+        }
 
         movie.title = "Update Success - Edited"
 
-        let exp = expectation(description: "Update a RepoMovie in CoreData")
-        let result: AnyPublisher<Movie, CoreDataRepositoryError> = try repository()
-            .update(try XCTUnwrap(movie.url), with: movie)
-        result.subscribe(on: backgroundQueue)
-            .receive(on: mainQueue)
-            .sink(
-                receiveCompletion: { completion in
-                    switch completion {
-                    case .finished:
-                        break
-                    case .failure:
-                        XCTFail("Received failure from CRUDRepository.update")
-                        exp.fulfill()
-                    }
-                },
-                receiveValue: { resultMovie in
-                    XCTAssert(resultMovie == movie, "Success response should match local object.")
-                    exp.fulfill()
-                }
-            )
-            .store(in: &cancellables)
-        wait(for: [exp], timeout: 10)
+        let result: Result<Movie, CoreDataRepositoryError> = try await repository()
+            .update(try XCTUnwrap(createdMovie.url), with: movie)
 
-        let objectId = try XCTUnwrap(
-            viewContext().persistentStoreCoordinator?
-                .managedObjectID(forURIRepresentation: try XCTUnwrap(movie.url))
-        )
-        let updatedRepoMovie = try viewContext().existingObject(with: objectId)
-        let updatedMovie = try XCTUnwrap(updatedRepoMovie as? RepoMovie).asUnmanaged
-        let diff = CustomDump.diff(updatedMovie, movie)
-        XCTAssertNil(diff, "CoreData movie should be updated with the new title, but found diff \(diff ?? "").")
+        guard case var .success(resultMovie) = result else {
+            XCTFail("Not expecting a failed result")
+            return
+        }
+
+        XCTAssertNotNil(resultMovie.url)
+        resultMovie.url = nil
+        let diff = CustomDump.diff(resultMovie, movie)
+        XCTAssertNil(diff)
     }
 
-    func testUpdateFailure() throws {
-        var movie = Movie(id: UUID(), title: "Update Failure", releaseDate: Date(), boxOffice: 100)
-        let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        let count = try viewContext().count(for: fetchRequest)
-        XCTAssert(count == 0, "Count of objects in CoreData should be zero at the start of each test.")
-        let repoMovie = movie.asRepoManaged(in: try viewContext())
-        try viewContext().save()
-        movie.url = repoMovie.objectID.uriRepresentation()
-        let countAfterCreate = try viewContext().count(for: fetchRequest)
-        XCTAssert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for read test.")
+    func testUpdateFailure() async throws {
+        var movie = Movie(id: UUID(), title: "Update Success", releaseDate: Date(), boxOffice: 100)
+        let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
+            let object = RepoMovie(context: try self.repositoryContext())
+            object.create(from: movie)
+            try self.repositoryContext().save()
+            return object.asUnmanaged
+        }
 
-        try viewContext().delete(repoMovie)
-        try viewContext().save()
+        _ = try await repositoryContext().perform {
+            let objectID = try self.repositoryContext().persistentStoreCoordinator?
+                .managedObjectID(forURIRepresentation: try XCTUnwrap(createdMovie.url))
+            let object = try self.repositoryContext().existingObject(with: try XCTUnwrap(objectID))
+            try self.repositoryContext().delete(object)
+            try self.repositoryContext().save()
+        }
 
-        let countAfterDelete = try viewContext().count(for: fetchRequest)
-        XCTAssert(countAfterDelete == 0, "Count of objects in CoreData should be 0 after delete for read test.")
+        movie.title = "Update Success - Edited"
 
-        let exp = expectation(description: "Fail to update a RepoMovie in CoreData")
-        let result: AnyPublisher<Movie, CoreDataRepositoryError> = try repository()
-            .update(try XCTUnwrap(movie.url), with: movie)
-        result.subscribe(on: backgroundQueue)
-            .receive(on: mainQueue)
-            .sink(
-                receiveCompletion: { completion in
-                    switch completion {
-                    case .finished:
-                        XCTFail("Received success from CRUDRepository.update when expecting failure.")
-                    case .failure:
-                        exp.fulfill()
-                    }
-                },
-                receiveValue: { _ in
-                    XCTFail("Not expected to receive a value for CRUDRepository.update")
-                    exp.fulfill()
-                }
-            )
-            .store(in: &cancellables)
-        wait(for: [exp], timeout: 10)
+        let result: Result<Movie, CoreDataRepositoryError> = try await repository()
+            .update(try XCTUnwrap(createdMovie.url), with: movie)
+
+        switch result {
+        case .success:
+            XCTFail("Not expecting a successful result")
+        case .failure:
+            XCTAssert(true)
+        }
     }
 
-    func testDeleteSuccess() throws {
-        var movie = Movie(id: UUID(), title: "Delete Success", releaseDate: Date(), boxOffice: 100)
-        let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        let count = try viewContext().count(for: fetchRequest)
-        XCTAssert(count == 0, "Count of objects in CoreData should be zero at the start of each test.")
-        let repoMovie = movie.asRepoManaged(in: try viewContext())
-        try viewContext().save()
-        movie.url = repoMovie.objectID.uriRepresentation()
-        let countAfterCreate = try viewContext().count(for: RepoMovie.fetchRequest())
-        XCTAssert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for read test.")
+    func testDeleteSuccess() async throws {
+        let movie = Movie(id: UUID(), title: "Delete Success", releaseDate: Date(), boxOffice: 100)
+        let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
+            let object = RepoMovie(context: try self.repositoryContext())
+            object.create(from: movie)
+            try self.repositoryContext().save()
+            return object.asUnmanaged
+        }
 
-        let exp = expectation(description: "Delete a RepoMovie in CoreData")
-        let result: AnyPublisher<Void, CoreDataRepositoryError> = try repository().delete(try XCTUnwrap(movie.url))
-        result.subscribe(on: backgroundQueue)
-            .receive(on: mainQueue)
-            .sink(
-                receiveCompletion: { completion in
-                    switch completion {
-                    case .finished:
-                        break
-                    case .failure:
-                        XCTFail("Received failure from CRUDRepository.delete")
-                        exp.fulfill()
-                    }
-                },
-                receiveValue: { _ in
-                    exp.fulfill()
-                }
-            )
-            .store(in: &cancellables)
-        wait(for: [exp], timeout: 5)
+        let result: Result<Void, CoreDataRepositoryError> = try await repository()
+            .delete(try XCTUnwrap(createdMovie.url))
 
-        let afterDeleteCount = try viewContext().count(for: fetchRequest)
-        XCTAssert(afterDeleteCount == 0, "CoreData should have no objects after delete but found \(afterDeleteCount)")
+        switch result {
+        case .success:
+            XCTAssert(true)
+        case .failure:
+            XCTFail("Not expecting a failed result")
+        }
     }
 
-    func testDeleteFailure() throws {
-        var movie = Movie(id: UUID(), title: "Delete Failure", releaseDate: Date(), boxOffice: 100)
-        let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        let count = try viewContext().count(for: fetchRequest)
-        XCTAssert(count == 0, "Count of objects in CoreData should be zero at the start of each test.")
-        let repoMovie = movie.asRepoManaged(in: try viewContext())
-        try viewContext().save()
-        movie.url = repoMovie.objectID.uriRepresentation()
-        let countAfterCreate = try viewContext().count(for: fetchRequest)
-        XCTAssert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for delete test.")
+    func testDeleteFailure() async throws {
+        let movie = Movie(id: UUID(), title: "Delete Failure", releaseDate: Date(), boxOffice: 100)
+        let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
+            let object = RepoMovie(context: try self.repositoryContext())
+            object.create(from: movie)
+            try self.repositoryContext().save()
+            return object.asUnmanaged
+        }
 
-        try viewContext().delete(repoMovie)
-        try viewContext().save()
+        _ = try await repositoryContext().perform {
+            let objectID = try self.repositoryContext().persistentStoreCoordinator?
+                .managedObjectID(forURIRepresentation: try XCTUnwrap(createdMovie.url))
+            let object = try self.repositoryContext().existingObject(with: try XCTUnwrap(objectID))
+            try self.repositoryContext().delete(object)
+            try self.repositoryContext().save()
+        }
 
-        let exp = expectation(description: "Fail to delete a RepoMovie in CoreData")
-        let result: AnyPublisher<Void, CoreDataRepositoryError> = try repository().delete(try XCTUnwrap(movie.url))
-        result.subscribe(on: backgroundQueue)
-            .receive(on: mainQueue)
-            .sink(
-                receiveCompletion: { completion in
-                    switch completion {
-                    case .finished:
-                        XCTFail("Received success from CRUDRepository.delete when expecting failure.")
-                    case .failure:
-                        exp.fulfill()
-                    }
-                },
-                receiveValue: { _ in
-                    XCTFail("Not expected to receive a value for CRUDRepository.delete")
-                    exp.fulfill()
-                }
-            )
-            .store(in: &cancellables)
-        wait(for: [exp], timeout: 5)
+        let result: Result<Void, CoreDataRepositoryError> = try await repository()
+            .delete(try XCTUnwrap(createdMovie.url))
+
+        switch result {
+        case .success:
+            XCTFail("Not expecting a success result")
+        case .failure:
+            XCTAssert(true)
+        }
     }
 
-    func testReadSubscriptionSuccess() throws {
+    func testReadSubscriptionSuccess() async throws {
         var movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
-        let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        let count = try viewContext().count(for: fetchRequest)
-        XCTAssert(count == 0, "Count of objects in CoreData should be zero at the start of each test.")
-        let repoMovie = movie.asRepoManaged(in: try viewContext())
-        try viewContext().save()
-        movie.url = repoMovie.objectID.uriRepresentation()
-        let countAfterCreate = try viewContext().count(for: RepoMovie.fetchRequest())
-        XCTAssert(countAfterCreate == 1, "Count of objects in CoreData should be 1 for read test.")
+
+        let count: Int = try await repositoryContext().perform { [self] in
+            try self.repositoryContext().count(for: RepoMovie.fetchRequest())
+        }
+
+        XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
+
+        let repoMovieUrl: URL = try await repositoryContext().perform { [self] in
+            let repoMovie = movie.asRepoManaged(in: try self.repositoryContext())
+            try self.repositoryContext().save()
+            return repoMovie.objectID.uriRepresentation()
+        }
+
+        movie.url = repoMovieUrl
+        let countAfterCreate: Int = try await repositoryContext().perform {
+            try self.repositoryContext().count(for: RepoMovie.fetchRequest())
+        }
+        XCTAssertEqual(countAfterCreate, 1, "Count of objects in CoreData should be 1 for read test.")
 
         var editedMovie = movie
         editedMovie.title = "New Title"
@@ -327,10 +222,10 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                 resultCount += 1
                 switch resultCount {
                 case 1:
-                    XCTAssert(receiveMovie == movie, "Success response should match local object.")
+                    XCTAssertEqual(receiveMovie, movie, "Success response should match local object.")
                     firstExp.fulfill()
                 case 2:
-                    XCTAssert(receiveMovie == editedMovie, "Second success response should match local object.")
+                    XCTAssertEqual(receiveMovie, editedMovie, "Second success response should match local object.")
                     secondExp.fulfill()
                 default:
                     XCTFail("Not expecting any values past the first two.")
@@ -339,18 +234,13 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
             })
             .store(in: &cancellables)
         wait(for: [firstExp], timeout: 5)
-        try repository().update(try XCTUnwrap(movie.url), with: editedMovie).sink(
-            receiveCompletion: { completion in
-                if case .failure = completion {
-                    XCTFail("Update should not fail")
-                }
-            },
-            receiveValue: { resultMovie in
-                XCTAssert(resultMovie == editedMovie)
-            }
-        )
-        .store(in: &cancellables)
+        try repositoryContext().performAndWait { [self] in
+            let coordinator = try XCTUnwrap(try self.repositoryContext().persistentStoreCoordinator)
+            let objectId = try XCTUnwrap(coordinator.managedObjectID(forURIRepresentation: try XCTUnwrap(movie.url)))
+            let object = try XCTUnwrap(try repositoryContext().existingObject(with: objectId) as? RepoMovie)
+            object.update(from: editedMovie)
+            try self.repositoryContext().save()
+        }
         wait(for: [secondExp], timeout: 5)
-        cancellables.forEach { $0.cancel() }
     }
 }
