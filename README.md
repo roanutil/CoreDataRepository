@@ -1,10 +1,11 @@
 # CoreDataRepository
+
 [![CI](https://github.com/roanutil/CoreDataRepository/actions/workflows/ci.yml/badge.svg)](https://github.com/roanutil/CoreDataRepository/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/roanutil/CoreDataRepository/branch/main/graph/badge.svg?token=WRO4CXYWRG)](https://codecov.io/gh/roanutil/CoreDataRepository) 
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Froanutil%2FCoreDataRepository%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/roanutil/CoreDataRepository)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Froanutil%2FCoreDataRepository%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/roanutil/CoreDataRepository)
 
-CoreDataRepository is a reactive library (Combine) for using CoreData on a background queue. It features endpoints for CRUD, batch, fetch, and aggregate operations. Also, it offers a stream like subscription for fetch and read.
+CoreDataRepository is a library for using CoreData on a background queue. It features endpoints for CRUD, batch, fetch, and aggregate operations. Also, it offers a stream like subscription for fetch and read.
 
 Since ```NSManagedObject```s are not thread safe, a value type model must exist for each ```NSMangaedObject``` subclass.
 
@@ -14,8 +15,9 @@ Since ```NSManagedObject```s are not thread safe, a value type model must exist 
 CoreData is a great framework for local persistence on Apple's platforms. However, it can be tempting to create strong dependencies on it throughout an app. Even worse, the `viewContext` runs on the main `DispatchQueue` along with the UI. Even fetching data from the store can be enough to cause performance problems.
 
 The goals of `CoreDataRepository` are:
+
 - Ease isolation of `CoreData` related code away from the rest of the app.
-- Improve ergonomics by providing an asynchronous API with `Combine`.
+- Improve ergonomics by providing an asynchronous API.
 - Improve usability of private contexts to relieve load from the main `DispatchQueue`.
 - Make local persistence with `CoreData` feel more 'Swift-like' by allowing the model layer to use value types.
 
@@ -33,9 +35,11 @@ To give some weight to this idea, here's a quote from the Q&A portion of [this](
 ## Basic Usage
 
 ### Model Bridging
+
 There are two protocols that handle bridging between the value type and managed models.
 
 #### RepositoryManagedModel
+
 ```swift
 @objc(RepoMovie)
 public final class RepoMovie: NSManagedObject {
@@ -74,7 +78,9 @@ extension RepoMovie: RepositoryManagedModel {
     }
 }
 ```
+
 #### UnmanagedModel
+
 ```swift
 public struct Movie: Hashable {
     public let id: UUID
@@ -106,79 +112,64 @@ extension Movie: UnmanagedModel {
 ```
 
 ### CRUD
+
 ```swift
 var movie = Movie(id: UUID(), title: "The Madagascar Penguins in a Christmas Caper", releaseDate: Date(), boxOffice: 100)
-_ = repository.create(movie).subscribe(on: self.userInitSerialQueue)
-    .receive(on: mainQueue)
-    .sink(
-        receiveCompletion: { completion in
-            switch completion {
-            case .finished:
-                os_log("Successfully created new movie")
-            case .failure:
-                fatalError("Failed to create new movie")
-            }
-        },
-        receiveValue: { result in
-            switch result {
-            case .create(let resultMovie):
-                os_log("Created movie with title - \(resultMovie.title)")
-            default:
-                fatalError("I asked for a create operation!")
-            }
-        }
-    )
+let result: Result<Movie, CoreDataRepositoryError> = await repository.create(movie)
+if case let .success(movie) = result {
+    os_log("Created movie with title - \(movie.title)")
+}
 ```
+
 ### Fetch
+
 ```swift
 let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
 fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \RepoMovie.title, ascending: true)]
 fetchRequest.predicate = NSPredicate(value: true)
-let result: AnyPublisher<[Movie], Error> = repository.fetch(fetchRequest)
+let result: Result<[Movie], CoreDataRepositoryError> = await repository.fetch(fetchRequest)
+if case let .success(movies) = result {
+    os_log("Fetched \(movies.count) movies")
+}
+```
+
+### Fetch Subscription
+
+Similar to a regular fe:
+
+```swift
+let result: AnyPublisher<[Movie], CoreDataRepositoryError> = repository.fetchSubscription(fetchRequest)
 let cancellable = result.subscribe(on: userInitSerialQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
-                    os_log("Fetched a bunch of moview")
+                    os_log("Fetched a bunch of movies")
                 default:
                     fatalError("Failed to fetch all the movies!")
                 }
         }, receiveValue: { value in
             os_log("Fetched \(value.items.count) movies")
         })
-```
-### Fetch Subscription
-Similar to a regular fetch:
-```swift
-...
-let result: AnyPublisher<[Movie], Error> = repository.fetchSubscription(fetchRequest)
 ...
 cancellable.cancel()
 ```
 
 ### Aggregate
+
 ```swift
-let result: AnyPublisher<[[String: Decimal]], Error> = repository.sum(
+let result: Result<[[String: Decimal]], CoreDataRepositoryError> = await repository.sum(
     predicate: NSPredicate(value: true),
     entityDesc: RepoMovie.entity(),
     attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
 )
-_ = result.subscribe(on: backgroundQueue)
-    .receive(on: mainQueue)
-    .sink(receiveCompletion: { completion in
-        switch completion {
-        case .finished:
-            os_log("Finished getting the sum all the movies' boxOffice")
-        default:
-            fatalError("Failed to get the sum")
-        }
-    }, receiveValue: { value in
-        os_log("The sum of all movies' boxOffice is \(value.result.first!.values.first!)")
-    })
+if case let .success(values) = result {
+    os_log("The sum of all movies' boxOffice is \(values.first!.values.first!)")
+}
 ```
 
 ### Batch
+
 ```swift
 let movies: [[String: Any]] = [
     ["id": UUID(), "title": "A", "releaseDate": Date()],
@@ -188,39 +179,8 @@ let movies: [[String: Any]] = [
     ["id": UUID(), "title": "E", "releaseDate": Date()]
 ]
 let request = NSBatchInsertRequest(entityName: RepoMovie.entity().name!, objects: movies)
-_ = self.repository.insert(request)
-    .subscribe(on: userInitSerialQueue)
-    .receive(on: mainQueue)
-    .sink(
-        receiveCompletion: { completion in
-            switch completion {
-            case .finished:
-                os_log("Finished inserting A LOT of movies")
-            default:
-                fatalError("Failed to insert a lot of movies")
-            }
-        },
-        receiveValue: { value in
-            switch value {
-            case let .insert(_, result):
-                switch result.resultType {
-                  case .count:
-                    if let count = result.result as? Int {
-                      os_log("Batch inserted \(count) movies!")
-                    }
-                  case .objectIDs:
-                    if let objectIDs = result.result as? [NSManagedObjectID] {
-                      os_log("Batch inserted \(objectIDs.count) movies!")
-                    }
-                  case .statusOnly:
-                  let resultIsSuccessful = result.result as? Bool ?? false
-                  os_log("Batch insert - isSuccessful = \(resultIsSuccessful)")
-                }
-            default:
-                fatalError("I asked for a batch INSERT!")
-            }
-        }
-    )
+let result: Result<NSBatchInsertResult, CoreDataRepositoryError> = await repository.insert(request)
+
 ```
 
 #### OR
@@ -233,29 +193,20 @@ let movies: [[String: Any]] = [
     Movie(id: UUID(), title: "D", releaseDate: Date()),
     Movie(id: UUID(), title: "E", releaseDate: Date())
 ]
-let publisher: AnyPublisher<(success: [Movie], failed: [Movie]), Never> = repository.create(movies)
-_ = publisher
-    .subscribe(on: backgroundQueue)
-    .receive(on: mainQueue)
-    .sink(
-        receiveCompletion: { completion in
-            switch completion {
-            case .finished:
-                os_log("Finished inserting A LOT of movies")
-            default:
-                fatalError("Failed to insert a lot of movies")
-            }
-        },
-        receiveValue: { createdMovies in
-            os_log("Created these movies: \(createdMovies)")
-        }
-    )_
+let result: (success: [Movie], failed: [Movie]) = await repository.create(movies)
+os_log("Created these movies: \(result.success)")
+os_log("Failed to create these movies: \(result.failed)")
 ```
 
-
 ## TODO
-- Add a subscription feature for aggregate functions
 
+- Add a subscription feature for aggregate functions
+- Migrate subscription endpoints to AsyncSequence instead of Publisher
+- Simplify model protocols (require only one protocol for the value type)
+- Allow older platform support by working around the newer variants of `NSManagedObjectContext.perform` and `NSManagedObjectContext.performAndWait`
 
 ## Contributing
+
 I welcome any feedback or contributions. It's probably best to create an issue where any possible changes can be discussed before doing the work and creating a PR.
+
+The above [TODO](#todo) section is a good place to start if you would like to contribute but don't already have a change in mind.
