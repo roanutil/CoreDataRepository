@@ -34,6 +34,7 @@ extension CoreDataRepository {
             try context.performAndWait {
                 try context.save()
             }
+            try scratchPad.obtainPermanentIDs(for: [object])
             return object.asUnmanaged
         }
     }
