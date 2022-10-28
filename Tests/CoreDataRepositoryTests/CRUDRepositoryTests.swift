@@ -16,15 +16,16 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testCreateSuccess() async throws {
         let movie = Movie(id: UUID(), title: "Create Success", releaseDate: Date(), boxOffice: 100)
         let result: Result<Movie, CoreDataRepositoryError> = try await repository().create(movie)
-        guard case var .success(resultMovie) = result else {
+        guard case let .success(resultMovie) = result else {
             XCTFail("Not expecting a failed result")
             return
         }
+        var tempResultMovie = resultMovie
+        XCTAssertNotNil(tempResultMovie.url)
+        tempResultMovie.url = nil
+        XCTAssertNoDifference(tempResultMovie, movie)
 
-        XCTAssertNotNil(resultMovie.url)
-        resultMovie.url = nil
-        let diff = CustomDump.diff(resultMovie, movie)
-        XCTAssertNil(diff)
+        try await verify(resultMovie)
     }
 
     func testReadSuccess() async throws {
@@ -39,15 +40,18 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let result: Result<Movie, CoreDataRepositoryError> = try await repository()
             .read(try XCTUnwrap(createdMovie.url))
 
-        guard case var .success(resultMovie) = result else {
+        guard case let .success(resultMovie) = result else {
             XCTFail("Not expecting a failed result")
             return
         }
 
-        XCTAssertNotNil(resultMovie.url)
-        resultMovie.url = nil
-        let diff = CustomDump.diff(resultMovie, movie)
-        XCTAssertNil(diff)
+        var tempResultMovie = resultMovie
+
+        XCTAssertNotNil(tempResultMovie.url)
+        tempResultMovie.url = nil
+        XCTAssertNoDifference(tempResultMovie, movie)
+
+        try await verify(resultMovie)
     }
 
     func testReadFailure() async throws {
@@ -91,15 +95,18 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let result: Result<Movie, CoreDataRepositoryError> = try await repository()
             .update(try XCTUnwrap(createdMovie.url), with: movie)
 
-        guard case var .success(resultMovie) = result else {
+        guard case let .success(resultMovie) = result else {
             XCTFail("Not expecting a failed result")
             return
         }
 
-        XCTAssertNotNil(resultMovie.url)
-        resultMovie.url = nil
-        let diff = CustomDump.diff(resultMovie, movie)
-        XCTAssertNil(diff)
+        var tempResultMovie = resultMovie
+
+        XCTAssertNotNil(tempResultMovie.url)
+        tempResultMovie.url = nil
+        XCTAssertNoDifference(tempResultMovie, movie)
+
+        try await verify(resultMovie)
     }
 
     func testUpdateFailure() async throws {

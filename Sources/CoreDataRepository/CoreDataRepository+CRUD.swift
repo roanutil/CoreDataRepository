@@ -26,11 +26,15 @@ extension CoreDataRepository {
         _ item: Model,
         transactionAuthor: String? = nil
     ) async -> Result<Model, CoreDataRepositoryError> {
-        await context.performInScratchPad(schedule: .enqueued) { scratchPad in
+        await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             scratchPad.transactionAuthor = transactionAuthor
             let object = Model.RepoManaged(context: scratchPad)
             object.create(from: item)
             try scratchPad.save()
+            try context.performAndWait {
+                try context.save()
+            }
+            try scratchPad.obtainPermanentIDs(for: [object])
             return object.asUnmanaged
         }
     }
@@ -68,12 +72,15 @@ extension CoreDataRepository {
         with item: Model,
         transactionAuthor _: String? = nil
     ) async -> Result<Model, CoreDataRepositoryError> {
-        await context.performInScratchPad(schedule: .enqueued) { scratchPad in
+        await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             let id = try scratchPad.tryObjectId(from: url)
             let object = try scratchPad.notDeletedObject(for: id)
             let repoManaged: Model.RepoManaged = try object.asRepoManaged()
             repoManaged.update(from: item)
             try scratchPad.save()
+            try context.performAndWait {
+                try context.save()
+            }
             return repoManaged.asUnmanaged
         }
     }
@@ -92,12 +99,15 @@ extension CoreDataRepository {
         _ url: URL,
         transactionAuthor _: String? = nil
     ) async -> Result<Void, CoreDataRepositoryError> {
-        await context.performInScratchPad(schedule: .enqueued) { scratchPad in
+        await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             let id = try scratchPad.tryObjectId(from: url)
             let object = try scratchPad.notDeletedObject(for: id)
             object.prepareForDeletion()
             scratchPad.delete(object)
             try scratchPad.save()
+            try context.performAndWait {
+                try context.save()
+            }
             return ()
         }
     }

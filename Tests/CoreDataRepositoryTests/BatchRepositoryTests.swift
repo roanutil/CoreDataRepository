@@ -116,6 +116,10 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(result.success.count, newMovies.count)
         XCTAssertEqual(result.failed.count, 0)
 
+        for movie in result.success {
+            try await verify(movie)
+        }
+
         try await repositoryContext().perform {
             let data = try self.repositoryContext().fetch(fetchRequest)
             XCTAssertEqual(
