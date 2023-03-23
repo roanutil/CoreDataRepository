@@ -4,7 +4,7 @@
 //
 // MIT License
 //
-// Copyright © 2022 Andrew Roan
+// Copyright © 2023 Andrew Roan
 
 import Combine
 import CoreData
@@ -40,7 +40,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
 
     func mapDictToRepoMovie(_ dict: [String: Any]) throws -> RepoMovie {
         try mapDictToMovie(dict)
-            .asRepoManaged(in: try repositoryContext())
+            .asRepoManaged(in: repositoryContext())
     }
 
     func mapDictToMovie(_ dict: [String: Any]) throws -> Movie {
@@ -57,7 +57,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
             XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
         }
 
-        let request = NSBatchInsertRequest(entityName: try XCTUnwrap(RepoMovie.entity().name), objects: movies)
+        let request = try NSBatchInsertRequest(entityName: XCTUnwrap(RepoMovie.entity().name), objects: movies)
         let result: Result<NSBatchInsertResult, CoreDataRepositoryError> = try await repository().insert(request)
 
         switch result {
@@ -84,8 +84,8 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
             XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
         }
 
-        let request = NSBatchInsertRequest(
-            entityName: try XCTUnwrap(RepoMovie.entity().name),
+        let request = try NSBatchInsertRequest(
+            entityName: XCTUnwrap(RepoMovie.entity().name),
             objects: failureInsertMovies
         )
         let result: Result<NSBatchInsertResult, CoreDataRepositoryError> = try await repository().insert(request)
@@ -163,7 +163,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         }
 
         let predicate = NSPredicate(value: true)
-        let request = NSBatchUpdateRequest(entityName: try XCTUnwrap(RepoMovie.entity().name))
+        let request = try NSBatchUpdateRequest(entityName: XCTUnwrap(RepoMovie.entity().name))
         request.predicate = predicate
         request.propertiesToUpdate = ["title": "Updated!", "boxOffice": 1]
 
@@ -216,7 +216,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         }
 
         let request =
-            NSBatchDeleteRequest(fetchRequest: NSFetchRequest<NSFetchRequestResult>(entityName: try XCTUnwrap(
+            try NSBatchDeleteRequest(fetchRequest: NSFetchRequest<NSFetchRequestResult>(entityName: XCTUnwrap(
                 RepoMovie
                     .entity().name
             )))

@@ -4,7 +4,7 @@
 //
 // MIT License
 //
-// Copyright © 2022 Andrew Roan
+// Copyright © 2023 Andrew Roan
 
 public protocol SubscriptionProvider {
     var id: AnyHashable { get }

@@ -4,7 +4,7 @@
 //
 // MIT License
 //
-// Copyright © 2022 Andrew Roan
+// Copyright © 2023 Andrew Roan
 
 import Combine
 import CoreData
@@ -30,7 +30,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         try repositoryContext().performAndWait {
-            objectIDs = try movies.map { $0.asRepoManaged(in: try self.repositoryContext()).objectID }
+            objectIDs = try movies.map { try $0.asRepoManaged(in: self.repositoryContext()).objectID }
             try repositoryContext().save()
         }
     }
@@ -56,7 +56,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         let result: Result<[[String: Decimal]], CoreDataRepositoryError> = try await repository().sum(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
-            attributeDesc: try XCTUnwrap(
+            attributeDesc: XCTUnwrap(
                 RepoMovie.entity().attributesByName.values
                     .first(where: { $0.name == "boxOffice" })
             )
@@ -74,7 +74,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         let result: Result<[[String: Decimal]], CoreDataRepositoryError> = try await repository().average(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
-            attributeDesc: try XCTUnwrap(
+            attributeDesc: XCTUnwrap(
                 RepoMovie.entity().attributesByName.values
                     .first(where: { $0.name == "boxOffice" })
             )
@@ -96,7 +96,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         let result: Result<[[String: Decimal]], CoreDataRepositoryError> = try await repository().min(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
-            attributeDesc: try XCTUnwrap(
+            attributeDesc: XCTUnwrap(
                 RepoMovie.entity().attributesByName.values
                     .first(where: { $0.name == "boxOffice" })
             )
@@ -118,7 +118,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         let result: Result<[[String: Decimal]], CoreDataRepositoryError> = try await repository().max(
             predicate: NSPredicate(value: true),
             entityDesc: RepoMovie.entity(),
-            attributeDesc: try XCTUnwrap(
+            attributeDesc: XCTUnwrap(
                 RepoMovie.entity().attributesByName.values
                     .first(where: { $0.name == "boxOffice" })
             )

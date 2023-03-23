@@ -4,7 +4,7 @@
 //
 // MIT License
 //
-// Copyright © 2022 Andrew Roan
+// Copyright © 2023 Andrew Roan
 
 import Combine
 import CoreData
@@ -31,14 +31,14 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testReadSuccess() async throws {
         let movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
-            let object = RepoMovie(context: try self.repositoryContext())
+            let object = try RepoMovie(context: self.repositoryContext())
             object.create(from: movie)
             try self.repositoryContext().save()
             return object.asUnmanaged
         }
 
         let result: Result<Movie, CoreDataRepositoryError> = try await repository()
-            .read(try XCTUnwrap(createdMovie.url))
+            .read(XCTUnwrap(createdMovie.url))
 
         guard case let .success(resultMovie) = result else {
             XCTFail("Not expecting a failed result")
@@ -57,21 +57,21 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testReadFailure() async throws {
         let movie = Movie(id: UUID(), title: "Read Failure", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform {
-            let object = RepoMovie(context: try self.repositoryContext())
+            let object = try RepoMovie(context: self.repositoryContext())
             object.create(from: movie)
             try self.repositoryContext().save()
             return object.asUnmanaged
         }
         _ = try await repositoryContext().perform {
             let objectID = try self.repositoryContext().persistentStoreCoordinator?
-                .managedObjectID(forURIRepresentation: try XCTUnwrap(createdMovie.url))
-            let object = try self.repositoryContext().existingObject(with: try XCTUnwrap(objectID))
+                .managedObjectID(forURIRepresentation: XCTUnwrap(createdMovie.url))
+            let object = try self.repositoryContext().existingObject(with: XCTUnwrap(objectID))
             try self.repositoryContext().delete(object)
             try self.repositoryContext().save()
         }
 
         let result: Result<Movie, CoreDataRepositoryError> = try await repository()
-            .read(try XCTUnwrap(createdMovie.url))
+            .read(XCTUnwrap(createdMovie.url))
 
         switch result {
         case .success:
@@ -84,7 +84,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testUpdateSuccess() async throws {
         var movie = Movie(id: UUID(), title: "Update Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
-            let object = RepoMovie(context: try self.repositoryContext())
+            let object = try RepoMovie(context: self.repositoryContext())
             object.create(from: movie)
             try self.repositoryContext().save()
             return object.asUnmanaged
@@ -93,7 +93,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         movie.title = "Update Success - Edited"
 
         let result: Result<Movie, CoreDataRepositoryError> = try await repository()
-            .update(try XCTUnwrap(createdMovie.url), with: movie)
+            .update(XCTUnwrap(createdMovie.url), with: movie)
 
         guard case let .success(resultMovie) = result else {
             XCTFail("Not expecting a failed result")
@@ -112,7 +112,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testUpdateFailure() async throws {
         var movie = Movie(id: UUID(), title: "Update Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
-            let object = RepoMovie(context: try self.repositoryContext())
+            let object = try RepoMovie(context: self.repositoryContext())
             object.create(from: movie)
             try self.repositoryContext().save()
             return object.asUnmanaged
@@ -120,8 +120,8 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
 
         _ = try await repositoryContext().perform {
             let objectID = try self.repositoryContext().persistentStoreCoordinator?
-                .managedObjectID(forURIRepresentation: try XCTUnwrap(createdMovie.url))
-            let object = try self.repositoryContext().existingObject(with: try XCTUnwrap(objectID))
+                .managedObjectID(forURIRepresentation: XCTUnwrap(createdMovie.url))
+            let object = try self.repositoryContext().existingObject(with: XCTUnwrap(objectID))
             try self.repositoryContext().delete(object)
             try self.repositoryContext().save()
         }
@@ -129,7 +129,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         movie.title = "Update Success - Edited"
 
         let result: Result<Movie, CoreDataRepositoryError> = try await repository()
-            .update(try XCTUnwrap(createdMovie.url), with: movie)
+            .update(XCTUnwrap(createdMovie.url), with: movie)
 
         switch result {
         case .success:
@@ -142,14 +142,14 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testDeleteSuccess() async throws {
         let movie = Movie(id: UUID(), title: "Delete Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
-            let object = RepoMovie(context: try self.repositoryContext())
+            let object = try RepoMovie(context: self.repositoryContext())
             object.create(from: movie)
             try self.repositoryContext().save()
             return object.asUnmanaged
         }
 
         let result: Result<Void, CoreDataRepositoryError> = try await repository()
-            .delete(try XCTUnwrap(createdMovie.url))
+            .delete(XCTUnwrap(createdMovie.url))
 
         switch result {
         case .success:
@@ -162,7 +162,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testDeleteFailure() async throws {
         let movie = Movie(id: UUID(), title: "Delete Failure", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
-            let object = RepoMovie(context: try self.repositoryContext())
+            let object = try RepoMovie(context: self.repositoryContext())
             object.create(from: movie)
             try self.repositoryContext().save()
             return object.asUnmanaged
@@ -170,14 +170,14 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
 
         _ = try await repositoryContext().perform {
             let objectID = try self.repositoryContext().persistentStoreCoordinator?
-                .managedObjectID(forURIRepresentation: try XCTUnwrap(createdMovie.url))
-            let object = try self.repositoryContext().existingObject(with: try XCTUnwrap(objectID))
+                .managedObjectID(forURIRepresentation: XCTUnwrap(createdMovie.url))
+            let object = try self.repositoryContext().existingObject(with: XCTUnwrap(objectID))
             try self.repositoryContext().delete(object)
             try self.repositoryContext().save()
         }
 
         let result: Result<Void, CoreDataRepositoryError> = try await repository()
-            .delete(try XCTUnwrap(createdMovie.url))
+            .delete(XCTUnwrap(createdMovie.url))
 
         switch result {
         case .success:
@@ -191,14 +191,14 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         var movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
 
         let count: Int = try await repositoryContext().perform { [self] in
-            try self.repositoryContext().count(for: RepoMovie.fetchRequest())
+            try repositoryContext().count(for: RepoMovie.fetchRequest())
         }
 
         XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
         let repoMovieUrl: URL = try await repositoryContext().perform { [self] in
-            let repoMovie = movie.asRepoManaged(in: try self.repositoryContext())
-            try self.repositoryContext().save()
+            let repoMovie = try movie.asRepoManaged(in: repositoryContext())
+            try repositoryContext().save()
             return repoMovie.objectID.uriRepresentation()
         }
 
@@ -215,7 +215,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let secondExp = expectation(description: "Read a movie again after CoreData context is updated")
         var resultCount = 0
         let result: AnyPublisher<Movie, CoreDataRepositoryError> = try repository()
-            .readSubscription(try XCTUnwrap(movie.url))
+            .readSubscription(XCTUnwrap(movie.url))
         result.subscribe(on: backgroundQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -242,11 +242,11 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
             .store(in: &cancellables)
         wait(for: [firstExp], timeout: 5)
         try repositoryContext().performAndWait { [self] in
-            let coordinator = try XCTUnwrap(try self.repositoryContext().persistentStoreCoordinator)
-            let objectId = try XCTUnwrap(coordinator.managedObjectID(forURIRepresentation: try XCTUnwrap(movie.url)))
-            let object = try XCTUnwrap(try repositoryContext().existingObject(with: objectId) as? RepoMovie)
+            let coordinator = try XCTUnwrap(repositoryContext().persistentStoreCoordinator)
+            let objectId = try XCTUnwrap(coordinator.managedObjectID(forURIRepresentation: XCTUnwrap(movie.url)))
+            let object = try XCTUnwrap(repositoryContext().existingObject(with: objectId) as? RepoMovie)
             object.update(from: editedMovie)
-            try self.repositoryContext().save()
+            try repositoryContext().save()
         }
         wait(for: [secondExp], timeout: 5)
     }

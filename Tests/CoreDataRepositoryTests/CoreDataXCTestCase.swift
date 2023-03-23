@@ -4,7 +4,7 @@
 //
 // MIT License
 //
-// Copyright © 2022 Andrew Roan
+// Copyright © 2023 Andrew Roan
 
 import Combine
 import CoreData
@@ -39,7 +39,7 @@ class CoreDataXCTestCase: XCTestCase {
             _repositoryContext = container.newBackgroundContext()
             _repositoryContext?.automaticallyMergesChangesFromParent = true
         }
-        _repository = CoreDataRepository(context: try repositoryContext())
+        _repository = try CoreDataRepository(context: repositoryContext())
         try super.setUpWithError()
     }
 

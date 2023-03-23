@@ -4,7 +4,7 @@
 //
 // MIT License
 //
-// Copyright © 2022 Andrew Roan
+// Copyright © 2023 Andrew Roan
 
 import Combine
 import CoreData
@@ -30,7 +30,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         expectedMovies = try repositoryContext().performAndWait {
-            _ = try self.movies.map { $0.asRepoManaged(in: try repositoryContext()) }
+            _ = try self.movies.map { try $0.asRepoManaged(in: repositoryContext()) }
             try self.repositoryContext().save()
             return try self.repositoryContext().fetch(fetchRequest).map(\.asUnmanaged)
         }
@@ -84,17 +84,17 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
             })
             .store(in: &cancellables)
         wait(for: [firstExp], timeout: 5)
-        let crudRepository = CoreDataRepository(context: try repositoryContext())
+        let crudRepository = try CoreDataRepository(context: repositoryContext())
         _ = try await repositoryContext().perform { [self] in
             let url = try XCTUnwrap(expectedMovies.last?.url)
-            let coordinator = try XCTUnwrap(try repositoryContext().persistentStoreCoordinator)
+            let coordinator = try XCTUnwrap(repositoryContext().persistentStoreCoordinator)
             let objectId = try XCTUnwrap(coordinator.managedObjectID(forURIRepresentation: url))
             let object = try repositoryContext().existingObject(with: objectId)
             try repositoryContext().delete(object)
             try repositoryContext().save()
         }
-        let _: Result<Void, CoreDataRepositoryError> = await crudRepository
-            .delete(try XCTUnwrap(expectedMovies.last?.url))
+        let _: Result<Void, CoreDataRepositoryError> = try await crudRepository
+            .delete(XCTUnwrap(expectedMovies.last?.url))
         wait(for: [secondExp], timeout: 5)
     }
 }
