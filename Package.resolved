@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/CombineCommunity/CombineExt.git",
         "state": {
           "branch": null,
-          "revision": "dcfb8a8208ed21c2267ffd93f4ab38743a9aedd7",
-          "version": "1.6.0"
+          "revision": "d7b896fa9ca8b47fa7bcde6b43ef9b70bf8c1f56",
+          "version": "1.8.1"
         }
       },
       {
@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/pointfreeco/swift-custom-dump.git",
         "state": {
           "branch": null,
-          "revision": "c4f78db9b90ca57b7b6abc2223e235242739ea3c",
-          "version": "0.4.0"
+          "revision": "de8ba65649e7ee317b9daf27dd5eebf34bd4be57",
+          "version": "0.9.1"
         }
       },
       {
@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/pointfreeco/xctest-dynamic-overlay",
         "state": {
           "branch": null,
-          "revision": "50a70a9d3583fe228ce672e8923010c8df2deddd",
-          "version": "0.2.1"
+          "revision": "ab8c9f45843694dd16be4297e6d44c0634fd9913",
+          "version": "0.8.4"
         }
       }
     ]
