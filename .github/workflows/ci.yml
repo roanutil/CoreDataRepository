@@ -23,18 +23,15 @@ jobs:
     environment: default
     strategy:
       matrix:
-        os: [macos-12, macos-13]
-        xcode: [13.2.1, 13.4.1, 14.2, 14.3]
-        # Swift: 5.5.2, 5.6,     5.7, 5.8
         include:
           - os: macos-12
-            xcode: 13.2.1
+            xcode: 13.2.1 # Swift 5.5.2
           - os: macos-12
-            xcode: 13.4.1
+            xcode: 13.4.1 # Swift 5.6
           - os: macos-13
-            xcode: 14.2
+            xcode: 14.2 # Swift 5.7
           - os: macos-13
-            xcode: 14.3
+            xcode: 14.3 # Swift 5.8
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
