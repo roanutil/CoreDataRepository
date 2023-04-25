@@ -10,22 +10,36 @@ on:
   workflow_dispatch:
 
 jobs:
-  library:
-    runs-on: macos-12
+  lint:
+    runs-on: macos-13
     environment: default
-    strategy:
-      matrix:
-        platform: [macOS]
-        xcode: [13.2.1, 13.4.1, '14.0']
-        # Swift: 5.5.2, 5.6,     5.7  
     steps:
       - uses: actions/checkout@v3
-      - name: Select Xcode ${{ matrix.xcode }}
-        run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app
       - name: Format lint
         run: swiftformat --lint .
       - name: Lint
         run: swiftlint .
+  test:
+    environment: default
+    strategy:
+      matrix:
+        os: [macos-12, macos-13]
+        xcode: [13.2.1, 13.4.1, 14.2, 14.3]
+        # Swift: 5.5.2, 5.6,     5.7, 5.8
+        include:
+          - os: macos-12
+            xcode: 13.2.1
+          - os: macos-12
+            xcode: 13.4.1
+          - os: macos-13
+            xcode: 14.2
+          - os: macos-13
+            xcode: 14.3
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Select Xcode ${{ matrix.xcode }}
+        run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app
       - name: Run Tests
         run: swift test --enable-code-coverage
       - name: Swift Coverage Report
