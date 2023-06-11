@@ -135,4 +135,48 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
             XCTFail("Not expecting failure")
         }
     }
+
+    func testCountWithPredicate() async throws {
+        let result: Result<[[String: Int]], CoreDataRepositoryError> = try await repository()
+            .count(predicate: NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \RepoMovie.title),
+                rightExpression: NSExpression(forConstantValue: "A"),
+                modifier: .direct,
+                type: .notEqualTo
+            ), entityDesc: RepoMovie.entity())
+        switch result {
+        case let .success(values):
+            let firstValue = try XCTUnwrap(values.first?.values.first)
+            XCTAssertEqual(firstValue, 4, "Result value (count) should equal number of movies not titled 'A'.")
+        case .failure:
+            XCTFail("Not expecting failure")
+        }
+    }
+
+    func testSumWithPredicate() async throws {
+        let result: Result<[[String: Decimal]], CoreDataRepositoryError> = try await repository().sum(
+            predicate: NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \RepoMovie.title),
+                rightExpression: NSExpression(forConstantValue: "A"),
+                modifier: .direct,
+                type: .notEqualTo
+            ),
+            entityDesc: RepoMovie.entity(),
+            attributeDesc: XCTUnwrap(
+                RepoMovie.entity().attributesByName.values
+                    .first(where: { $0.name == "boxOffice" })
+            )
+        )
+        switch result {
+        case let .success(values):
+            let firstValue = try XCTUnwrap(values.first?.values.first)
+            XCTAssertEqual(
+                firstValue,
+                140,
+                "Result value should equal sum of movies box office that are not titled 'A'."
+            )
+        case .failure:
+            XCTFail("Not expecting failure")
+        }
+    }
 }
