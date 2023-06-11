@@ -14,8 +14,11 @@ import XCTest
 
 final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testCreateSuccess() async throws {
+        let historyTimeStamp = Date()
+        let transactionAuthor: String = #function
         let movie = Movie(id: UUID(), title: "Create Success", releaseDate: Date(), boxOffice: 100)
-        let result: Result<Movie, CoreDataRepositoryError> = try await repository().create(movie)
+        let result: Result<Movie, CoreDataRepositoryError> = try await repository()
+            .create(movie, transactionAuthor: transactionAuthor)
         guard case let .success(resultMovie) = result else {
             XCTFail("Not expecting a failed result")
             return
@@ -26,6 +29,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         XCTAssertNoDifference(tempResultMovie, movie)
 
         try await verify(resultMovie)
+        try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
     }
 
     func testReadSuccess() async throws {
@@ -92,8 +96,11 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
 
         movie.title = "Update Success - Edited"
 
+        let historyTimeStamp = Date()
+        let transactionAuthor: String = #function
+
         let result: Result<Movie, CoreDataRepositoryError> = try await repository()
-            .update(XCTUnwrap(createdMovie.url), with: movie)
+            .update(XCTUnwrap(createdMovie.url), with: movie, transactionAuthor: transactionAuthor)
 
         guard case let .success(resultMovie) = result else {
             XCTFail("Not expecting a failed result")
@@ -107,6 +114,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         XCTAssertNoDifference(tempResultMovie, movie)
 
         try await verify(resultMovie)
+        try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
     }
 
     func testUpdateFailure() async throws {
@@ -148,8 +156,11 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
             return object.asUnmanaged
         }
 
+        let historyTimeStamp = Date()
+        let transactionAuthor: String = #function
+
         let result: Result<Void, CoreDataRepositoryError> = try await repository()
-            .delete(XCTUnwrap(createdMovie.url))
+            .delete(XCTUnwrap(createdMovie.url), transactionAuthor: transactionAuthor)
 
         switch result {
         case .success:
@@ -157,6 +168,8 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         case .failure:
             XCTFail("Not expecting a failed result")
         }
+
+        try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
     }
 
     func testDeleteFailure() async throws {

@@ -27,12 +27,13 @@ extension CoreDataRepository {
         transactionAuthor: String? = nil
     ) async -> Result<Model, CoreDataRepositoryError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
-            scratchPad.transactionAuthor = transactionAuthor
             let object = Model.RepoManaged(context: scratchPad)
             object.create(from: item)
             try scratchPad.save()
             try context.performAndWait {
+                context.transactionAuthor = transactionAuthor
                 try context.save()
+                context.transactionAuthor = nil
             }
             try scratchPad.obtainPermanentIDs(for: [object])
             return object.asUnmanaged
@@ -70,16 +71,19 @@ extension CoreDataRepository {
     public func update<Model: UnmanagedModel>(
         _ url: URL,
         with item: Model,
-        transactionAuthor _: String? = nil
+        transactionAuthor: String? = nil
     ) async -> Result<Model, CoreDataRepositoryError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
+            scratchPad.transactionAuthor = transactionAuthor
             let id = try scratchPad.tryObjectId(from: url)
             let object = try scratchPad.notDeletedObject(for: id)
             let repoManaged: Model.RepoManaged = try object.asRepoManaged()
             repoManaged.update(from: item)
             try scratchPad.save()
             try context.performAndWait {
+                context.transactionAuthor = transactionAuthor
                 try context.save()
+                context.transactionAuthor = nil
             }
             return repoManaged.asUnmanaged
         }
@@ -97,16 +101,19 @@ extension CoreDataRepository {
     ///
     public func delete(
         _ url: URL,
-        transactionAuthor _: String? = nil
+        transactionAuthor: String? = nil
     ) async -> Result<Void, CoreDataRepositoryError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
+            scratchPad.transactionAuthor = transactionAuthor
             let id = try scratchPad.tryObjectId(from: url)
             let object = try scratchPad.notDeletedObject(for: id)
             object.prepareForDeletion()
             scratchPad.delete(object)
             try scratchPad.save()
             try context.performAndWait {
+                context.transactionAuthor = transactionAuthor
                 try context.save()
+                context.transactionAuthor = nil
             }
             return ()
         }

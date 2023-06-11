@@ -22,11 +22,13 @@ extension CoreDataRepository {
         _ request: NSBatchInsertRequest,
         transactionAuthor: String? = nil
     ) async -> Result<NSBatchInsertResult, CoreDataRepositoryError> {
-        await context.performInScratchPad { scratchPad in
-            scratchPad.transactionAuthor = transactionAuthor
+        await context.performInScratchPad { [context] scratchPad in
+            context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchInsertResult else {
+                context.transactionAuthor = nil
                 throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
             }
+            context.transactionAuthor = nil
             return result
         }
     }
@@ -127,11 +129,13 @@ extension CoreDataRepository {
         _ request: NSBatchUpdateRequest,
         transactionAuthor: String? = nil
     ) async -> Result<NSBatchUpdateResult, CoreDataRepositoryError> {
-        await context.performInScratchPad { scratchPad in
-            scratchPad.transactionAuthor = transactionAuthor
+        await context.performInScratchPad { [context] scratchPad in
+            context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchUpdateResult else {
+                context.transactionAuthor = nil
                 throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
             }
+            context.transactionAuthor = nil
             return result
         }
     }
@@ -193,11 +197,13 @@ extension CoreDataRepository {
         _ request: NSBatchDeleteRequest,
         transactionAuthor: String? = nil
     ) async -> Result<NSBatchDeleteResult, CoreDataRepositoryError> {
-        await context.performInScratchPad { scratchPad in
-            scratchPad.transactionAuthor = transactionAuthor
+        await context.performInScratchPad { [context] scratchPad in
+            context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchDeleteResult else {
+                context.transactionAuthor = nil
                 throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
             }
+            context.transactionAuthor = nil
             return result
         }
     }
