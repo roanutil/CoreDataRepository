@@ -17,6 +17,7 @@ class CoreDataStack: NSObject {
 
     static var persistentContainer: NSPersistentContainer {
         let desc = NSPersistentStoreDescription()
+        desc.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
         desc.type = NSSQLiteStoreType // NSInMemoryStoreType
         desc.shouldAddStoreAsynchronously = false
         let model = Self.model
