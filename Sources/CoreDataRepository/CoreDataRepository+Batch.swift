@@ -82,10 +82,50 @@ extension CoreDataRepository {
     ///     - urls: [URL]
     /// - Returns
     ///     - (success: [Model, failed: [Model])
+    @available(*, deprecated, message: "This method has an unused parameter for transactionAuthor.")
     public func read<Model: UnmanagedModel>(
         urls: [URL],
         transactionAuthor _: String? = nil
     ) async -> (success: [Model], failed: [URL]) {
+        var successes = [Model]()
+        var failures = [URL]()
+        await withTaskGroup(of: _Result<Model, URL>.self, body: { [weak self] group in
+            guard let self = self else {
+                group.cancelAll()
+                return
+            }
+            for url in urls {
+                let added = group.addTaskUnlessCancelled {
+                    async let result: Result<Model, CoreDataRepositoryError> = self.read(url)
+                    switch await result {
+                    case let .success(created):
+                        return _Result<Model, URL>.success(created)
+                    case .failure:
+                        return _Result<Model, URL>.failure(url)
+                    }
+                }
+                if !added {
+                    return
+                }
+            }
+            for await result in group {
+                switch result {
+                case let .success(success):
+                    successes.append(success)
+                case let .failure(failure):
+                    failures.append(failure)
+                }
+            }
+        })
+        return (success: successes, failed: failures)
+    }
+
+    /// Batch update objects in CoreData
+    /// - Parameters
+    ///     - urls: [URL]
+    /// - Returns
+    ///     - (success: [Model, failed: [Model])
+    public func read<Model: UnmanagedModel>(urls: [URL]) async -> (success: [Model], failed: [URL]) {
         var successes = [Model]()
         var failures = [URL]()
         await withTaskGroup(of: _Result<Model, URL>.self, body: { [weak self] group in
