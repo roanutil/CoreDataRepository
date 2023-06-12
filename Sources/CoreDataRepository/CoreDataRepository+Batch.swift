@@ -82,10 +82,20 @@ extension CoreDataRepository {
     ///     - urls: [URL]
     /// - Returns
     ///     - (success: [Model, failed: [Model])
+    @available(*, deprecated, message: "This method has an unused parameter for transactionAuthor.")
     public func read<Model: UnmanagedModel>(
         urls: [URL],
         transactionAuthor _: String? = nil
     ) async -> (success: [Model], failed: [URL]) {
+        await read(urls: urls)
+    }
+
+    /// Batch update objects in CoreData
+    /// - Parameters
+    ///     - urls: [URL]
+    /// - Returns
+    ///     - (success: [Model, failed: [Model])
+    public func read<Model: UnmanagedModel>(urls: [URL]) async -> (success: [Model], failed: [URL]) {
         var successes = [Model]()
         var failures = [URL]()
         await withTaskGroup(of: _Result<Model, URL>.self, body: { [weak self] group in
