@@ -141,7 +141,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
 
         try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
     }
-    
+
     func testDeprecatedReadSuccess() async throws {
         let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
         var movies = [Movie]()
@@ -155,7 +155,8 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
             movies = repoMovies.map(\.asUnmanaged)
         }
 
-        let result: (success: [Movie], failed: [URL]) = try await repository().read(urls: movies.compactMap(\.url), transactionAuthor: "Unused")
+        let result: (success: [Movie], failed: [URL]) = try await repository()
+            .read(urls: movies.compactMap(\.url), transactionAuthor: "Unused")
 
         XCTAssertEqual(result.success.count, movies.count)
         XCTAssertEqual(result.failed.count, 0)
