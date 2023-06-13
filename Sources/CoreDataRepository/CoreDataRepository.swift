@@ -16,8 +16,6 @@ public final class CoreDataRepository {
 
     /// CoreData context the repository uses
     public let context: NSManagedObjectContext
-    var subscriptions = [SubscriptionProvider]()
-    var cancellables = Set<AnyCancellable>()
 
     // MARK: Init
 

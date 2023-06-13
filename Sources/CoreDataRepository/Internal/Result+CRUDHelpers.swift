@@ -41,15 +41,19 @@ extension Result where Failure == CoreDataRepositoryError {
                     parentContext.performAndWait {
                         do {
                             try parentContext.save()
+                        } catch let error as CocoaError {
+                            result = .failure(.coreData(error))
                         } catch {
-                            result = .failure(.coreData(error as NSError))
+                            result = .failure(.unknown(error as NSError))
                         }
                     }
                     return result
                 }
                 return .success(success)
+            } catch let error as CocoaError {
+                return .failure(.coreData(error))
             } catch {
-                return .failure(.coreData(error as NSError))
+                return .failure(.unknown(error as NSError))
             }
         }
     }
@@ -60,8 +64,10 @@ extension Result where Failure == Error {
         mapError { error in
             if let repoError = error as? CoreDataRepositoryError {
                 return repoError
+            } else if let cocoaError = error as? CocoaError {
+                return .coreData(cocoaError)
             } else {
-                return .coreData(error as NSError)
+                return .unknown(error as NSError)
             }
         }
     }

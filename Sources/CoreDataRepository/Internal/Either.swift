@@ -1,4 +1,4 @@
-// _Result.swift
+// Either.swift
 // CoreDataRepository
 //
 //
@@ -9,7 +9,7 @@
 import Foundation
 
 /// Wrapper for success/failure output where failure does not confrom to `Error`
-enum _Result<Success, Failure> {
+enum Either<Success, Failure> {
     case success(Success)
     case failure(Failure)
 }

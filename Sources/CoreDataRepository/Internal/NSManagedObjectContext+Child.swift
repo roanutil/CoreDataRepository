@@ -20,8 +20,10 @@ extension NSManagedObjectContext {
             output = try await child.perform(schedule: schedule) { try block(child) }
         } catch let error as CoreDataRepositoryError {
             return .failure(error)
-        } catch let error as NSError {
+        } catch let error as CocoaError {
             return .failure(.coreData(error))
+        } catch let error as NSError {
+            return .failure(.unknown(error))
         }
         return .success(output)
     }

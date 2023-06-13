@@ -53,48 +53,62 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
     }
 
     func testFetchSubscriptionSuccess() async throws {
-        let firstExp = expectation(description: "Fetch movies from CoreData")
-        let secondExp = expectation(description: "Fetch movies again after CoreData context is updated")
-        var resultCount = 0
-        let result: AnyPublisher<[Movie], CoreDataRepositoryError> = try repository().fetchSubscription(fetchRequest)
-        result.subscribe(on: backgroundQueue)
-            .receive(on: mainQueue)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    XCTFail("Not expecting completion since subscription finishes after subscriber cancel")
-                default:
-                    XCTFail("Not expecting failure")
-                }
-            }, receiveValue: { items in
+        let task = Task {
+            var resultCount = 0
+            let stream = try repository()
+                .fetchSubscription(fetchRequest, of: Movie.self)
+            for await _items in stream {
+                let items = try _items.get()
                 resultCount += 1
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(items.count, 5, "Result items count should match expectation")
                     XCTAssertEqual(items, self.expectedMovies, "Result items should match expectations")
-                    firstExp.fulfill()
+                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let _: Result<Void, CoreDataRepositoryError> = try await crudRepository
+                        .delete(XCTUnwrap(expectedMovies.last?.url))
+                    await Task.yield()
                 case 2:
                     XCTAssertEqual(items.count, 4, "Result items count should match expectation")
                     XCTAssertEqual(items, Array(self.expectedMovies[0 ... 3]), "Result items should match expectations")
-                    secondExp.fulfill()
+                    return resultCount
                 default:
                     XCTFail("Not expecting any values past the first two.")
+                    return resultCount
                 }
-
-            })
-            .store(in: &cancellables)
-        wait(for: [firstExp], timeout: 5)
-        let crudRepository = try CoreDataRepository(context: repositoryContext())
-        _ = try await repositoryContext().perform { [self] in
-            let url = try XCTUnwrap(expectedMovies.last?.url)
-            let coordinator = try XCTUnwrap(repositoryContext().persistentStoreCoordinator)
-            let objectId = try XCTUnwrap(coordinator.managedObjectID(forURIRepresentation: url))
-            let object = try repositoryContext().existingObject(with: objectId)
-            try repositoryContext().delete(object)
-            try repositoryContext().save()
+            }
+            return resultCount
         }
-        let _: Result<Void, CoreDataRepositoryError> = try await crudRepository
-            .delete(XCTUnwrap(expectedMovies.last?.url))
-        wait(for: [secondExp], timeout: 5)
+        let finalCount = try await task.value
+        XCTAssertEqual(finalCount, 2)
+    }
+
+    func testFetchThrowingSubscriptionSuccess() async throws {
+        let task = Task {
+            var resultCount = 0
+            let stream = try repository().fetchThrowingSubscription(self.fetchRequest, of: Movie.self)
+            for try await items in stream {
+                resultCount += 1
+                switch resultCount {
+                case 1:
+                    XCTAssertEqual(items.count, 5, "Result items count should match expectation")
+                    XCTAssertEqual(items, self.expectedMovies, "Result items should match expectations")
+                    let crudRepository = try CoreDataRepository(context: self.repositoryContext())
+                    let _: Result<Void, CoreDataRepositoryError> = try await crudRepository
+                        .delete(XCTUnwrap(expectedMovies.last?.url))
+                    await Task.yield()
+                case 2:
+                    XCTAssertEqual(items.count, 4, "Result items count should match expectation")
+                    XCTAssertEqual(items, Array(self.expectedMovies[0 ... 3]), "Result items should match expectations")
+                    return resultCount
+                default:
+                    XCTFail("Not expecting any values past the first two.")
+                    return resultCount
+                }
+            }
+            return resultCount
+        }
+        let finalCount = try await task.value
+        XCTAssertEqual(finalCount, 2)
     }
 }

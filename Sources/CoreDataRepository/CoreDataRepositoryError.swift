@@ -8,12 +8,15 @@
 
 import Foundation
 
-public enum CoreDataRepositoryError: Error, Equatable, Hashable {
+public enum CoreDataRepositoryError: Error, Equatable, Hashable, Sendable {
     case failedToGetObjectIdFromUrl(URL)
     case propertyDoesNotMatchEntity
     case fetchedObjectFailedToCastToExpectedType
     case fetchedObjectIsFlaggedAsDeleted
-    case coreData(NSError)
+    case coreData(CocoaError)
+    case unknown(NSError)
+    case noEntityNameFound
+    case atLeastOneAttributeDescRequired
 
     public var localizedDescription: String {
         switch self {
@@ -46,6 +49,12 @@ public enum CoreDataRepositoryError: Error, Equatable, Hashable {
             )
         case let .coreData(error):
             return error.localizedDescription
+        case let .unknown(error):
+            return error.localizedDescription
+        case .noEntityNameFound:
+            return ""
+        case .atLeastOneAttributeDescRequired:
+            return ""
         }
     }
 }
@@ -65,6 +74,12 @@ extension CoreDataRepositoryError: CustomNSError {
             return 4
         case .coreData:
             return 5
+        case .unknown:
+            return 6
+        case .noEntityNameFound:
+            return 7
+        case .atLeastOneAttributeDescRequired:
+            return 8
         }
     }
 
@@ -82,6 +97,12 @@ extension CoreDataRepositoryError: CustomNSError {
             return [:]
         case let .coreData(error):
             return error.userInfo
+        case let .unknown(error):
+            return error.userInfo
+        case .noEntityNameFound:
+            return [:]
+        case .atLeastOneAttributeDescRequired:
+            return [:]
         }
     }
 }

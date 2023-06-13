@@ -42,7 +42,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         }
 
         let result: Result<Movie, CoreDataRepositoryError> = try await repository()
-            .read(XCTUnwrap(createdMovie.url))
+            .read(XCTUnwrap(createdMovie.url), of: Movie.self)
 
         guard case let .success(resultMovie) = result else {
             XCTFail("Not expecting a failed result")
@@ -75,7 +75,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         }
 
         let result: Result<Movie, CoreDataRepositoryError> = try await repository()
-            .read(XCTUnwrap(createdMovie.url))
+            .read(XCTUnwrap(createdMovie.url), of: Movie.self)
 
         switch result {
         case .success:
@@ -224,43 +224,80 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         var editedMovie = movie
         editedMovie.title = "New Title"
 
-        let firstExp = expectation(description: "Read a movie from CoreData")
-        let secondExp = expectation(description: "Read a movie again after CoreData context is updated")
-        var resultCount = 0
-        let result: AnyPublisher<Movie, CoreDataRepositoryError> = try repository()
-            .readSubscription(XCTUnwrap(movie.url))
-        result.subscribe(on: backgroundQueue)
-            .receive(on: mainQueue)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    XCTFail("Not expecting completion since subscription finishes after subscriber cancel")
-                case .failure:
-                    XCTFail("Not expecting failure")
-                }
-            }, receiveValue: { receiveMovie in
+        let task = Task { [movie, editedMovie] in
+            var resultCount = 0
+            let stream = try repository().readSubscription(repoMovieUrl, of: Movie.self)
+            for await _movie in stream {
+                let receivedMovie = try _movie.get()
                 resultCount += 1
                 switch resultCount {
                 case 1:
-                    XCTAssertEqual(receiveMovie, movie, "Success response should match local object.")
-                    firstExp.fulfill()
+                    XCTAssertEqual(receivedMovie, movie, "Success response should match local object.")
+                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let _: Result<Movie, CoreDataRepositoryError> = await crudRepository
+                        .update(repoMovieUrl, with: editedMovie)
+                    await Task.yield()
                 case 2:
-                    XCTAssertEqual(receiveMovie, editedMovie, "Second success response should match local object.")
-                    secondExp.fulfill()
+                    XCTAssertEqual(receivedMovie, editedMovie, "Second success response should match local object.")
+                    return resultCount
                 default:
                     XCTFail("Not expecting any values past the first two.")
+                    return resultCount
                 }
-
-            })
-            .store(in: &cancellables)
-        wait(for: [firstExp], timeout: 5)
-        try repositoryContext().performAndWait { [self] in
-            let coordinator = try XCTUnwrap(repositoryContext().persistentStoreCoordinator)
-            let objectId = try XCTUnwrap(coordinator.managedObjectID(forURIRepresentation: XCTUnwrap(movie.url)))
-            let object = try XCTUnwrap(repositoryContext().existingObject(with: objectId) as? RepoMovie)
-            object.update(from: editedMovie)
-            try repositoryContext().save()
+            }
+            return resultCount
         }
-        wait(for: [secondExp], timeout: 5)
+        let finalCount = try await task.value
+        XCTAssertEqual(finalCount, 2)
+    }
+
+    func testReadThrowingSubscriptionSuccess() async throws {
+        var movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
+
+        let count: Int = try await repositoryContext().perform { [self] in
+            try repositoryContext().count(for: RepoMovie.fetchRequest())
+        }
+
+        XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
+
+        let repoMovieUrl: URL = try await repositoryContext().perform { [self] in
+            let repoMovie = try movie.asRepoManaged(in: repositoryContext())
+            try repositoryContext().save()
+            return repoMovie.objectID.uriRepresentation()
+        }
+
+        movie.url = repoMovieUrl
+        let countAfterCreate: Int = try await repositoryContext().perform {
+            try self.repositoryContext().count(for: RepoMovie.fetchRequest())
+        }
+        XCTAssertEqual(countAfterCreate, 1, "Count of objects in CoreData should be 1 for read test.")
+
+        var editedMovie = movie
+        editedMovie.title = "New Title"
+
+        let task = Task { [movie, editedMovie] in
+            var resultCount = 0
+            let stream = try repository().readThrowingSubscription(repoMovieUrl, of: Movie.self)
+            for try await receivedMovie in stream {
+                resultCount += 1
+                switch resultCount {
+                case 1:
+                    XCTAssertEqual(receivedMovie, movie, "Success response should match local object.")
+                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let _: Result<Movie, CoreDataRepositoryError> = await crudRepository
+                        .update(repoMovieUrl, with: editedMovie)
+                    await Task.yield()
+                case 2:
+                    XCTAssertEqual(receivedMovie, editedMovie, "Second success response should match local object.")
+                    return resultCount
+                default:
+                    XCTFail("Not expecting any values past the first two.")
+                    return resultCount
+                }
+            }
+            return resultCount
+        }
+        let finalCount = try await task.value
+        XCTAssertEqual(finalCount, 2)
     }
 }

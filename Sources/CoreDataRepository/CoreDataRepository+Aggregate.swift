@@ -10,10 +10,7 @@ import Combine
 import CoreData
 
 extension CoreDataRepository {
-    // MARK: Types
-
-    /// The aggregate function to be calculated
-    public enum AggregateFunction: String {
+    enum AggregateFunction: String {
         case count
         case sum
         case average
@@ -21,231 +18,291 @@ extension CoreDataRepository {
         case max
     }
 
-    // MARK: Private Functions
+    static func aggregate<Value: Numeric>(
+        context: NSManagedObjectContext,
+        request: NSFetchRequest<NSDictionary>
+    ) throws -> Value {
+        let result = try context.fetch(request)
+        guard let value: Value = result.asAggregateValue() else {
+            throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
+        }
+        return value
+    }
 
-    private func request(
+    private static func send<Value>(
         function: AggregateFunction,
+        context: NSManagedObjectContext,
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) -> NSFetchRequest<NSDictionary> {
-        let expDesc = NSExpressionDescription.aggregate(function: function, attributeDesc: attributeDesc)
-        let request = NSFetchRequest<NSDictionary>(entityName: entityDesc.managedObjectClassName)
-        request.predicate = predicate
-        request.entity = entityDesc
-        request.returnsObjectsAsFaults = false
-        request.resultType = .dictionaryResultType
-        if function == .count {
-            request.propertiesToFetch = [attributeDesc.name, expDesc]
-        } else {
-            request.propertiesToFetch = [expDesc]
+    ) async -> Result<Value, CoreDataRepositoryError> where Value: Numeric {
+        guard entityDesc == attributeDesc.entity else {
+            return .failure(.propertyDoesNotMatchEntity)
         }
-
-        if let groupBy = groupBy {
-            request.propertiesToGroupBy = [groupBy.name]
-        }
-        request.sortDescriptors = [NSSortDescriptor(key: attributeDesc.name, ascending: false)]
-        return request
-    }
-
-    /// Calculates aggregate values
-    /// - Parameters
-    ///     - function: Function
-    ///     - predicate: NSPredicate
-    ///     - entityDesc: NSEntityDescription
-    ///     - attributeDesc: NSAttributeDescription
-    ///     - groupBy: NSAttributeDescription? = nil
-    /// - Returns
-    ///     - `[[String: Value]]`
-    ///
-    private static func aggregate<Value: Numeric>(
-        context: NSManagedObjectContext,
-        request: NSFetchRequest<NSDictionary>
-    ) throws -> [[String: Value]] {
-        let result = try context.fetch(request)
-        return result as? [[String: Value]] ?? []
-    }
-
-    private static func send<Value>(
-        context: NSManagedObjectContext,
-        request: NSFetchRequest<NSDictionary>
-    ) async -> Result<[[String: Value]], CoreDataRepositoryError> where Value: Numeric {
-        await context.performInScratchPad { scratchPad in
+        return await context.performInScratchPad { scratchPad in
+            let request = try NSFetchRequest<NSDictionary>.request(
+                function: function,
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy
+            )
             do {
-                let result: [[String: Value]] = try Self.aggregate(context: scratchPad, request: request)
-                return result
+                let value: Value = try Self.aggregate(context: scratchPad, request: request)
+                return value
+            } catch let error as CocoaError {
+                throw CoreDataRepositoryError.coreData(error)
             } catch {
-                throw CoreDataRepositoryError.coreData(error as NSError)
+                throw CoreDataRepositoryError.unknown(error as NSError)
             }
         }
     }
 
-    // MARK: Public Functions
-
-    /// Calculate the count for a fetchRequest
-    /// - Parameters:
-    ///     - predicate: NSPredicate
-    ///     - entityDesc: NSEntityDescription
-    /// - Returns
-    ///     - Result<[[String: Value]], CoreDataRepositoryError>
-    ///
     public func count<Value: Numeric>(
         predicate: NSPredicate,
-        entityDesc: NSEntityDescription
-    ) async -> Result<[[String: Value]], CoreDataRepositoryError> {
-        let _request = NSFetchRequest<NSDictionary>(entityName: entityDesc.name ?? "")
-        _request.predicate = predicate
-        _request
-            .sortDescriptors =
-            [NSSortDescriptor(key: entityDesc.attributesByName.values.first!.name, ascending: true)]
-        return await context.performInScratchPad { scratchPad in
+        entityDesc: NSEntityDescription,
+        as _: Value.Type
+    ) async -> Result<Value, CoreDataRepositoryError> {
+        await context.performInScratchPad { scratchPad in
             do {
-                let count = try scratchPad.count(for: _request)
-                return [["countOf\(entityDesc.name ?? "")": Value(exactly: count) ?? Value.zero]]
+                let request = try NSFetchRequest<NSDictionary>
+                    .countRequest(predicate: predicate, entityDesc: entityDesc)
+                let count = try scratchPad.count(for: request)
+                return Value(exactly: count) ?? Value.zero
+            } catch let error as CocoaError {
+                throw CoreDataRepositoryError.coreData(error)
             } catch {
-                throw CoreDataRepositoryError.coreData(error as NSError)
+                throw CoreDataRepositoryError.unknown(error as NSError)
             }
         }
     }
 
-    /// Calculate the sum for a fetchRequest
-    /// - Parameters:
-    ///     - predicate: NSPredicate
-    ///     - entityDesc: NSEntityDescription
-    ///     - attributeDesc: NSAttributeDescription
-    ///     - groupBy: NSAttributeDescription? = nil
-    /// - Returns
-    ///     - Result<[[String: Value]], CoreDataRepositoryError>
-    ///
+    public func countSubscription<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        as _: Value.Type
+    ) -> AsyncStream<Result<Value, CoreDataRepositoryError>> {
+        CountSubscription(
+            context: context.childContext(),
+            predicate: predicate,
+            entityDesc: entityDesc
+        ).stream()
+    }
+
+    public func countThrowingSubscription<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        as _: Value.Type
+    ) -> AsyncThrowingStream<Value, Error> {
+        CountSubscription(
+            context: context.childContext(),
+            predicate: predicate,
+            entityDesc: entityDesc
+        ).throwingStream()
+    }
+
     public func sum<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
-        groupBy: NSAttributeDescription? = nil
-    ) async -> Result<[[String: Value]], CoreDataRepositoryError> {
-        let _request = request(
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) async -> Result<Value, CoreDataRepositoryError> {
+        await Self.send(
             function: .sum,
+            context: context,
             predicate: predicate,
             entityDesc: entityDesc,
             attributeDesc: attributeDesc,
             groupBy: groupBy
         )
-        guard entityDesc == attributeDesc.entity else {
-            return .failure(.propertyDoesNotMatchEntity)
-        }
-        return await Self.send(context: context, request: _request)
     }
 
-    /// Calculate the average for a fetchRequest
-    /// - Parameters:
-    ///     - predicate: NSPredicate
-    ///     - entityDesc: NSEntityDescription
-    ///     - attributeDesc: NSAttributeDescription
-    ///     - groupBy: NSAttributeDescription? = nil
-    /// - Returns
-    ///     - Result<[[String: Value]], CoreDataRepositoryError>
-    ///
+    public func sumSubscription<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncStream<Result<Value, CoreDataRepositoryError>> {
+        AggregateSubscription(
+            function: .sum,
+            context: context.childContext(),
+            predicate: predicate,
+            entityDesc: entityDesc,
+            attributeDesc: attributeDesc,
+            groupBy: groupBy
+        ).stream()
+    }
+
+    public func sumThrowingSubscription<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncThrowingStream<Value, Error> {
+        AggregateSubscription(
+            function: .sum,
+            context: context.childContext(),
+            predicate: predicate,
+            entityDesc: entityDesc,
+            attributeDesc: attributeDesc,
+            groupBy: groupBy
+        ).throwingStream()
+    }
+
     public func average<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
-        groupBy: NSAttributeDescription? = nil
-    ) async -> Result<[[String: Value]], CoreDataRepositoryError> {
-        let _request = request(
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) async -> Result<Value, CoreDataRepositoryError> {
+        await Self.send(
             function: .average,
+            context: context,
             predicate: predicate,
             entityDesc: entityDesc,
             attributeDesc: attributeDesc,
             groupBy: groupBy
         )
-        guard entityDesc == attributeDesc.entity else {
-            return .failure(.propertyDoesNotMatchEntity)
-        }
-        return await Self.send(context: context, request: _request)
     }
 
-    /// Calculate the min for a fetchRequest
-    /// - Parameters:
-    ///     - predicate: NSPredicate
-    ///     - entityDesc: NSEntityDescription
-    ///     - attributeDesc: NSAttributeDescription
-    ///     - groupBy: NSAttributeDescription? = nil
-    /// - Returns
-    ///     - Result<[[String: Value]], CoreDataRepositoryError>
-    ///
+    public func averageSubscription<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncStream<Result<Value, CoreDataRepositoryError>> {
+        AggregateSubscription(
+            function: .average,
+            context: context.childContext(),
+            predicate: predicate,
+            entityDesc: entityDesc,
+            attributeDesc: attributeDesc,
+            groupBy: groupBy
+        ).stream()
+    }
+
+    public func averageThrowingSubscription<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncThrowingStream<Value, Error> {
+        AggregateSubscription(
+            function: .average,
+            context: context.childContext(),
+            predicate: predicate,
+            entityDesc: entityDesc,
+            attributeDesc: attributeDesc,
+            groupBy: groupBy
+        ).throwingStream()
+    }
+
     public func min<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
-        groupBy: NSAttributeDescription? = nil
-    ) async -> Result<[[String: Value]], CoreDataRepositoryError> {
-        let _request = request(
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) async -> Result<Value, CoreDataRepositoryError> {
+        await Self.send(
             function: .min,
+            context: context,
             predicate: predicate,
             entityDesc: entityDesc,
             attributeDesc: attributeDesc,
             groupBy: groupBy
         )
-        guard entityDesc == attributeDesc.entity else {
-            return .failure(.propertyDoesNotMatchEntity)
-        }
-        return await Self.send(context: context, request: _request)
     }
 
-    /// Calculate the max for a fetchRequest
-    /// - Parameters:
-    ///     - predicate: NSPredicate
-    ///     - entityDesc: NSEntityDescription
-    ///     - attributeDesc: NSAttributeDescription
-    ///     - groupBy: NSAttributeDescription? = nil
-    /// - Returns
-    ///     - Result<[[String: Value]], CoreDataRepositoryError>
-    ///
+    public func minSubscription<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncStream<Result<Value, CoreDataRepositoryError>> {
+        AggregateSubscription(
+            function: .min,
+            context: context.childContext(),
+            predicate: predicate,
+            entityDesc: entityDesc,
+            attributeDesc: attributeDesc,
+            groupBy: groupBy
+        ).stream()
+    }
+
+    public func minThrowingSubscription<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncThrowingStream<Value, Error> {
+        AggregateSubscription(
+            function: .min,
+            context: context.childContext(),
+            predicate: predicate,
+            entityDesc: entityDesc,
+            attributeDesc: attributeDesc,
+            groupBy: groupBy
+        ).throwingStream()
+    }
+
     public func max<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
-        groupBy: NSAttributeDescription? = nil
-    ) async -> Result<[[String: Value]], CoreDataRepositoryError> {
-        let _request = request(
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) async -> Result<Value, CoreDataRepositoryError> {
+        await Self.send(
             function: .max,
+            context: context,
             predicate: predicate,
             entityDesc: entityDesc,
             attributeDesc: attributeDesc,
             groupBy: groupBy
         )
-        guard entityDesc == attributeDesc.entity else {
-            return .failure(.propertyDoesNotMatchEntity)
-        }
-        return await Self.send(context: context, request: _request)
     }
-}
 
-// MARK: Extensions
-
-extension NSExpression {
-    /// Convenience initializer for NSExpression that represent an aggregate function on a keypath
-    fileprivate convenience init(
-        function: CoreDataRepository.AggregateFunction,
-        attributeDesc: NSAttributeDescription
-    ) {
-        let keyPathExp = NSExpression(forKeyPath: attributeDesc.name)
-        self.init(forFunction: "\(function.rawValue):", arguments: [keyPathExp])
+    public func maxSubscription<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncStream<Result<Value, CoreDataRepositoryError>> {
+        AggregateSubscription(
+            function: .max,
+            context: context.childContext(),
+            predicate: predicate,
+            entityDesc: entityDesc,
+            attributeDesc: attributeDesc,
+            groupBy: groupBy
+        ).stream()
     }
-}
 
-extension NSExpressionDescription {
-    /// Convenience initializer for NSExpressionDescription that represent the properties to fetch in NSFetchRequest
-    fileprivate static func aggregate(
-        function: CoreDataRepository.AggregateFunction,
-        attributeDesc: NSAttributeDescription
-    ) -> NSExpressionDescription {
-        let expression = NSExpression(function: function, attributeDesc: attributeDesc)
-        let expDesc = NSExpressionDescription()
-        expDesc.expression = expression
-        expDesc.name = "\(function.rawValue)Of\(attributeDesc.name.capitalized)"
-        expDesc.expressionResultType = attributeDesc.attributeType
-        return expDesc
+    public func maxThrowingSubscription<Value: Numeric>(
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncThrowingStream<Value, Error> {
+        AggregateSubscription(
+            function: .max,
+            context: context.childContext(),
+            predicate: predicate,
+            entityDesc: entityDesc,
+            attributeDesc: attributeDesc,
+            groupBy: groupBy
+        ).throwingStream()
     }
 }

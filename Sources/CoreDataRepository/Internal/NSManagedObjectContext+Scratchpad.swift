@@ -38,11 +38,16 @@ extension NSManagedObjectContext {
                 scratchPad.rollback()
             }
             return .failure(error)
+        } catch let error as CocoaError {
+            await scratchPad.perform {
+                scratchPad.rollback()
+            }
+            return .failure(.coreData(error))
         } catch let error as NSError {
             await scratchPad.perform {
                 scratchPad.rollback()
             }
-            return .failure(CoreDataRepositoryError.coreData(error))
+            return .failure(CoreDataRepositoryError.unknown(error))
         }
         return .success(output)
     }
