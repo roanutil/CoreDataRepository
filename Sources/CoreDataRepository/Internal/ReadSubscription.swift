@@ -13,7 +13,7 @@ import Foundation
 final class ReadSubscription<Model: UnmanagedModel> {
     private let objectId: NSManagedObjectID
     private let context: NSManagedObjectContext
-    let subject: PassthroughSubject<Model, CoreDataRepositoryError>
+    let subject: PassthroughSubject<Model, CoreDataError>
     private var cancellables: Set<AnyCancellable> = []
 
     func manualFetch() {

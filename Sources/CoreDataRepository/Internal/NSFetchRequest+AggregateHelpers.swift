@@ -18,7 +18,7 @@ extension NSFetchRequest<NSDictionary> {
         groupBy: NSAttributeDescription? = nil
     ) throws -> NSFetchRequest<NSDictionary> {
         guard let entityName = entityDesc.name else {
-            throw CoreDataRepositoryError.noEntityNameFound
+            throw CoreDataError.noEntityNameFound
         }
         let expDesc = NSExpressionDescription.aggregate(function: function, attributeDesc: attributeDesc)
         let request = NSFetchRequest<NSDictionary>(entityName: entityName)
@@ -42,7 +42,7 @@ extension NSFetchRequest<NSDictionary> {
         entityDesc: NSEntityDescription
     ) throws -> NSFetchRequest<NSDictionary> {
         guard let attributeDesc = entityDesc.attributesByName.values.first else {
-            throw CoreDataRepositoryError.atLeastOneAttributeDescRequired
+            throw CoreDataError.atLeastOneAttributeDescRequired
         }
         return try request(
             function: .count,

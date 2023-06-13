@@ -13,15 +13,15 @@ extension NSManagedObjectContext {
     func performInChild<Output>(
         schedule: NSManagedObjectContext.ScheduledTaskType = .immediate,
         _ block: @escaping (NSManagedObjectContext) throws -> Output
-    ) async -> Result<Output, CoreDataRepositoryError> {
+    ) async -> Result<Output, CoreDataError> {
         let child = childContext()
         let output: Output
         do {
             output = try await child.perform(schedule: schedule) { try block(child) }
-        } catch let error as CoreDataRepositoryError {
+        } catch let error as CoreDataError {
             return .failure(error)
         } catch let error as CocoaError {
-            return .failure(.coreData(error))
+            return .failure(.cocoa(error))
         } catch let error as NSError {
             return .failure(.unknown(error))
         }

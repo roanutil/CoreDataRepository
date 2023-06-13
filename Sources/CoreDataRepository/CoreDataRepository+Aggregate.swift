@@ -24,7 +24,7 @@ extension CoreDataRepository {
     ) throws -> Value {
         let result = try context.fetch(request)
         guard let value: Value = result.asAggregateValue() else {
-            throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
+            throw CoreDataError.fetchedObjectFailedToCastToExpectedType
         }
         return value
     }
@@ -36,7 +36,7 @@ extension CoreDataRepository {
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) async -> Result<Value, CoreDataRepositoryError> where Value: Numeric {
+    ) async -> Result<Value, CoreDataError> where Value: Numeric {
         guard entityDesc == attributeDesc.entity else {
             return .failure(.propertyDoesNotMatchEntity)
         }
@@ -52,9 +52,9 @@ extension CoreDataRepository {
                 let value: Value = try Self.aggregate(context: scratchPad, request: request)
                 return value
             } catch let error as CocoaError {
-                throw CoreDataRepositoryError.coreData(error)
+                throw CoreDataError.cocoa(error)
             } catch {
-                throw CoreDataRepositoryError.unknown(error as NSError)
+                throw CoreDataError.unknown(error as NSError)
             }
         }
     }
@@ -63,7 +63,7 @@ extension CoreDataRepository {
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         as _: Value.Type
-    ) async -> Result<Value, CoreDataRepositoryError> {
+    ) async -> Result<Value, CoreDataError> {
         await context.performInScratchPad { scratchPad in
             do {
                 let request = try NSFetchRequest<NSDictionary>
@@ -71,9 +71,9 @@ extension CoreDataRepository {
                 let count = try scratchPad.count(for: request)
                 return Value(exactly: count) ?? Value.zero
             } catch let error as CocoaError {
-                throw CoreDataRepositoryError.coreData(error)
+                throw CoreDataError.cocoa(error)
             } catch {
-                throw CoreDataRepositoryError.unknown(error as NSError)
+                throw CoreDataError.unknown(error as NSError)
             }
         }
     }
@@ -82,7 +82,7 @@ extension CoreDataRepository {
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         as _: Value.Type
-    ) -> AsyncStream<Result<Value, CoreDataRepositoryError>> {
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
         CountSubscription(
             context: context.childContext(),
             predicate: predicate,
@@ -108,7 +108,7 @@ extension CoreDataRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) async -> Result<Value, CoreDataRepositoryError> {
+    ) async -> Result<Value, CoreDataError> {
         await Self.send(
             function: .sum,
             context: context,
@@ -125,7 +125,7 @@ extension CoreDataRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncStream<Result<Value, CoreDataRepositoryError>> {
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
         AggregateSubscription(
             function: .sum,
             context: context.childContext(),
@@ -159,7 +159,7 @@ extension CoreDataRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) async -> Result<Value, CoreDataRepositoryError> {
+    ) async -> Result<Value, CoreDataError> {
         await Self.send(
             function: .average,
             context: context,
@@ -176,7 +176,7 @@ extension CoreDataRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncStream<Result<Value, CoreDataRepositoryError>> {
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
         AggregateSubscription(
             function: .average,
             context: context.childContext(),
@@ -210,7 +210,7 @@ extension CoreDataRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) async -> Result<Value, CoreDataRepositoryError> {
+    ) async -> Result<Value, CoreDataError> {
         await Self.send(
             function: .min,
             context: context,
@@ -227,7 +227,7 @@ extension CoreDataRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncStream<Result<Value, CoreDataRepositoryError>> {
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
         AggregateSubscription(
             function: .min,
             context: context.childContext(),
@@ -261,7 +261,7 @@ extension CoreDataRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) async -> Result<Value, CoreDataRepositoryError> {
+    ) async -> Result<Value, CoreDataError> {
         await Self.send(
             function: .max,
             context: context,
@@ -278,7 +278,7 @@ extension CoreDataRepository {
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncStream<Result<Value, CoreDataRepositoryError>> {
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
         AggregateSubscription(
             function: .max,
             context: context.childContext(),

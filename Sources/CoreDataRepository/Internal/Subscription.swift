@@ -17,7 +17,7 @@ class Subscription<
 >: NSObject, NSFetchedResultsControllerDelegate {
     let request: NSFetchRequest<RequestResult>
     let frc: NSFetchedResultsController<ControllerResult>
-    let subject: PassthroughSubject<Output, CoreDataRepositoryError>
+    let subject: PassthroughSubject<Output, CoreDataError>
 
     init(
         fetchRequest: NSFetchRequest<RequestResult>,
@@ -47,7 +47,7 @@ class Subscription<
         do {
             try frc.performFetch()
         } catch let error as CocoaError {
-            fail(.coreData(error))
+            fail(.cocoa(error))
         } catch {
             fail(.unknown(error as NSError))
         }
@@ -61,11 +61,11 @@ class Subscription<
         subject.send(completion: .finished)
     }
 
-    func fail(_ error: CoreDataRepositoryError) {
+    func fail(_ error: CoreDataError) {
         subject.send(completion: .failure(error))
     }
 
-    func stream() -> AsyncStream<Result<Output, CoreDataRepositoryError>> {
+    func stream() -> AsyncStream<Result<Output, CoreDataError>> {
         AsyncStream { [self] continuation in
             let task = Task {
                 self.manualFetch()

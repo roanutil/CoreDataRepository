@@ -17,7 +17,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let historyTimeStamp = Date()
         let transactionAuthor: String = #function
         let movie = Movie(id: UUID(), title: "Create Success", releaseDate: Date(), boxOffice: 100)
-        let result: Result<Movie, CoreDataRepositoryError> = try await repository()
+        let result: Result<Movie, CoreDataError> = try await repository()
             .create(movie, transactionAuthor: transactionAuthor)
         guard case let .success(resultMovie) = result else {
             XCTFail("Not expecting a failed result")
@@ -41,7 +41,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
             return object.asUnmanaged
         }
 
-        let result: Result<Movie, CoreDataRepositoryError> = try await repository()
+        let result: Result<Movie, CoreDataError> = try await repository()
             .read(XCTUnwrap(createdMovie.url), of: Movie.self)
 
         guard case let .success(resultMovie) = result else {
@@ -74,7 +74,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
             try self.repositoryContext().save()
         }
 
-        let result: Result<Movie, CoreDataRepositoryError> = try await repository()
+        let result: Result<Movie, CoreDataError> = try await repository()
             .read(XCTUnwrap(createdMovie.url), of: Movie.self)
 
         switch result {
@@ -99,7 +99,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let historyTimeStamp = Date()
         let transactionAuthor: String = #function
 
-        let result: Result<Movie, CoreDataRepositoryError> = try await repository()
+        let result: Result<Movie, CoreDataError> = try await repository()
             .update(XCTUnwrap(createdMovie.url), with: movie, transactionAuthor: transactionAuthor)
 
         guard case let .success(resultMovie) = result else {
@@ -136,7 +136,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
 
         movie.title = "Update Success - Edited"
 
-        let result: Result<Movie, CoreDataRepositoryError> = try await repository()
+        let result: Result<Movie, CoreDataError> = try await repository()
             .update(XCTUnwrap(createdMovie.url), with: movie)
 
         switch result {
@@ -159,7 +159,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let historyTimeStamp = Date()
         let transactionAuthor: String = #function
 
-        let result: Result<Void, CoreDataRepositoryError> = try await repository()
+        let result: Result<Void, CoreDataError> = try await repository()
             .delete(XCTUnwrap(createdMovie.url), transactionAuthor: transactionAuthor)
 
         switch result {
@@ -189,7 +189,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
             try self.repositoryContext().save()
         }
 
-        let result: Result<Void, CoreDataRepositoryError> = try await repository()
+        let result: Result<Void, CoreDataError> = try await repository()
             .delete(XCTUnwrap(createdMovie.url))
 
         switch result {
@@ -234,7 +234,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                 case 1:
                     XCTAssertEqual(receivedMovie, movie, "Success response should match local object.")
                     let crudRepository = try CoreDataRepository(context: repositoryContext())
-                    let _: Result<Movie, CoreDataRepositoryError> = await crudRepository
+                    let _: Result<Movie, CoreDataError> = await crudRepository
                         .update(repoMovieUrl, with: editedMovie)
                     await Task.yield()
                 case 2:
@@ -284,7 +284,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                 case 1:
                     XCTAssertEqual(receivedMovie, movie, "Success response should match local object.")
                     let crudRepository = try CoreDataRepository(context: repositoryContext())
-                    let _: Result<Movie, CoreDataRepositoryError> = await crudRepository
+                    let _: Result<Movie, CoreDataError> = await crudRepository
                         .update(repoMovieUrl, with: editedMovie)
                     await Task.yield()
                 case 2:

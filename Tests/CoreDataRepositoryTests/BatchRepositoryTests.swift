@@ -61,7 +61,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         let transactionAuthor: String = #function
 
         let request = try NSBatchInsertRequest(entityName: XCTUnwrap(RepoMovie.entity().name), objects: movies)
-        let result: Result<NSBatchInsertResult, CoreDataRepositoryError> = try await repository()
+        let result: Result<NSBatchInsertResult, CoreDataError> = try await repository()
             .insert(request, transactionAuthor: transactionAuthor)
 
         switch result {
@@ -94,7 +94,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
             entityName: XCTUnwrap(RepoMovie.entity().name),
             objects: failureInsertMovies
         )
-        let result: Result<NSBatchInsertResult, CoreDataRepositoryError> = try await repository().insert(request)
+        let result: Result<NSBatchInsertResult, CoreDataError> = try await repository().insert(request)
 
         switch result {
         case .success:
@@ -182,7 +182,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         let historyTimeStamp = Date()
         let transactionAuthor: String = #function
 
-        let _: Result<NSBatchUpdateResult, CoreDataRepositoryError> = try await repository()
+        let _: Result<NSBatchUpdateResult, CoreDataError> = try await repository()
             .update(request, transactionAuthor: transactionAuthor)
 
         try await repositoryContext().perform {
@@ -247,7 +247,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         let historyTimeStamp = Date()
         let transactionAuthor: String = #function
 
-        let _: Result<NSBatchDeleteResult, CoreDataRepositoryError> = try await repository()
+        let _: Result<NSBatchDeleteResult, CoreDataError> = try await repository()
             .delete(request, transactionAuthor: transactionAuthor)
 
         try await repositoryContext().perform {

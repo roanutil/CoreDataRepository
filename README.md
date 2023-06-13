@@ -117,7 +117,7 @@ extension Movie: UnmanagedModel {
 
 ```swift
 var movie = Movie(id: UUID(), title: "The Madagascar Penguins in a Christmas Caper", releaseDate: Date(), boxOffice: 100)
-let result: Result<Movie, CoreDataRepositoryError> = await repository.create(movie)
+let result: Result<Movie, CoreDataError> = await repository.create(movie)
 if case let .success(movie) = result {
     os_log("Created movie with title - \(movie.title)")
 }
@@ -129,7 +129,7 @@ if case let .success(movie) = result {
 let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
 fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \RepoMovie.title, ascending: true)]
 fetchRequest.predicate = NSPredicate(value: true)
-let result: Result<[Movie], CoreDataRepositoryError> = await repository.fetch(fetchRequest)
+let result: Result<[Movie], CoreDataError> = await repository.fetch(fetchRequest)
 if case let .success(movies) = result {
     os_log("Fetched \(movies.count) movies")
 }
@@ -140,7 +140,7 @@ if case let .success(movies) = result {
 Similar to a regular fe:
 
 ```swift
-let result: AnyPublisher<[Movie], CoreDataRepositoryError> = repository.fetchSubscription(fetchRequest)
+let result: AnyPublisher<[Movie], CoreDataError> = repository.fetchSubscription(fetchRequest)
 let cancellable = result.subscribe(on: userInitSerialQueue)
             .receive(on: mainQueue)
             .sink(receiveCompletion: { completion in
@@ -160,7 +160,7 @@ cancellable.cancel()
 ### Aggregate
 
 ```swift
-let result: Result<[[String: Decimal]], CoreDataRepositoryError> = await repository.sum(
+let result: Result<[[String: Decimal]], CoreDataError> = await repository.sum(
     predicate: NSPredicate(value: true),
     entityDesc: RepoMovie.entity(),
     attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
@@ -181,7 +181,7 @@ let movies: [[String: Any]] = [
     ["id": UUID(), "title": "E", "releaseDate": Date()]
 ]
 let request = NSBatchInsertRequest(entityName: RepoMovie.entity().name!, objects: movies)
-let result: Result<NSBatchInsertResult, CoreDataRepositoryError> = await repository.insert(request)
+let result: Result<NSBatchInsertResult, CoreDataError> = await repository.insert(request)
 
 ```
 

@@ -12,8 +12,8 @@ import Foundation
 
 extension NSManagedObjectContext {
     func performInScratchPad<Output>(
-        promise: @escaping Future<Output, CoreDataRepositoryError>.Promise,
-        _ block: @escaping (NSManagedObjectContext) -> Result<Output, CoreDataRepositoryError>
+        promise: @escaping Future<Output, CoreDataError>.Promise,
+        _ block: @escaping (NSManagedObjectContext) -> Result<Output, CoreDataError>
     ) {
         let scratchPad = scratchPadContext()
         scratchPad.perform {
@@ -28,12 +28,12 @@ extension NSManagedObjectContext {
     func performInScratchPad<Output>(
         schedule: NSManagedObjectContext.ScheduledTaskType = .immediate,
         _ block: @escaping (NSManagedObjectContext) throws -> Output
-    ) async -> Result<Output, CoreDataRepositoryError> {
+    ) async -> Result<Output, CoreDataError> {
         let scratchPad = scratchPadContext()
         let output: Output
         do {
             output = try await scratchPad.perform(schedule: schedule) { try block(scratchPad) }
-        } catch let error as CoreDataRepositoryError {
+        } catch let error as CoreDataError {
             await scratchPad.perform {
                 scratchPad.rollback()
             }
@@ -42,19 +42,19 @@ extension NSManagedObjectContext {
             await scratchPad.perform {
                 scratchPad.rollback()
             }
-            return .failure(.coreData(error))
+            return .failure(.cocoa(error))
         } catch let error as NSError {
             await scratchPad.perform {
                 scratchPad.rollback()
             }
-            return .failure(CoreDataRepositoryError.unknown(error))
+            return .failure(CoreDataError.unknown(error))
         }
         return .success(output)
     }
 
     func performAndWaitInScratchPad<Output>(
-        promise: @escaping Future<Output, CoreDataRepositoryError>.Promise,
-        _ block: @escaping (NSManagedObjectContext) -> Result<Output, CoreDataRepositoryError>
+        promise: @escaping Future<Output, CoreDataError>.Promise,
+        _ block: @escaping (NSManagedObjectContext) -> Result<Output, CoreDataError>
     ) throws {
         let scratchPad = scratchPadContext()
         scratchPad.performAndWait {

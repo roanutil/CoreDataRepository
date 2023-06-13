@@ -13,12 +13,12 @@ extension CoreDataRepository {
     public func insert(
         _ request: NSBatchInsertRequest,
         transactionAuthor: String? = nil
-    ) async -> Result<NSBatchInsertResult, CoreDataRepositoryError> {
+    ) async -> Result<NSBatchInsertResult, CoreDataError> {
         await context.performInScratchPad { [context] scratchPad in
             context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchInsertResult else {
                 context.transactionAuthor = nil
-                throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
+                throw CoreDataError.fetchedObjectFailedToCastToExpectedType
             }
             context.transactionAuthor = nil
             return result
@@ -38,7 +38,7 @@ extension CoreDataRepository {
             }
             for item in items {
                 let added = group.addTaskUnlessCancelled {
-                    async let result: Result<Model, CoreDataRepositoryError> = self
+                    async let result: Result<Model, CoreDataError> = self
                         .create(item, transactionAuthor: transactionAuthor)
                     switch await result {
                     case let .success(created):
@@ -100,12 +100,12 @@ extension CoreDataRepository {
     public func update(
         _ request: NSBatchUpdateRequest,
         transactionAuthor: String? = nil
-    ) async -> Result<NSBatchUpdateResult, CoreDataRepositoryError> {
+    ) async -> Result<NSBatchUpdateResult, CoreDataError> {
         await context.performInScratchPad { [context] scratchPad in
             context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchUpdateResult else {
                 context.transactionAuthor = nil
-                throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
+                throw CoreDataError.fetchedObjectFailedToCastToExpectedType
             }
             context.transactionAuthor = nil
             return result
@@ -128,7 +128,7 @@ extension CoreDataRepository {
                     guard let url = item.managedRepoUrl else {
                         return Either<Model, Model>.failure(item)
                     }
-                    async let result: Result<Model, CoreDataRepositoryError> = self
+                    async let result: Result<Model, CoreDataError> = self
                         .update(url, with: item, transactionAuthor: transactionAuthor)
                     switch await result {
                     case let .success(created):
@@ -156,12 +156,12 @@ extension CoreDataRepository {
     public func delete(
         _ request: NSBatchDeleteRequest,
         transactionAuthor: String? = nil
-    ) async -> Result<NSBatchDeleteResult, CoreDataRepositoryError> {
+    ) async -> Result<NSBatchDeleteResult, CoreDataError> {
         await context.performInScratchPad { [context] scratchPad in
             context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchDeleteResult else {
                 context.transactionAuthor = nil
-                throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
+                throw CoreDataError.fetchedObjectFailedToCastToExpectedType
             }
             context.transactionAuthor = nil
             return result
@@ -181,7 +181,7 @@ extension CoreDataRepository {
             }
             for url in urls {
                 let added = group.addTaskUnlessCancelled {
-                    async let result: Result<Void, CoreDataRepositoryError> = self
+                    async let result: Result<Void, CoreDataError> = self
                         .delete(url, transactionAuthor: transactionAuthor)
                     switch await result {
                     case .success:

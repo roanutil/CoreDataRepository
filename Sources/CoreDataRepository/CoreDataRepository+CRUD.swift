@@ -13,7 +13,7 @@ extension CoreDataRepository {
     public func create<Model: UnmanagedModel>(
         _ item: Model,
         transactionAuthor: String? = nil
-    ) async -> Result<Model, CoreDataRepositoryError> {
+    ) async -> Result<Model, CoreDataError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             let object = Model.RepoManaged(context: scratchPad)
             object.create(from: item)
@@ -31,7 +31,7 @@ extension CoreDataRepository {
     public func read<Model: UnmanagedModel>(
         _ url: URL,
         of _: Model.Type
-    ) async -> Result<Model, CoreDataRepositoryError> {
+    ) async -> Result<Model, CoreDataError> {
         await context.performInChild(schedule: .enqueued) { readContext in
             let id = try readContext.tryObjectId(from: url)
             let object = try readContext.notDeletedObject(for: id)
@@ -44,7 +44,7 @@ extension CoreDataRepository {
         _ url: URL,
         with item: Model,
         transactionAuthor: String? = nil
-    ) async -> Result<Model, CoreDataRepositoryError> {
+    ) async -> Result<Model, CoreDataError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             scratchPad.transactionAuthor = transactionAuthor
             let id = try scratchPad.tryObjectId(from: url)
@@ -64,7 +64,7 @@ extension CoreDataRepository {
     public func delete(
         _ url: URL,
         transactionAuthor: String? = nil
-    ) async -> Result<Void, CoreDataRepositoryError> {
+    ) async -> Result<Void, CoreDataError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             scratchPad.transactionAuthor = transactionAuthor
             let id = try scratchPad.tryObjectId(from: url)
@@ -82,7 +82,7 @@ extension CoreDataRepository {
     }
 
     public func readSubscription<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
-        -> AsyncStream<Result<Model, CoreDataRepositoryError>>
+        -> AsyncStream<Result<Model, CoreDataError>>
     {
         let readContext = context.childContext()
         return AsyncStream { continuation in
@@ -166,7 +166,7 @@ extension CoreDataRepository {
     private static func getObjectId(
         fromUrl url: URL,
         context: NSManagedObjectContext
-    ) -> Result<NSManagedObjectID, CoreDataRepositoryError> {
+    ) -> Result<NSManagedObjectID, CoreDataError> {
         guard let objectId = context.persistentStoreCoordinator?.managedObjectID(forURIRepresentation: url) else {
             return Result.failure(.failedToGetObjectIdFromUrl(url))
         }

@@ -21,7 +21,7 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
             do {
                 result = try frc.managedObjectContext.fetch(request)
             } catch let error as CocoaError {
-                subject.send(completion: .failure(.coreData(error)))
+                subject.send(completion: .failure(.cocoa(error)))
                 return
             } catch {
                 subject.send(completion: .failure(.unknown(error as NSError)))
@@ -53,7 +53,7 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
                 attributeDesc: attributeDesc,
                 groupBy: groupBy
             )
-        } catch let error as CoreDataRepositoryError {
+        } catch let error as CoreDataError {
             self.init(
                 fetchRequest: NSFetchRequest(),
                 fetchResultControllerRequest: NSFetchRequest(),
@@ -67,7 +67,7 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
                 fetchResultControllerRequest: NSFetchRequest(),
                 context: context
             )
-            self.fail(.coreData(error))
+            self.fail(.cocoa(error))
             return
         } catch {
             self.init(

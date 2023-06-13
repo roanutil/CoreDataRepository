@@ -8,12 +8,12 @@
 
 import Foundation
 
-public enum CoreDataRepositoryError: Error, Equatable, Hashable, Sendable {
+public enum CoreDataError: Error, Equatable, Hashable, Sendable {
     case failedToGetObjectIdFromUrl(URL)
     case propertyDoesNotMatchEntity
     case fetchedObjectFailedToCastToExpectedType
     case fetchedObjectIsFlaggedAsDeleted
-    case coreData(CocoaError)
+    case cocoa(CocoaError)
     case unknown(NSError)
     case noEntityNameFound
     case atLeastOneAttributeDescRequired
@@ -47,7 +47,7 @@ public enum CoreDataRepositoryError: Error, Equatable, Hashable, Sendable {
                 bundle: .module,
                 comment: "Error for when an object is fetched but is flagged as deleted and is no longer usable."
             )
-        case let .coreData(error):
+        case let .cocoa(error):
             return error.localizedDescription
         case let .unknown(error):
             return error.localizedDescription
@@ -59,7 +59,7 @@ public enum CoreDataRepositoryError: Error, Equatable, Hashable, Sendable {
     }
 }
 
-extension CoreDataRepositoryError: CustomNSError {
+extension CoreDataError: CustomNSError {
     public static let errorDomain: String = "CoreDataRepository"
 
     public var errorCode: Int {
@@ -72,7 +72,7 @@ extension CoreDataRepositoryError: CustomNSError {
             return 3
         case .fetchedObjectIsFlaggedAsDeleted:
             return 4
-        case .coreData:
+        case .cocoa:
             return 5
         case .unknown:
             return 6
@@ -95,7 +95,7 @@ extension CoreDataRepositoryError: CustomNSError {
             return [:]
         case .fetchedObjectIsFlaggedAsDeleted:
             return [:]
-        case let .coreData(error):
+        case let .cocoa(error):
             return error.userInfo
         case let .unknown(error):
             return error.userInfo

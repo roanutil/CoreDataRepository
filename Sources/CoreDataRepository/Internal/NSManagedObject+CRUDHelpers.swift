@@ -12,7 +12,7 @@ import Foundation
 extension NSManagedObject {
     func asRepoManaged<T>() throws -> T where T: RepositoryManagedModel {
         guard let repoManaged = self as? T else {
-            throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
+            throw CoreDataError.fetchedObjectFailedToCastToExpectedType
         }
         return repoManaged
     }

@@ -31,18 +31,18 @@ extension Result where Success == NSManagedObject, Failure == Error {
     }
 }
 
-extension Result where Failure == CoreDataRepositoryError {
-    func save(context: NSManagedObjectContext) -> Result<Success, CoreDataRepositoryError> {
+extension Result where Failure == CoreDataError {
+    func save(context: NSManagedObjectContext) -> Result<Success, CoreDataError> {
         flatMap { success in
             do {
                 try context.save()
                 if let parentContext = context.parent {
-                    var result: Result<Success, CoreDataRepositoryError> = .success(success)
+                    var result: Result<Success, CoreDataError> = .success(success)
                     parentContext.performAndWait {
                         do {
                             try parentContext.save()
                         } catch let error as CocoaError {
-                            result = .failure(.coreData(error))
+                            result = .failure(.cocoa(error))
                         } catch {
                             result = .failure(.unknown(error as NSError))
                         }
@@ -51,7 +51,7 @@ extension Result where Failure == CoreDataRepositoryError {
                 }
                 return .success(success)
             } catch let error as CocoaError {
-                return .failure(.coreData(error))
+                return .failure(.cocoa(error))
             } catch {
                 return .failure(.unknown(error as NSError))
             }
@@ -60,12 +60,12 @@ extension Result where Failure == CoreDataRepositoryError {
 }
 
 extension Result where Failure == Error {
-    func mapToRepoError() -> Result<Success, CoreDataRepositoryError> {
+    func mapToRepoError() -> Result<Success, CoreDataError> {
         mapError { error in
-            if let repoError = error as? CoreDataRepositoryError {
+            if let repoError = error as? CoreDataError {
                 return repoError
             } else if let cocoaError = error as? CocoaError {
-                return .coreData(cocoaError)
+                return .cocoa(cocoaError)
             } else {
                 return .unknown(error as NSError)
             }

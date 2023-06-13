@@ -19,9 +19,9 @@ final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManage
                 let count = try frc.managedObjectContext.count(for: frc.fetchRequest)
                 subject.send(Value(exactly: count) ?? Value.zero)
             } catch let error as CocoaError {
-                subject.send(completion: .failure(.coreData(error)))
+                subject.send(completion: .failure(.cocoa(error)))
             } catch {
-                subject.send(completion: .failure(CoreDataRepositoryError.unknown(error as NSError)))
+                subject.send(completion: .failure(CoreDataError.unknown(error as NSError)))
             }
         }
     }
@@ -37,7 +37,7 @@ final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManage
                 predicate: predicate,
                 entityDesc: entityDesc
             )
-        } catch let error as CoreDataRepositoryError {
+        } catch let error as CoreDataError {
             self.init(
                 fetchRequest: NSFetchRequest(),
                 fetchResultControllerRequest: NSFetchRequest(),
@@ -51,7 +51,7 @@ final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManage
                 fetchResultControllerRequest: NSFetchRequest(),
                 context: context
             )
-            self.fail(.coreData(error))
+            self.fail(.cocoa(error))
             return
         } catch {
             self.init(

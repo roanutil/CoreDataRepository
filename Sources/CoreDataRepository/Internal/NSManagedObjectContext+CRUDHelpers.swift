@@ -12,7 +12,7 @@ import Foundation
 extension NSManagedObjectContext {
     func tryObjectId(from url: URL) throws -> NSManagedObjectID {
         guard let objectId = persistentStoreCoordinator?.managedObjectID(forURIRepresentation: url) else {
-            throw CoreDataRepositoryError.failedToGetObjectIdFromUrl(url)
+            throw CoreDataError.failedToGetObjectIdFromUrl(url)
         }
         return objectId
     }
@@ -26,7 +26,7 @@ extension NSManagedObjectContext {
     func notDeletedObject(for id: NSManagedObjectID) throws -> NSManagedObject {
         let object: NSManagedObject = try existingObject(with: id)
         guard !object.isDeleted else {
-            throw CoreDataRepositoryError.fetchedObjectIsFlaggedAsDeleted
+            throw CoreDataError.fetchedObjectIsFlaggedAsDeleted
         }
         return object
     }

@@ -42,7 +42,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
     }
 
     func testFetchSuccess() async throws {
-        let result: Result<[Movie], CoreDataRepositoryError> = try await repository().fetch(fetchRequest)
+        let result: Result<[Movie], CoreDataError> = try await repository().fetch(fetchRequest)
         switch result {
         case let .success(movies):
             XCTAssertEqual(movies.count, 5, "Result items count should match expectation")
@@ -65,7 +65,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                     XCTAssertEqual(items.count, 5, "Result items count should match expectation")
                     XCTAssertEqual(items, self.expectedMovies, "Result items should match expectations")
                     let crudRepository = try CoreDataRepository(context: repositoryContext())
-                    let _: Result<Void, CoreDataRepositoryError> = try await crudRepository
+                    let _: Result<Void, CoreDataError> = try await crudRepository
                         .delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:
@@ -94,7 +94,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                     XCTAssertEqual(items.count, 5, "Result items count should match expectation")
                     XCTAssertEqual(items, self.expectedMovies, "Result items should match expectations")
                     let crudRepository = try CoreDataRepository(context: self.repositoryContext())
-                    let _: Result<Void, CoreDataRepositoryError> = try await crudRepository
+                    let _: Result<Void, CoreDataError> = try await crudRepository
                         .delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:

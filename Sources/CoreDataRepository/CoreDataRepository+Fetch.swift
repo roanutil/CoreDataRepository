@@ -12,7 +12,7 @@ import CoreData
 
 extension CoreDataRepository {
     public func fetch<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>) async
-        -> Result<[Model], CoreDataRepositoryError>
+        -> Result<[Model], CoreDataError>
     {
         await context.performInChild { fetchContext in
             try fetchContext.fetch(request).map(\.asUnmanaged)
@@ -22,7 +22,7 @@ extension CoreDataRepository {
     public func fetchSubscription<Model: UnmanagedModel>(
         _ request: NSFetchRequest<Model.RepoManaged>,
         of _: Model.Type
-    ) -> AsyncStream<Result<[Model], CoreDataRepositoryError>> {
+    ) -> AsyncStream<Result<[Model], CoreDataError>> {
         FetchSubscription(request: request, context: context.childContext()).stream()
     }
 
