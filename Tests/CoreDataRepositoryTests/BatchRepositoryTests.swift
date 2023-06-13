@@ -120,7 +120,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         let transactionAuthor: String = #function
 
         let newMovies = try movies.map(mapDictToMovie(_:))
-        let result: (success: [Movie], failed: [Movie]) = try await repository()
+        let result: (success: [Movie], failed: [CoreDataBatchError<Movie>]) = try await repository()
             .create(newMovies, transactionAuthor: transactionAuthor)
 
         XCTAssertEqual(result.success.count, newMovies.count)
@@ -216,7 +216,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         let historyTimeStamp = Date()
         let transactionAuthor: String = #function
 
-        let result: (success: [Movie], failed: [Movie]) = try await repository()
+        let result: (success: [Movie], failed: [CoreDataBatchError<Movie>]) = try await repository()
             .update(editedMovies, transactionAuthor: transactionAuthor)
 
         XCTAssertEqual(result.success.count, movies.count)
@@ -273,7 +273,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         let historyTimeStamp = Date()
         let transactionAuthor: String = #function
 
-        let result: (success: [URL], failed: [URL]) = try await repository()
+        let result: (success: [URL], failed: [CoreDataBatchError<URL>]) = try await repository()
             .delete(urls: movies.compactMap(\.url), transactionAuthor: transactionAuthor)
 
         XCTAssertEqual(result.success.count, movies.count)

@@ -1,4 +1,4 @@
-// CoreDataRepositoryError.swift
+// CoreDataError.swift
 // CoreDataRepository
 //
 //
@@ -17,6 +17,7 @@ public enum CoreDataError: Error, Equatable, Hashable, Sendable {
     case unknown(NSError)
     case noEntityNameFound
     case atLeastOneAttributeDescRequired
+    case noUrlOnItemToMapToObjectId
 
     public var localizedDescription: String {
         switch self {
@@ -55,6 +56,8 @@ public enum CoreDataError: Error, Equatable, Hashable, Sendable {
             return ""
         case .atLeastOneAttributeDescRequired:
             return ""
+        case .noUrlOnItemToMapToObjectId:
+            return ""
         }
     }
 }
@@ -80,6 +83,8 @@ extension CoreDataError: CustomNSError {
             return 7
         case .atLeastOneAttributeDescRequired:
             return 8
+        case .noUrlOnItemToMapToObjectId:
+            return 9
         }
     }
 
@@ -102,6 +107,8 @@ extension CoreDataError: CustomNSError {
         case .noEntityNameFound:
             return [:]
         case .atLeastOneAttributeDescRequired:
+            return [:]
+        case .noUrlOnItemToMapToObjectId:
             return [:]
         }
     }

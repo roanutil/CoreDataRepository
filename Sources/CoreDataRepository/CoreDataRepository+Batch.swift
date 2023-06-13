@@ -28,10 +28,10 @@ extension CoreDataRepository {
     public func create<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
-    ) async -> (success: [Model], failed: [Model]) {
+    ) async -> (success: [Model], failed: [CoreDataBatchError<Model>]) {
         var successes = [Model]()
-        var failures = [Model]()
-        await withTaskGroup(of: Either<Model, Model>.self, body: { [weak self] group in
+        var failures = [CoreDataBatchError<Model>]()
+        await withTaskGroup(of: Result<Model, CoreDataBatchError<Model>>.self, body: { [weak self] group in
             guard let self = self else {
                 group.cancelAll()
                 return
@@ -42,9 +42,9 @@ extension CoreDataRepository {
                         .create(item, transactionAuthor: transactionAuthor)
                     switch await result {
                     case let .success(created):
-                        return Either<Model, Model>.success(created)
-                    case .failure:
-                        return Either<Model, Model>.failure(item)
+                        return .success(created)
+                    case let .failure(error):
+                        return .failure(CoreDataBatchError(item: item, error: error))
                     }
                 }
                 if !added {
@@ -63,10 +63,13 @@ extension CoreDataRepository {
         return (success: successes, failed: failures)
     }
 
-    public func read<Model: UnmanagedModel>(urls: [URL], as _: Model.Type) async -> (success: [Model], failed: [URL]) {
+    public func read<Model: UnmanagedModel>(
+        urls: [URL],
+        as _: Model.Type
+    ) async -> (success: [Model], failed: [CoreDataBatchError<URL>]) {
         var successes = [Model]()
-        var failures = [URL]()
-        await withTaskGroup(of: Either<Model, URL>.self, body: { [weak self] group in
+        var failures = [CoreDataBatchError<URL>]()
+        await withTaskGroup(of: Result<Model, CoreDataBatchError<URL>>.self, body: { [weak self] group in
             guard let self = self else {
                 group.cancelAll()
                 return
@@ -76,9 +79,9 @@ extension CoreDataRepository {
                     async let result = self.read(url, of: Model.self)
                     switch await result {
                     case let .success(created):
-                        return Either<Model, URL>.success(created)
-                    case .failure:
-                        return Either<Model, URL>.failure(url)
+                        return .success(created)
+                    case let .failure(error):
+                        return .failure(CoreDataBatchError(item: url, error: error))
                     }
                 }
                 if !added {
@@ -115,10 +118,10 @@ extension CoreDataRepository {
     public func update<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
-    ) async -> (success: [Model], failed: [Model]) {
+    ) async -> (success: [Model], failed: [CoreDataBatchError<Model>]) {
         var successes = [Model]()
-        var failures = [Model]()
-        await withTaskGroup(of: Either<Model, Model>.self, body: { [weak self] group in
+        var failures = [CoreDataBatchError<Model>]()
+        await withTaskGroup(of: Result<Model, CoreDataBatchError<Model>>.self, body: { [weak self] group in
             guard let self = self else {
                 group.cancelAll()
                 return
@@ -126,15 +129,15 @@ extension CoreDataRepository {
             for item in items {
                 let added = group.addTaskUnlessCancelled {
                     guard let url = item.managedRepoUrl else {
-                        return Either<Model, Model>.failure(item)
+                        return .failure(CoreDataBatchError(item: item, error: .noUrlOnItemToMapToObjectId))
                     }
                     async let result: Result<Model, CoreDataError> = self
                         .update(url, with: item, transactionAuthor: transactionAuthor)
                     switch await result {
                     case let .success(created):
-                        return Either<Model, Model>.success(created)
-                    case .failure:
-                        return Either<Model, Model>.failure(item)
+                        return .success(created)
+                    case let .failure(error):
+                        return .failure(CoreDataBatchError(item: item, error: error))
                     }
                 }
                 if !added {
@@ -171,10 +174,10 @@ extension CoreDataRepository {
     public func delete(
         urls: [URL],
         transactionAuthor: String? = nil
-    ) async -> (success: [URL], failed: [URL]) {
+    ) async -> (success: [URL], failed: [CoreDataBatchError<URL>]) {
         var successes = [URL]()
-        var failures = [URL]()
-        await withTaskGroup(of: Either<URL, URL>.self, body: { [weak self] group in
+        var failures = [CoreDataBatchError<URL>]()
+        await withTaskGroup(of: Result<URL, CoreDataBatchError<URL>>.self, body: { [weak self] group in
             guard let self = self else {
                 group.cancelAll()
                 return
@@ -185,9 +188,9 @@ extension CoreDataRepository {
                         .delete(url, transactionAuthor: transactionAuthor)
                     switch await result {
                     case .success:
-                        return Either<URL, URL>.success(url)
-                    case .failure:
-                        return Either<URL, URL>.failure(url)
+                        return .success(url)
+                    case let .failure(error):
+                        return .failure(CoreDataBatchError(item: url, error: error))
                     }
                 }
                 if !added {
