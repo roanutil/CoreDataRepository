@@ -13,16 +13,14 @@ import XCTest
 
 @MainActor
 class SwiftDataXCTestCase: XCTestCase {
-    var _container: ModelContainer?
-    var _context: ModelContext?
     var _repository: SwiftDataRepository?
 
-    func container() throws -> ModelContainer {
-        try XCTUnwrap(_container)
+    func container() async throws -> ModelContainer {
+        try await repository().container
     }
 
-    func context() throws -> ModelContext {
-        try XCTUnwrap(_context)
+    func context() async throws -> ModelContext {
+        try await repository().executor.context
     }
 
     func repository() throws -> SwiftDataRepository {
@@ -34,17 +32,13 @@ class SwiftDataXCTestCase: XCTestCase {
             for: RepoMovie.self,
             ModelConfiguration(inMemory: true)
         )
-        _container = container
-        _context = container.mainContext
         _repository = SwiftDataRepository(container: container)
         try await super.setUp()
     }
 
     override func tearDown() async throws {
         try await super.tearDown()
-        _container?.destroy()
-        _container = nil
-        _context = nil
+        try await container().destroy()
         _repository = nil
     }
 
@@ -53,35 +47,28 @@ class SwiftDataXCTestCase: XCTestCase {
         case noItemFoundForPersistentId
     }
 
-    func verify<T>(_ item: T) throws where T: PersistentModelProxy {
+    func verify<T>(_ item: T) async throws where T: PersistentModelProxy {
         guard let identifier = item.persistentId else {
             throw Failure.noPersistentIdFoundOnProxy
         }
 
-        guard let _object: T.Persistent = try context().registeredObject(for: identifier) else {
+        guard let _object: T.Persistent = try await context().registeredObject(for: identifier) else {
             throw Failure.noItemFoundForPersistentId
         }
         XCTAssertNoDifference(item, try T(persisted: XCTUnwrap(_object)))
     }
 
-    func verifyDoesNotExist<T>(_ item: T) throws where T: PersistentModelProxy {
-        guard let identifier = item.persistentId else {
-            throw Failure.noPersistentIdFoundOnProxy
-        }
-
-        try context().transaction {
-            let model: T.Persistent? = try context().registeredObject(for: identifier)
-            XCTAssertNil(model)
-        }
+    func verifyDoesNotExist<T>(_ item: T) async throws where T: Identifiable, T: PersistentModelProxy,
+        T.Persistent: IdentifiableByProxy, T.ID == T.Persistent.ProxID
+    {
+        let object = try await context().fetch(FetchDescriptor<T.Persistent>()).first(where: { $0.proxyID == item.id })
+        XCTAssertNil(object)
     }
 
-    func identifier<T>(for item: T) throws -> PersistentIdentifier where T: Identifiable, T: PersistentModelProxy,
-        T.Persistent: Identifiable, T.ID == T.Persistent.ID, T: Codable
+    func identifier<T>(for item: T) async throws -> PersistentIdentifier where T: Identifiable, T: PersistentModelProxy,
+        T.Persistent: IdentifiableByProxy, T.ID == T.Persistent.ProxID
     {
-        let predicate = #Predicate<T.Persistent> { model in
-            model.id == item.id
-        }
-        let first = try XCTUnwrap(context().fetchIdentifiers(FetchDescriptor(predicate: predicate)).first)
-        return first
+        let first = try await context().fetch(FetchDescriptor<T.Persistent>()).first(where: { $0.proxyID == item.id })
+        return try XCTUnwrap(first?.objectID)
     }
 }

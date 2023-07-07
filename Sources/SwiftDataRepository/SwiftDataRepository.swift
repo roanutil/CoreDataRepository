@@ -14,6 +14,7 @@ public actor SwiftDataRepository: ModelActor {
 
     public init(container: ModelContainer) {
         let context = ModelContext(container)
+        context.autosaveEnabled = false
         executor = DefaultModelExecutor(context: context)
     }
 
@@ -64,6 +65,50 @@ public actor SwiftDataRepository: ModelActor {
                 return .failure(.noModelFoundForId(identifier))
             }
             return .success(Proxy(persisted: repoItem))
+        }.value
+    }
+
+    public func update<Proxy>(_ item: Proxy) async -> Result<Proxy, Failure> where Proxy: PersistentModelProxy {
+        guard let persistentId = item.persistentId else {
+            return .failure(.noPersistentId)
+        }
+        return await Task {
+            guard let object = context.object(with: persistentId) as? Proxy.Persistent else {
+                return .failure(.noModelFoundForId(persistentId))
+            }
+            item.updating(persisted: object)
+
+            do {
+                try context.save()
+                return .success(Proxy(persisted: object))
+            } catch let error as SwiftDataError {
+                context.undo()
+                return .failure(.swiftData(error))
+            } catch {
+                context.undo()
+                return .failure(.unknown(error as NSError))
+            }
+        }.value
+    }
+
+    public func delete(identifier: PersistentIdentifier) async -> Result<Void, Failure> {
+        await Task {
+            let object = context.object(with: identifier)
+            context.delete(object)
+            context.delete(object: object)
+            if !object.isDeleted() {
+                fatalError()
+            }
+            do {
+                try context.save()
+                return .success(())
+            } catch let error as SwiftDataError {
+                context.undo()
+                return .failure(.swiftData(error))
+            } catch {
+                context.undo()
+                return .failure(.unknown(error as NSError))
+            }
         }.value
     }
 }

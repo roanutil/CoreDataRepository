@@ -38,14 +38,14 @@ extension Movie: PersistentModelProxy {
             updating(persisted: existingObject)
             return existingObject
         } else {
-            let object = RepoMovie(id: id, title: title, releaseDate: releaseDate, boxOffice: boxOffice)
+            let object = RepoMovie(proxyID: id, title: title, releaseDate: releaseDate, boxOffice: boxOffice)
             context.insert(object)
             return object
         }
     }
 
     public func updating(persisted: RepoMovie) {
-        persisted.id = id
+        persisted.proxyID = id
         persisted.title = title
         persisted.releaseDate = releaseDate
         persisted.boxOffice = boxOffice
@@ -53,7 +53,7 @@ extension Movie: PersistentModelProxy {
 
     public init(persisted: RepoMovie) {
         self.init(
-            id: persisted.id,
+            id: persisted.proxyID,
             title: persisted.title,
             releaseDate: persisted.releaseDate,
             boxOffice: persisted.boxOffice,
@@ -63,14 +63,14 @@ extension Movie: PersistentModelProxy {
 }
 
 @Model
-public final class RepoMovie: Identifiable {
-    public var id: UUID
+public final class RepoMovie: IdentifiableByProxy {
+    public var proxyID: UUID
     public var title: String
     public var releaseDate: Date
     public var boxOffice: Decimal
 
-    public init(id: UUID, title: String, releaseDate: Date, boxOffice: Decimal) {
-        self.id = id
+    public init(proxyID: UUID, title: String, releaseDate: Date, boxOffice: Decimal) {
+        self.proxyID = proxyID
         self.title = title
         self.releaseDate = releaseDate
         self.boxOffice = boxOffice
