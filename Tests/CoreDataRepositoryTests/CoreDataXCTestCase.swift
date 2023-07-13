@@ -86,4 +86,16 @@ class CoreDataXCTestCase: XCTestCase {
             XCTAssertNoDifference(item, managedItem.asUnmanaged)
         }
     }
+
+    func verify(transactionAuthor: String?, timeStamp: Date) throws {
+        let historyRequest = NSPersistentHistoryChangeRequest.fetchHistory(after: timeStamp)
+        try repositoryContext().performAndWait {
+            let historyResult = try XCTUnwrap(repositoryContext().execute(historyRequest) as? NSPersistentHistoryResult)
+            let history = try XCTUnwrap(historyResult.result as? [NSPersistentHistoryTransaction])
+            XCTAssertGreaterThan(history.count, 0)
+            history.forEach { historyTransaction in
+                XCTAssertEqual(historyTransaction.author, transactionAuthor)
+            }
+        }
+    }
 }

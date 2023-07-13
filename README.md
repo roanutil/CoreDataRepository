@@ -5,6 +5,9 @@
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Froanutil%2FCoreDataRepository%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/roanutil/CoreDataRepository)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Froanutil%2FCoreDataRepository%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/roanutil/CoreDataRepository)
 
+## :mega: Checkout the [discussion](https://github.com/roanutil/CoreDataRepository/discussions/15) for SwiftData
+## :mega: Major changes are in progress for [v3.0](https://github.com/roanutil/CoreDataRepository/tree/3.0-preview)
+
 CoreDataRepository is a library for using CoreData on a background queue. It features endpoints for CRUD, batch, fetch, and aggregate operations. Also, it offers a stream like subscription for fetch and read.
 
 Since ```NSManagedObject```s are not thread safe, a value type model must exist for each ```NSMangaedObject``` subclass.

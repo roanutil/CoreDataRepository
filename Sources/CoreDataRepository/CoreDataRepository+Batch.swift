@@ -22,11 +22,13 @@ extension CoreDataRepository {
         _ request: NSBatchInsertRequest,
         transactionAuthor: String? = nil
     ) async -> Result<NSBatchInsertResult, CoreDataRepositoryError> {
-        await context.performInScratchPad { scratchPad in
-            scratchPad.transactionAuthor = transactionAuthor
+        await context.performInScratchPad { [context] scratchPad in
+            context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchInsertResult else {
+                context.transactionAuthor = nil
                 throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
             }
+            context.transactionAuthor = nil
             return result
         }
     }
@@ -80,10 +82,20 @@ extension CoreDataRepository {
     ///     - urls: [URL]
     /// - Returns
     ///     - (success: [Model, failed: [Model])
+    @available(*, deprecated, message: "This method has an unused parameter for transactionAuthor.")
     public func read<Model: UnmanagedModel>(
         urls: [URL],
         transactionAuthor _: String? = nil
     ) async -> (success: [Model], failed: [URL]) {
+        await read(urls: urls)
+    }
+
+    /// Batch update objects in CoreData
+    /// - Parameters
+    ///     - urls: [URL]
+    /// - Returns
+    ///     - (success: [Model, failed: [Model])
+    public func read<Model: UnmanagedModel>(urls: [URL]) async -> (success: [Model], failed: [URL]) {
         var successes = [Model]()
         var failures = [URL]()
         await withTaskGroup(of: _Result<Model, URL>.self, body: { [weak self] group in
@@ -127,11 +139,13 @@ extension CoreDataRepository {
         _ request: NSBatchUpdateRequest,
         transactionAuthor: String? = nil
     ) async -> Result<NSBatchUpdateResult, CoreDataRepositoryError> {
-        await context.performInScratchPad { scratchPad in
-            scratchPad.transactionAuthor = transactionAuthor
+        await context.performInScratchPad { [context] scratchPad in
+            context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchUpdateResult else {
+                context.transactionAuthor = nil
                 throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
             }
+            context.transactionAuthor = nil
             return result
         }
     }
@@ -193,11 +207,13 @@ extension CoreDataRepository {
         _ request: NSBatchDeleteRequest,
         transactionAuthor: String? = nil
     ) async -> Result<NSBatchDeleteResult, CoreDataRepositoryError> {
-        await context.performInScratchPad { scratchPad in
-            scratchPad.transactionAuthor = transactionAuthor
+        await context.performInScratchPad { [context] scratchPad in
+            context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchDeleteResult else {
+                context.transactionAuthor = nil
                 throw CoreDataRepositoryError.fetchedObjectFailedToCastToExpectedType
             }
+            context.transactionAuthor = nil
             return result
         }
     }
