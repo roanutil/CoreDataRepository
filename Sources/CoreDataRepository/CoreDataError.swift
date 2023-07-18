@@ -6,15 +6,17 @@
 //
 // Copyright © 2023 Andrew Roan
 
+import CoreData
 import Foundation
 
 /// An error that models all the possible error conditions of CoreDataRepository.
 ///
 /// CoreDataError also conforms to CustomNSError so that it cleanly casts to NSError
 public enum CoreDataError: Error, Hashable, Sendable {
-    /// UnmanagedModels store the NSManagedObjectID of their respective RepositoryManagedModels as a URL. This URL must
+    /// UnmanagedModels store the ``NSManagedObjectID`` of their respective RepositoryManagedModels as a URL. This URL
+    /// must
     /// be mapped back into a
-    /// NSManagedObjectID for most transactions. If it fails, this error is returned.
+    /// ``NSManagedObjectID`` for most transactions. If it fails, this error is returned.
     case failedToGetObjectIdFromUrl(URL)
 
     /// For some aggregate functions, a NSAttributeDescription is required so that a NSFetchRequest can be constructed
@@ -45,7 +47,7 @@ public enum CoreDataError: Error, Hashable, Sendable {
     case atLeastOneAttributeDescRequired
 
     /// If an UnmanagedModel is used in a transaction where it is expected to already be persisted but has no URL
-    /// representing the NSManagedObjectID,
+    /// representing the ``NSManagedObjectID``,
     /// this error is returned.
     case noUrlOnItemToMapToObjectId
 
@@ -53,7 +55,7 @@ public enum CoreDataError: Error, Hashable, Sendable {
         switch self {
         case .failedToGetObjectIdFromUrl:
             return NSLocalizedString(
-                "No NSManagedObjectID found that correlates to the provided URL.",
+                "No ``NSManagedObjectID`` found that correlates to the provided URL.",
                 bundle: .module,
                 comment: "Error for when an ObjectID can't be found for the provided URL."
             )
@@ -67,14 +69,14 @@ public enum CoreDataError: Error, Hashable, Sendable {
             )
         case .fetchedObjectFailedToCastToExpectedType:
             return NSLocalizedString(
-                "The object corresponding to the provided NSManagedObjectID is an incorrect Entity or "
+                "The object corresponding to the provided ``NSManagedObjectID`` is an incorrect Entity or "
                     + "NSManagedObject subtype. It failed to cast to the requested type.",
                 bundle: .module,
                 comment: "Error for when an object is found for a given ObjectID but it is not the expected type."
             )
         case .fetchedObjectIsFlaggedAsDeleted:
             return NSLocalizedString(
-                "The object corresponding to the provided NSManagedObjectID is deleted and cannot be fetched.",
+                "The object corresponding to the provided ``NSManagedObjectID`` is deleted and cannot be fetched.",
                 bundle: .module,
                 comment: "Error for when an object is fetched but is flagged as deleted and is no longer usable."
             )
@@ -83,11 +85,25 @@ public enum CoreDataError: Error, Hashable, Sendable {
         case let .unknown(error):
             return error.localizedDescription
         case .noEntityNameFound:
-            return ""
+            return NSLocalizedString(
+                "The managed object entity description does not have a name.",
+                bundle: .module,
+                comment: "Error for when the NSEntityDescription does not have a name."
+            )
         case .atLeastOneAttributeDescRequired:
-            return ""
+            return NSLocalizedString(
+                "The managed object entity has no attribute description. An attribute description is required for "
+                    + "aggregate operations.",
+                bundle: .module,
+                comment: "Error for when  the NSEntityDescription has no NSAttributeDescription but one is required."
+            )
         case .noUrlOnItemToMapToObjectId:
-            return ""
+            return NSLocalizedString(
+                "No object ID URL found on the unmanaged model for an operation against an existing managed object.",
+                bundle: .module,
+                comment: "Error for performing an operation against an existing NSManagedObject but the UnmanagedModel "
+                    + "instance has no ManagedRepoUrl for looking up the NSManagedOjbectID."
+            )
         }
     }
 }

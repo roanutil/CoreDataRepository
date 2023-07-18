@@ -10,6 +10,7 @@ import Combine
 import CoreData
 
 extension CoreDataRepository {
+    /// Execute a NSBatchInsertRequest against the store.
     public func insert(
         _ request: NSBatchInsertRequest,
         transactionAuthor: String? = nil
@@ -25,6 +26,7 @@ extension CoreDataRepository {
         }
     }
 
+    /// Create a batch of unmanaged models.
     public func create<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -63,6 +65,7 @@ extension CoreDataRepository {
         return (success: successes, failed: failures)
     }
 
+    /// Read a batch of unmanaged models.
     public func read<Model: UnmanagedModel>(
         urls: [URL],
         as _: Model.Type
@@ -100,6 +103,7 @@ extension CoreDataRepository {
         return (success: successes, failed: failures)
     }
 
+    /// Execute a NSBatchUpdateRequest against the store.
     public func update(
         _ request: NSBatchUpdateRequest,
         transactionAuthor: String? = nil
@@ -115,6 +119,8 @@ extension CoreDataRepository {
         }
     }
 
+    /// Update the store with a batch of unmanaged models. This operation is non-atomic. Each instance may succeed or
+    /// fail individually.
     public func update<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -156,6 +162,7 @@ extension CoreDataRepository {
         return (success: successes, failed: failures)
     }
 
+    /// Execute a NSBatchDeleteRequest against the store.
     public func delete(
         _ request: NSBatchDeleteRequest,
         transactionAuthor: String? = nil
@@ -171,6 +178,8 @@ extension CoreDataRepository {
         }
     }
 
+    /// Delete from the store with a batch of unmanaged models. This operation is non-atomic. Each instance may succeed
+    /// or fail individually.
     public func delete(
         urls: [URL],
         transactionAuthor: String? = nil

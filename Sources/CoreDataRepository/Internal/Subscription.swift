@@ -10,6 +10,7 @@ import Combine
 import CoreData
 import Foundation
 
+/// Base class other subscriptions.
 class Subscription<
     Output,
     RequestResult: NSFetchRequestResult,
@@ -120,6 +121,8 @@ class Subscription<
     }
 }
 
+// MARK: where RequestResult == ControllerResult
+
 extension Subscription where RequestResult == ControllerResult {
     convenience init(
         request: NSFetchRequest<RequestResult>,
@@ -132,6 +135,8 @@ extension Subscription where RequestResult == ControllerResult {
         )
     }
 }
+
+// MARK: where RequestResult == NSDictionary, ControllerResult == NSManagedObject
 
 extension Subscription where RequestResult == NSDictionary, ControllerResult == NSManagedObject {
     convenience init(

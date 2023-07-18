@@ -8,7 +8,7 @@
 
 import CoreData
 
-/// A protocol for a CoreData NSManagedObject sub class that has a corresponding value type
+/// A protocol for a CoreData ``NSManagedObject`` sub class that has a corresponding value type
 public protocol RepositoryManagedModel: NSManagedObject {
     associatedtype Unmanaged: UnmanagedModel where Unmanaged.RepoManaged == Self
     /// Returns a value type instance of `self`

@@ -11,6 +11,7 @@ import CombineExt
 import CoreData
 
 extension CoreDataRepository {
+    /// Fetch items from the store with a ``NSFetchRequest``.
     public func fetch<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>) async
         -> Result<[Model], CoreDataError>
     {
@@ -19,6 +20,7 @@ extension CoreDataRepository {
         }
     }
 
+    /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
     public func fetchSubscription<Model: UnmanagedModel>(
         _ request: NSFetchRequest<Model.RepoManaged>,
         of _: Model.Type
@@ -26,6 +28,7 @@ extension CoreDataRepository {
         FetchSubscription(request: request, context: context.childContext()).stream()
     }
 
+    /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
     public func fetchThrowingSubscription<Model: UnmanagedModel>(
         _ request: NSFetchRequest<Model.RepoManaged>,
         of _: Model.Type
