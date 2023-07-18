@@ -19,14 +19,10 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/CombineCommunity/CombineExt.git", .upToNextMajor(from: "1.5.1")),
         .package(url: "https://github.com/pointfreeco/swift-custom-dump.git", .upToNextMajor(from: "0.4.0")),
     ],
     targets: [
-        .target(
-            name: "CoreDataRepository",
-            dependencies: ["CombineExt"]
-        ),
+        .target(name: "CoreDataRepository"),
         .testTarget(
             name: "CoreDataRepositoryTests",
             dependencies: [

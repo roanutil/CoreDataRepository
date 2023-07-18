@@ -7,7 +7,6 @@
 // Copyright © 2023 Andrew Roan
 
 import Combine
-import CombineExt
 import CoreData
 
 extension CoreDataRepository {
