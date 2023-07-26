@@ -34,7 +34,7 @@ public struct Movie: Hashable, Identifiable, Codable {
 
 extension Movie: PersistentModelProxy {
     public func asPersistentModel(in context: ModelContext) -> RepoMovie {
-        if let persistentId, let existingObject: Persistent = context.registeredObject(for: persistentId) {
+        if let persistentId, let existingObject: Persistent = context.object(with: persistentId) as? Persistent {
             updating(persisted: existingObject)
             return existingObject
         } else {

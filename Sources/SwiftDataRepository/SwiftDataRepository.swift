@@ -48,10 +48,10 @@ public actor SwiftDataRepository: ModelActor {
                 item.persistentId = repoItem.objectID
                 return .success(item)
             } catch let error as SwiftDataError {
-                context.undo()
+                context.rollback()
                 return .failure(.swiftData(error))
             } catch {
-                context.undo()
+                context.rollback()
                 return .failure(.unknown(error as NSError))
             }
         }.value
@@ -61,7 +61,7 @@ public actor SwiftDataRepository: ModelActor {
         where Proxy: PersistentModelProxy
     {
         await Task {
-            guard let repoItem: Proxy.Persistent = context.registeredObject(for: identifier) else {
+            guard let repoItem: Proxy.Persistent = context.object(with: identifier) as? Proxy.Persistent else {
                 return .failure(.noModelFoundForId(identifier))
             }
             return .success(Proxy(persisted: repoItem))
@@ -82,20 +82,19 @@ public actor SwiftDataRepository: ModelActor {
                 try context.save()
                 return .success(Proxy(persisted: object))
             } catch let error as SwiftDataError {
-                context.undo()
+                context.rollback()
                 return .failure(.swiftData(error))
             } catch {
-                context.undo()
+                context.rollback()
                 return .failure(.unknown(error as NSError))
             }
         }.value
     }
 
     public func delete(identifier: PersistentIdentifier) async -> Result<Void, Failure> {
-        await Task {
+        await Task { [context] in
             let object = context.object(with: identifier)
             context.delete(object)
-            context.delete(object: object)
             if !object.isDeleted() {
                 fatalError()
             }
@@ -103,10 +102,10 @@ public actor SwiftDataRepository: ModelActor {
                 try context.save()
                 return .success(())
             } catch let error as SwiftDataError {
-                context.undo()
+                context.rollback()
                 return .failure(.swiftData(error))
             } catch {
-                context.undo()
+                context.rollback()
                 return .failure(.unknown(error as NSError))
             }
         }.value

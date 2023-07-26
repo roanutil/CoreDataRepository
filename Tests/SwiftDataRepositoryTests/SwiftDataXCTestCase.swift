@@ -52,7 +52,7 @@ class SwiftDataXCTestCase: XCTestCase {
             throw Failure.noPersistentIdFoundOnProxy
         }
 
-        guard let _object: T.Persistent = try await context().registeredObject(for: identifier) else {
+        guard let _object: T.Persistent = try await context().object(with: identifier) as? T.Persistent else {
             throw Failure.noItemFoundForPersistentId
         }
         XCTAssertNoDifference(item, try T(persisted: XCTUnwrap(_object)))
