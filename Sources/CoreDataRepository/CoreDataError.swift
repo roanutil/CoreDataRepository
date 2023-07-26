@@ -13,10 +13,8 @@ import Foundation
 ///
 /// CoreDataError also conforms to CustomNSError so that it cleanly casts to NSError
 public enum CoreDataError: Error, Hashable, Sendable {
-    /// UnmanagedModels store the ``NSManagedObjectID`` of their respective RepositoryManagedModels as a URL. This URL
-    /// must
-    /// be mapped back into a
-    /// ``NSManagedObjectID`` for most transactions. If it fails, this error is returned.
+    /// UnmanagedModels store the ``CoreData.NSManagedObjectID`` of their respective RepositoryManagedModels as a URL. This URL
+    /// must be mapped back into a ``NSManagedObjectID`` for most transactions. If it fails, this error is returned.
     case failedToGetObjectIdFromUrl(URL)
 
     /// For some aggregate functions, a NSAttributeDescription is required so that a NSFetchRequest can be constructed
@@ -25,12 +23,10 @@ public enum CoreDataError: Error, Hashable, Sendable {
     case propertyDoesNotMatchEntity
 
     /// CoreData may return a value of a related type to what is actually needed. If casting the value CoreData returns
-    /// to the required type fails, this error
-    /// is returned.
+    /// to the required type fails, this error is returned.
     case fetchedObjectFailedToCastToExpectedType
 
-    /// It's possible for a persisted object to be flagged as deleted but still be fetched. If that happens, this error
-    /// is returned.
+    /// It's possible for a persisted object to be flagged as deleted but still be fetched. If that happens, this error is returned.
     case fetchedObjectIsFlaggedAsDeleted
 
     /// If CoreData throws a CocoaError, it is embedded here.
@@ -47,8 +43,7 @@ public enum CoreDataError: Error, Hashable, Sendable {
     case atLeastOneAttributeDescRequired
 
     /// If an UnmanagedModel is used in a transaction where it is expected to already be persisted but has no URL
-    /// representing the ``NSManagedObjectID``,
-    /// this error is returned.
+    /// representing the ``NSManagedObjectID``, this error is returned.
     case noUrlOnItemToMapToObjectId
 
     public var localizedDescription: String {
