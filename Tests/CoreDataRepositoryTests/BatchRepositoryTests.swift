@@ -156,7 +156,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         }
 
         let result: (success: [Movie], failed: [URL]) = try await repository()
-            .read(urls: movies.compactMap(\.url), transactionAuthor: "Unused")
+            .read(urls: movies.compactMap(\.url))
 
         XCTAssertEqual(result.success.count, movies.count)
         XCTAssertEqual(result.failed.count, 0)
