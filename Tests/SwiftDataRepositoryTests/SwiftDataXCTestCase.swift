@@ -16,11 +16,11 @@ class SwiftDataXCTestCase: XCTestCase {
     var _repository: SwiftDataRepository?
 
     func container() async throws -> ModelContainer {
-        try await repository().container
+        try repository().modelContainer
     }
 
     func context() async throws -> ModelContext {
-        try await repository().executor.context
+        try await repository().modelExecutor.modelContext
     }
 
     func repository() throws -> SwiftDataRepository {
@@ -30,7 +30,7 @@ class SwiftDataXCTestCase: XCTestCase {
     override func setUp() async throws {
         let container = try ModelContainer(
             for: RepoMovie.self,
-            ModelConfiguration(inMemory: true)
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         _repository = SwiftDataRepository(container: container)
         try await super.setUp()
@@ -38,7 +38,7 @@ class SwiftDataXCTestCase: XCTestCase {
 
     override func tearDown() async throws {
         try await super.tearDown()
-        try await container().destroy()
+        try await container().deleteAllData()
         _repository = nil
     }
 
@@ -52,7 +52,7 @@ class SwiftDataXCTestCase: XCTestCase {
             throw Failure.noPersistentIdFoundOnProxy
         }
 
-        guard let _object: T.Persistent = try await context().object(with: identifier) as? T.Persistent else {
+        guard let _object: T.Persistent = try await context().model(for: identifier) as? T.Persistent else {
             throw Failure.noItemFoundForPersistentId
         }
         XCTAssertNoDifference(item, try T(persisted: XCTUnwrap(_object)))
@@ -69,6 +69,6 @@ class SwiftDataXCTestCase: XCTestCase {
         T.Persistent: IdentifiableByProxy, T.ID == T.Persistent.ProxID
     {
         let first = try await context().fetch(FetchDescriptor<T.Persistent>()).first(where: { $0.proxyID == item.id })
-        return try XCTUnwrap(first?.objectID)
+        return try XCTUnwrap(first?.persistentModelID)
     }
 }

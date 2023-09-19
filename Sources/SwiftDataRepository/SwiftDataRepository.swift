@@ -10,12 +10,20 @@ import Foundation
 import SwiftData
 
 public actor SwiftDataRepository: ModelActor {
-    public let executor: any ModelExecutor
+    public nonisolated var modelContainer: ModelContainer {
+        modelExecutor.modelContext.container
+    }
+
+    public var context: ModelContext {
+        modelExecutor.modelContext
+    }
+
+    public let modelExecutor: ModelExecutor
 
     public init(container: ModelContainer) {
         let context = ModelContext(container)
         context.autosaveEnabled = false
-        executor = DefaultModelExecutor(context: context)
+        modelExecutor = DefaultSerialModelExecutor(modelContext: context)
     }
 
     public enum Failure: Error, Equatable, Hashable, Sendable {
@@ -38,76 +46,142 @@ public actor SwiftDataRepository: ModelActor {
         }
     }
 
-    public func create<Proxy>(_ item: Proxy) async -> Result<Proxy, Failure> where Proxy: PersistentModelProxy {
-        await Task {
-            do {
-                var item = item
-                let repoItem = item.asPersistentModel(in: context)
-                context.insert(repoItem)
-                try context.save()
-                item.persistentId = repoItem.objectID
-                return .success(item)
-            } catch let error as SwiftDataError {
-                context.rollback()
-                return .failure(.swiftData(error))
-            } catch {
-                context.rollback()
-                return .failure(.unknown(error as NSError))
-            }
-        }.value
+    public func create<Proxy>(_ item: Proxy) -> Result<Proxy, Failure> where Proxy: PersistentModelProxy {
+        do {
+            var item = item
+            let repoItem = item.asPersistentModel(in: context)
+            context.insert(repoItem)
+            try context.save()
+            item.persistentId = repoItem.persistentModelID
+            return .success(item)
+        } catch let error as SwiftDataError {
+            context.rollback()
+            return .failure(.swiftData(error))
+        } catch {
+            context.rollback()
+            return .failure(.unknown(error as NSError))
+        }
     }
 
-    public func read<Proxy>(identifier: PersistentIdentifier, as _: Proxy.Type) async -> Result<Proxy, Failure>
+    public func read<Proxy>(identifier: PersistentIdentifier, as _: Proxy.Type) -> Result<Proxy, Failure>
         where Proxy: PersistentModelProxy
     {
-        await Task {
-            guard let repoItem: Proxy.Persistent = context.object(with: identifier) as? Proxy.Persistent else {
-                return .failure(.noModelFoundForId(identifier))
-            }
-            return .success(Proxy(persisted: repoItem))
-        }.value
+        guard let repoItem: Proxy.Persistent = context.model(for: identifier) as? Proxy.Persistent else {
+            return .failure(.noModelFoundForId(identifier))
+        }
+        return .success(Proxy(persisted: repoItem))
     }
 
-    public func update<Proxy>(_ item: Proxy) async -> Result<Proxy, Failure> where Proxy: PersistentModelProxy {
+    public func readSubscription<Proxy>(identifier: PersistentIdentifier, as _: Proxy.Type) -> AsyncStream<Result<
+        Proxy,
+        Failure
+    >> where Proxy: PersistentModelProxy {
+        guard let repoItem: Proxy.Persistent = context.model(for: identifier) as? Proxy.Persistent else {
+            return AsyncStream(unfolding: { .failure(.noModelFoundForId(identifier)) })
+        }
+        return repoItem.subscription()
+    }
+
+    public func readThrowingSubscription<Proxy>(
+        identifier: PersistentIdentifier,
+        as _: Proxy.Type
+    ) -> AsyncThrowingStream<Proxy, Error> where Proxy: PersistentModelProxy {
+        guard let repoItem: Proxy.Persistent = context.model(for: identifier) as? Proxy.Persistent else {
+            return AsyncThrowingStream(unfolding: { throw Failure.noModelFoundForId(identifier) })
+        }
+        return repoItem.throwingSubscription()
+    }
+
+    public func update<Proxy>(_ item: Proxy) -> Result<Proxy, Failure> where Proxy: PersistentModelProxy {
         guard let persistentId = item.persistentId else {
             return .failure(.noPersistentId)
         }
-        return await Task {
-            guard let object = context.object(with: persistentId) as? Proxy.Persistent else {
-                return .failure(.noModelFoundForId(persistentId))
-            }
-            item.updating(persisted: object)
+        guard let object = context.model(for: persistentId) as? Proxy.Persistent else {
+            return .failure(.noModelFoundForId(persistentId))
+        }
+        item.updating(persisted: object)
 
-            do {
-                try context.save()
-                return .success(Proxy(persisted: object))
-            } catch let error as SwiftDataError {
-                context.rollback()
-                return .failure(.swiftData(error))
-            } catch {
-                context.rollback()
-                return .failure(.unknown(error as NSError))
-            }
-        }.value
+        do {
+            try context.save()
+            return .success(Proxy(persisted: object))
+        } catch let error as SwiftDataError {
+            context.rollback()
+            return .failure(.swiftData(error))
+        } catch {
+            context.rollback()
+            return .failure(.unknown(error as NSError))
+        }
     }
 
-    public func delete(identifier: PersistentIdentifier) async -> Result<Void, Failure> {
-        await Task { [context] in
-            let object = context.object(with: identifier)
-            context.delete(object)
-            if !object.isDeleted() {
-                fatalError()
+    public func delete(identifier: PersistentIdentifier) -> Result<Void, Failure> {
+        let object = context.model(for: identifier)
+        context.delete(object)
+        if !object.isDeleted {
+            fatalError()
+        }
+        do {
+            try context.save()
+            context.processPendingChanges()
+            return .success(())
+        } catch let error as SwiftDataError {
+            context.rollback()
+            return .failure(.swiftData(error))
+        } catch {
+            context.rollback()
+            return .failure(.unknown(error as NSError))
+        }
+    }
+
+    public func fetch<Proxy: PersistentModelProxy>(_ request: FetchDescriptor<Proxy.Persistent>)
+        -> Result<[Proxy], Failure>
+    {
+        do {
+            return try .success(context.fetch(request).map(Proxy.init(persisted:)))
+        } catch let error as SwiftDataError {
+            return .failure(.swiftData(error))
+        } catch {
+            return .failure(.unknown(error as NSError))
+        }
+    }
+
+    public func fetch<Proxy: PersistentModelProxy>(
+        _ request: FetchDescriptor<Proxy.Persistent>,
+        batchSize: Int
+    ) -> Result<[Proxy], Failure> {
+        do {
+            return try .success(context.fetch(request, batchSize: batchSize).map(Proxy.init(persisted:)))
+        } catch let error as SwiftDataError {
+            return .failure(.swiftData(error))
+        } catch {
+            return .failure(.unknown(error as NSError))
+        }
+    }
+}
+
+extension PersistentModel {
+    func subscription<Proxy, Failure>() -> AsyncStream<Result<Proxy, Failure>> where Proxy: PersistentModelProxy,
+        Proxy.Persistent == Self, Failure: Error
+    {
+        AsyncStream { continuation in
+            continuation.yield(.success(Proxy(persisted: self)))
+            withObservationTracking {
+                _ = self.hasChanges
+            } onChange: {
+                continuation.yield(.success(Proxy(persisted: self)))
             }
-            do {
-                try context.save()
-                return .success(())
-            } catch let error as SwiftDataError {
-                context.rollback()
-                return .failure(.swiftData(error))
-            } catch {
-                context.rollback()
-                return .failure(.unknown(error as NSError))
+        }
+    }
+
+    func throwingSubscription<Proxy>() -> AsyncThrowingStream<Proxy, Error> where Proxy: PersistentModelProxy,
+        Proxy.Persistent == Self
+    {
+        AsyncThrowingStream { continuation in
+            continuation.yield(Proxy(persisted: self))
+            withObservationTracking {
+                _ = self.hasChanges
+            } onChange: {
+                continuation.yield(Proxy(persisted: self))
             }
-        }.value
+        }
     }
 }
