@@ -83,7 +83,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
 
             })
             .store(in: &cancellables)
-        await fulfillment(of: [firstExp], timeout: 5)
+        wait(for: [firstExp], timeout: 5)
         let crudRepository = try CoreDataRepository(context: repositoryContext())
         _ = try await repositoryContext().perform { [self] in
             let url = try XCTUnwrap(expectedMovies.last?.url)
@@ -95,6 +95,6 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         }
         let _: Result<Void, CoreDataRepositoryError> = try await crudRepository
             .delete(XCTUnwrap(expectedMovies.last?.url))
-        await fulfillment(of: [secondExp], timeout: 5)
+        wait(for: [secondExp], timeout: 5)
     }
 }
