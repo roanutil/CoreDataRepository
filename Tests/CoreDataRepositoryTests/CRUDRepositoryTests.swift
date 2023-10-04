@@ -253,7 +253,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
 
             })
             .store(in: &cancellables)
-        wait(for: [firstExp], timeout: 5)
+        await fulfillment(of: [firstExp], timeout: 5)
         try repositoryContext().performAndWait { [self] in
             let coordinator = try XCTUnwrap(repositoryContext().persistentStoreCoordinator)
             let objectId = try XCTUnwrap(coordinator.managedObjectID(forURIRepresentation: XCTUnwrap(movie.url)))
@@ -261,6 +261,6 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
             object.update(from: editedMovie)
             try repositoryContext().save()
         }
-        wait(for: [secondExp], timeout: 5)
+        await fulfillment(of: [secondExp], timeout: 5)
     }
 }
