@@ -103,7 +103,7 @@ extension Movie: UnmanagedModel {
         }
     }
 
-    public func asRepoManaged(in context: NSManagedObjectContext) -> RepoMovie {
+    public func asManagedModel(in context: NSManagedObjectContext) -> RepoMovie {
         let object = RepoMovie(context: context)
         object.id = id
         object.title = title
