@@ -10,6 +10,7 @@ import Combine
 import CoreData
 import Foundation
 
+/// Subscription provider that sends updates when a single ``NSManagedObject`` changes
 final class ReadSubscription<Model: UnmanagedModel> {
     private let objectId: NSManagedObjectID
     private let context: NSManagedObjectContext
@@ -18,10 +19,10 @@ final class ReadSubscription<Model: UnmanagedModel> {
 
     func manualFetch() {
         context.perform { [context, objectId, subject] in
-            guard let object = context.object(with: objectId) as? Model.RepoManaged else {
+            guard let object = context.object(with: objectId) as? Model.ManagedModel else {
                 return
             }
-            subject.send(object.asUnmanaged)
+            subject.send(Model(managed: object))
         }
     }
 
@@ -32,11 +33,11 @@ final class ReadSubscription<Model: UnmanagedModel> {
 
     func start() {
         context.perform { [weak self, context, objectId, subject] in
-            guard let object = context.object(with: objectId) as? Model.RepoManaged else {
+            guard let object = context.object(with: objectId) as? Model.ManagedModel else {
                 return
             }
             let startCancellable = object.objectWillChange.sink { [subject] _ in
-                subject.send(object.asUnmanaged)
+                subject.send(Model(managed: object))
             }
             self?.cancellables.insert(startCancellable)
         }

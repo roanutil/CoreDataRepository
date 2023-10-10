@@ -34,7 +34,7 @@ extension CoreDataRepository {
         var successes = [Model]()
         var failures = [CoreDataBatchError<Model>]()
         await withTaskGroup(of: Result<Model, CoreDataBatchError<Model>>.self, body: { [weak self] group in
-            guard let self = self else {
+            guard let self else {
                 group.cancelAll()
                 return
             }
@@ -73,7 +73,7 @@ extension CoreDataRepository {
         var successes = [Model]()
         var failures = [CoreDataBatchError<URL>]()
         await withTaskGroup(of: Result<Model, CoreDataBatchError<URL>>.self, body: { [weak self] group in
-            guard let self = self else {
+            guard let self else {
                 group.cancelAll()
                 return
             }
@@ -128,7 +128,7 @@ extension CoreDataRepository {
         var successes = [Model]()
         var failures = [CoreDataBatchError<Model>]()
         await withTaskGroup(of: Result<Model, CoreDataBatchError<Model>>.self, body: { [weak self] group in
-            guard let self = self else {
+            guard let self else {
                 group.cancelAll()
                 return
             }
@@ -187,7 +187,7 @@ extension CoreDataRepository {
         var successes = [URL]()
         var failures = [CoreDataBatchError<URL>]()
         await withTaskGroup(of: Result<URL, CoreDataBatchError<URL>>.self, body: { [weak self] group in
-            guard let self = self else {
+            guard let self else {
                 group.cancelAll()
                 return
             }

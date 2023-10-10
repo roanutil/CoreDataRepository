@@ -79,11 +79,11 @@ class CoreDataXCTestCase: XCTestCase {
                 return
             }
 
-            guard let managedItem = object as? T.RepoManaged else {
+            guard let managedItem = object as? T.ManagedModel else {
                 XCTFail("Failed to verify item in store because it failed to cast to RepoManaged type.")
                 return
             }
-            XCTAssertNoDifference(item, managedItem.asUnmanaged)
+            XCTAssertNoDifference(item, T(managed: managedItem))
         }
     }
 

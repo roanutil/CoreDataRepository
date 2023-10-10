@@ -10,7 +10,7 @@ import Combine
 import CoreData
 import Foundation
 
-/// Base class other subscriptions.
+/// Base class for other subscriptions.
 class Subscription<
     Output,
     RequestResult: NSFetchRequestResult,

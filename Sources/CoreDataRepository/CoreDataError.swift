@@ -13,7 +13,8 @@ import Foundation
 ///
 /// CoreDataError also conforms to CustomNSError so that it cleanly casts to NSError
 public enum CoreDataError: Error, Hashable, Sendable {
-    /// UnmanagedModels store the ``CoreData.NSManagedObjectID`` of their respective RepositoryManagedModels as a URL. This URL
+    /// UnmanagedModels store the ``CoreData.NSManagedObjectID`` of their respective RepositoryManagedModels as a URL.
+    /// This URL
     /// must be mapped back into a ``NSManagedObjectID`` for most transactions. If it fails, this error is returned.
     case failedToGetObjectIdFromUrl(URL)
 
@@ -26,7 +27,8 @@ public enum CoreDataError: Error, Hashable, Sendable {
     /// to the required type fails, this error is returned.
     case fetchedObjectFailedToCastToExpectedType
 
-    /// It's possible for a persisted object to be flagged as deleted but still be fetched. If that happens, this error is returned.
+    /// It's possible for a persisted object to be flagged as deleted but still be fetched. If that happens, this error
+    /// is returned.
     case fetchedObjectIsFlaggedAsDeleted
 
     /// If CoreData throws a CocoaError, it is embedded here.

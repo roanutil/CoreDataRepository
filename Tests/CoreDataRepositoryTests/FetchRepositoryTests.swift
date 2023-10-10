@@ -30,9 +30,9 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         expectedMovies = try repositoryContext().performAndWait {
-            _ = try self.movies.map { try $0.asRepoManaged(in: repositoryContext()) }
+            _ = try self.movies.map { try $0.asManagedModel(in: repositoryContext()) }
             try self.repositoryContext().save()
-            return try self.repositoryContext().fetch(fetchRequest).map(\.asUnmanaged)
+            return try self.repositoryContext().fetch(fetchRequest).map(Movie.init(managed:))
         }
     }
 

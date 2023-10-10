@@ -9,6 +9,7 @@
 import CoreData
 import Foundation
 
+/// Subscription provider that sends updates when an aggregate fetch request changes
 final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric {
     override func fetch() {
         frc.managedObjectContext.perform { [weak self, frc, subject, request] in

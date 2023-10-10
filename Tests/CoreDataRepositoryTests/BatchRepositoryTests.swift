@@ -40,7 +40,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
 
     func mapDictToRepoMovie(_ dict: [String: Any]) throws -> RepoMovie {
         try mapDictToMovie(dict)
-            .asRepoManaged(in: repositoryContext())
+            .asManagedModel(in: repositoryContext())
     }
 
     func mapDictToMovie(_ dict: [String: Any]) throws -> Movie {
@@ -152,7 +152,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
             let repoMovies = try self.movies
                 .map(self.mapDictToRepoMovie(_:))
             try self.repositoryContext().save()
-            movies = repoMovies.map(\.asUnmanaged)
+            movies = repoMovies.map(Movie.init(managed:))
         }
 
         let result = try await repository().read(urls: movies.compactMap(\.url), as: Movie.self)
@@ -206,7 +206,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
             let repoMovies = try self.movies
                 .map(self.mapDictToRepoMovie(_:))
             try self.repositoryContext().save()
-            movies = repoMovies.map(\.asUnmanaged)
+            movies = repoMovies.map(Movie.init(managed:))
         }
 
         var editedMovies = movies
@@ -267,7 +267,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
             let repoMovies = try self.movies
                 .map(self.mapDictToRepoMovie(_:))
             try self.repositoryContext().save()
-            movies = repoMovies.map(\.asUnmanaged)
+            movies = repoMovies.map(Movie.init(managed:))
         }
 
         let historyTimeStamp = Date()

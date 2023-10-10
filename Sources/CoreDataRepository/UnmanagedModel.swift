@@ -9,12 +9,22 @@
 import CoreData
 import Foundation
 
-/// A protocol for a value type that corresponds to a RepositoryManagedModel
+/// A protocol for a value type that corresponds to a ``NSManagedObject`` subclass
 public protocol UnmanagedModel: Equatable {
-    associatedtype RepoManaged: RepositoryManagedModel where RepoManaged.Unmanaged == Self
-    /// Keep an reference to the corresponding `RepositoryManagedModel` instance for getting it later.
-    /// Optional since a new instance won't have a record in CoreData.
+    /// The ``NSManagedObject`` subclass `Self` corresponds to
+    associatedtype ManagedModel: NSManagedObject
+
+    /// URL representation of the ``ManagedModel``'s ``NSManagedObjectID``
+    ///
+    /// A `nil` value should mean that this instance has not been saved in the repository
     var managedRepoUrl: URL? { get set }
-    /// Returns a RepositoryManagedModel instance of `self`
-    func asRepoManaged(in context: NSManagedObjectContext) -> RepoManaged
+
+    /// Create an instance of ``ManagedModel`` in the provided ``NSManagedObjectContext``
+    func asManagedModel(in context: NSManagedObjectContext) -> ManagedModel
+
+    /// Update the properties of the ``ManagedModel`` instance from `self`
+    func updating(managed: ManagedModel)
+
+    /// Initialize of new instance of `Self` from an instance of ``ManagedModel``
+    init(managed: ManagedModel)
 }

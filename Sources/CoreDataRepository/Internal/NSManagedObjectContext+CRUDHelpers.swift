@@ -10,19 +10,15 @@ import CoreData
 import Foundation
 
 extension NSManagedObjectContext {
-    func tryObjectId(from url: URL) throws -> NSManagedObjectID {
+    /// Helper function for getting the ``NSManagedObjectID`` from an ``URL``
+    func objectId(from url: URL) -> Result<NSManagedObjectID, CoreDataError> {
         guard let objectId = persistentStoreCoordinator?.managedObjectID(forURIRepresentation: url) else {
-            throw CoreDataError.failedToGetObjectIdFromUrl(url)
+            return .failure(CoreDataError.failedToGetObjectIdFromUrl(url))
         }
-        return objectId
+        return .success(objectId)
     }
 
-    func objectId(from url: URL) -> Result<NSManagedObjectID, Error> {
-        Result {
-            try tryObjectId(from: url)
-        }
-    }
-
+    /// Helper function for checking that a managed object is not deleted in the store
     func notDeletedObject(for id: NSManagedObjectID) throws -> NSManagedObject {
         let object: NSManagedObject = try existingObject(with: id)
         guard !object.isDeleted else {

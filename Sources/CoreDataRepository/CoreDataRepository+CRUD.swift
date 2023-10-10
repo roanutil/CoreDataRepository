@@ -16,8 +16,8 @@ extension CoreDataRepository {
         transactionAuthor: String? = nil
     ) async -> Result<Model, CoreDataError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
-            let object = Model.RepoManaged(context: scratchPad)
-            object.create(from: item)
+            let object = Model.ManagedModel(context: scratchPad)
+            item.updating(managed: object)
             try scratchPad.save()
             try context.performAndWait {
                 context.transactionAuthor = transactionAuthor
@@ -25,7 +25,7 @@ extension CoreDataRepository {
                 context.transactionAuthor = nil
             }
             try scratchPad.obtainPermanentIDs(for: [object])
-            return object.asUnmanaged
+            return Model(managed: object)
         }
     }
 
@@ -35,10 +35,10 @@ extension CoreDataRepository {
         of _: Model.Type
     ) async -> Result<Model, CoreDataError> {
         await context.performInChild(schedule: .enqueued) { readContext in
-            let id = try readContext.tryObjectId(from: url)
+            let id = try readContext.objectId(from: url).get()
             let object = try readContext.notDeletedObject(for: id)
-            let repoManaged: Model.RepoManaged = try object.asRepoManaged()
-            return repoManaged.asUnmanaged
+            let repoManaged: Model.ManagedModel = try object.asManagedModel()
+            return Model(managed: repoManaged)
         }
     }
 
@@ -50,17 +50,17 @@ extension CoreDataRepository {
     ) async -> Result<Model, CoreDataError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             scratchPad.transactionAuthor = transactionAuthor
-            let id = try scratchPad.tryObjectId(from: url)
+            let id = try scratchPad.objectId(from: url).get()
             let object = try scratchPad.notDeletedObject(for: id)
-            let repoManaged: Model.RepoManaged = try object.asRepoManaged()
-            repoManaged.update(from: item)
+            let repoManaged: Model.ManagedModel = try object.asManagedModel()
+            item.updating(managed: repoManaged)
             try scratchPad.save()
             try context.performAndWait {
                 context.transactionAuthor = transactionAuthor
                 try context.save()
                 context.transactionAuthor = nil
             }
-            return repoManaged.asUnmanaged
+            return Model(managed: repoManaged)
         }
     }
 
@@ -71,7 +71,7 @@ extension CoreDataRepository {
     ) async -> Result<Void, CoreDataError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             scratchPad.transactionAuthor = transactionAuthor
-            let id = try scratchPad.tryObjectId(from: url)
+            let id = try scratchPad.objectId(from: url).get()
             let object = try scratchPad.notDeletedObject(for: id)
             object.prepareForDeletion()
             scratchPad.delete(object)

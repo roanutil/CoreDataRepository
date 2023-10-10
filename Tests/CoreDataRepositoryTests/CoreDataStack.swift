@@ -24,7 +24,7 @@ class CoreDataStack: NSObject {
         let container = NSPersistentContainer(name: "Model", managedObjectModel: model)
         container.persistentStoreDescriptions = [desc]
         container.loadPersistentStores { _, error in
-            if let error = error {
+            if let error {
                 fatalError("Unable to load persistent stores: \(error)")
             }
         }

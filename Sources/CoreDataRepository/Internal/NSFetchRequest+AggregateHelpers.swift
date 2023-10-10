@@ -10,6 +10,7 @@ import CoreData
 import Foundation
 
 extension NSFetchRequest<NSDictionary> {
+    /// Helper function for building an aggregate fetch request
     static func request(
         function: CoreDataRepository.AggregateFunction,
         predicate: NSPredicate,
@@ -30,13 +31,14 @@ extension NSFetchRequest<NSDictionary> {
             request.propertiesToFetch = [expDesc]
         }
 
-        if let groupBy = groupBy {
+        if let groupBy {
             request.propertiesToGroupBy = [groupBy.name]
         }
         request.sortDescriptors = [NSSortDescriptor(key: attributeDesc.name, ascending: false)]
         return request
     }
 
+    /// Helper function for building a count fetch request
     static func countRequest(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription

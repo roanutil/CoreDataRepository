@@ -12,20 +12,6 @@ import Foundation
 
 extension NSManagedObjectContext {
     func performInScratchPad<Output>(
-        promise: @escaping Future<Output, CoreDataError>.Promise,
-        _ block: @escaping (NSManagedObjectContext) -> Result<Output, CoreDataError>
-    ) {
-        let scratchPad = scratchPadContext()
-        scratchPad.perform {
-            let result = block(scratchPad)
-            if case .failure = result {
-                scratchPad.rollback()
-            }
-            promise(result)
-        }
-    }
-
-    func performInScratchPad<Output>(
         schedule: NSManagedObjectContext.ScheduledTaskType = .immediate,
         _ block: @escaping (NSManagedObjectContext) throws -> Output
     ) async -> Result<Output, CoreDataError> {
@@ -50,20 +36,6 @@ extension NSManagedObjectContext {
             return .failure(CoreDataError.unknown(error))
         }
         return .success(output)
-    }
-
-    func performAndWaitInScratchPad<Output>(
-        promise: @escaping Future<Output, CoreDataError>.Promise,
-        _ block: @escaping (NSManagedObjectContext) -> Result<Output, CoreDataError>
-    ) throws {
-        let scratchPad = scratchPadContext()
-        scratchPad.performAndWait {
-            let result = block(scratchPad)
-            if case .failure = result {
-                scratchPad.rollback()
-            }
-            promise(result)
-        }
     }
 
     private func scratchPadContext() -> NSManagedObjectContext {
