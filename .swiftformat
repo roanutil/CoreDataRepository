@@ -1,6 +1,6 @@
 --extensionacl on-declarations
 --redundanttype explicit
---swiftversion 5.5
+--swiftversion 5.8
 --maxwidth 120
 --header "{file}\nCoreDataRepository\n\n\nMIT License\n\nCopyright © {year} Andrew Roan"
 --allman false
