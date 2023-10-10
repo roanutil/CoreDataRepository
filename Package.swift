@@ -22,13 +22,17 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-custom-dump.git", .upToNextMajor(from: "0.4.0")),
     ],
     targets: [
-        .target(name: "CoreDataRepository"),
+        .target(
+            name: "CoreDataRepository",
+            swiftSettings: [.enableUpcomingFeature("StrictConcurrency")]
+        ),
         .testTarget(
             name: "CoreDataRepositoryTests",
             dependencies: [
                 "CoreDataRepository",
                 .product(name: "CustomDump", package: "swift-custom-dump"),
-            ]
+            ],
+            swiftSettings: [.enableUpcomingFeature("StrictConcurrency")]
         ),
     ]
 )
