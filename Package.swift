@@ -19,7 +19,10 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/swift-custom-dump.git", .upToNextMajor(from: "0.4.0")),
+        .package(
+            url: "https://github.com/pointfreeco/swift-custom-dump.git",
+            from: "1.0.0"
+        ),
     ],
     targets: [
         .target(
