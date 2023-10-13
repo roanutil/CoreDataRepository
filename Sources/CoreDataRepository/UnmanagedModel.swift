@@ -26,5 +26,5 @@ public protocol UnmanagedModel: Equatable {
     func updating(managed: ManagedModel)
 
     /// Initialize of new instance of `Self` from an instance of ``ManagedModel``
-    init(managed: ManagedModel)
+    init(managed: ManagedModel) throws
 }

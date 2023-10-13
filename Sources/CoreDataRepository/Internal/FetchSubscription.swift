@@ -19,7 +19,7 @@ final class FetchSubscription<Model: UnmanagedModel>: Subscription<[Model], Mode
 
             do {
                 let result = try frc.managedObjectContext.fetch(request)
-                subject.send(result.map(Model.init(managed:)))
+                try subject.send(result.map(Model.init(managed:)))
             } catch let error as CocoaError {
                 subject.send(completion: .failure(.cocoa(error)))
                 return

@@ -22,7 +22,12 @@ final class ReadSubscription<Model: UnmanagedModel> {
             guard let object = context.object(with: objectId) as? Model.ManagedModel else {
                 return
             }
-            subject.send(Model(managed: object))
+            do {
+                let item = try Model(managed: object)
+                subject.send(item)
+            } catch {
+                subject.send(completion: .failure(CoreDataError.unknown(error as NSError)))
+            }
         }
     }
 
@@ -37,7 +42,12 @@ final class ReadSubscription<Model: UnmanagedModel> {
                 return
             }
             let startCancellable = object.objectWillChange.sink { [subject] _ in
-                subject.send(Model(managed: object))
+                do {
+                    let item = try Model(managed: object)
+                    subject.send(item)
+                } catch {
+                    subject.send(completion: .failure(CoreDataError.unknown(error as NSError)))
+                }
             }
             self?.cancellables.insert(startCancellable)
         }

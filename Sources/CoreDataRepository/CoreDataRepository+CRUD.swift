@@ -25,7 +25,7 @@ extension CoreDataRepository {
                 context.transactionAuthor = nil
             }
             try scratchPad.obtainPermanentIDs(for: [object])
-            return Model(managed: object)
+            return try Model(managed: object)
         }
     }
 
@@ -38,7 +38,7 @@ extension CoreDataRepository {
             let id = try readContext.objectId(from: url).get()
             let object = try readContext.notDeletedObject(for: id)
             let repoManaged: Model.ManagedModel = try object.asManagedModel()
-            return Model(managed: repoManaged)
+            return try Model(managed: repoManaged)
         }
     }
 
@@ -60,7 +60,7 @@ extension CoreDataRepository {
                 try context.save()
                 context.transactionAuthor = nil
             }
-            return Model(managed: repoManaged)
+            return try Model(managed: repoManaged)
         }
     }
 

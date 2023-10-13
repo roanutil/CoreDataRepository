@@ -59,7 +59,7 @@ class CoreDataXCTestCase: XCTestCase {
 
         let context = try repositoryContext()
         let coordinator = try container().persistentStoreCoordinator
-        context.performAndWait {
+        try context.performAndWait {
             guard let objectID = coordinator.managedObjectID(forURIRepresentation: url) else {
                 XCTFail("Failed to verify item in store because no NSManagedObjectID found in viewContext from URL.")
                 return
@@ -83,7 +83,7 @@ class CoreDataXCTestCase: XCTestCase {
                 XCTFail("Failed to verify item in store because it failed to cast to RepoManaged type.")
                 return
             }
-            XCTAssertNoDifference(item, T(managed: managedItem))
+            XCTAssertNoDifference(item, try T(managed: managedItem))
         }
     }
 
