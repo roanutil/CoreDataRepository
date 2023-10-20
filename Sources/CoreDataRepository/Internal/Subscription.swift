@@ -18,7 +18,8 @@ class Subscription<
 >: NSObject, NSFetchedResultsControllerDelegate {
     let request: NSFetchRequest<RequestResult>
     let frc: NSFetchedResultsController<ControllerResult>
-    let subject: PassthroughSubject<Output, CoreDataError>
+    private var streamContinuations: [AsyncStream<Result<Output, CoreDataError>>.Continuation]
+    private var throwingStreamContinuations: [AsyncThrowingStream<Output, Error>.Continuation]
 
     init(
         fetchRequest: NSFetchRequest<RequestResult>,
@@ -32,7 +33,8 @@ class Subscription<
             sectionNameKeyPath: nil,
             cacheName: nil
         )
-        subject = PassthroughSubject()
+        streamContinuations = []
+        throwingStreamContinuations = []
         super.init()
         frc.delegate = self
         start()
@@ -59,65 +61,59 @@ class Subscription<
     }
 
     func cancel() {
-        subject.send(completion: .finished)
+        for continuation in streamContinuations {
+            continuation.finish()
+        }
+        for continuation in throwingStreamContinuations {
+            continuation.finish()
+        }
     }
 
-    func fail(_ error: CoreDataError) {
-        subject.send(completion: .failure(error))
+    final func fail(_ error: CoreDataError) {
+        for continuation in streamContinuations {
+            continuation.yield(.failure(error))
+        }
+        for continuation in throwingStreamContinuations {
+            continuation.yield(with: .failure(error))
+        }
+    }
+
+    final func send(_ value: Output) {
+        for continuation in streamContinuations {
+            continuation.yield(.success(value))
+        }
+        for continuation in throwingStreamContinuations {
+            continuation.yield(value)
+        }
     }
 
     func stream() -> AsyncStream<Result<Output, CoreDataError>> {
-        AsyncStream { [self] continuation in
-            let task = Task {
-                self.manualFetch()
-                guard !Task.isCancelled else {
-                    self.cancel()
-                    continuation.finish()
-                    return
-                }
-                for try await items in self.subject.values {
-                    guard !Task.isCancelled else {
-                        self.cancel()
-                        continuation.finish()
-                        return
-                    }
-                    continuation.yield(.success(items))
-                    await Task.yield()
-                }
-            }
-            continuation.onTermination = { _ in
-                task.cancel()
-            }
+        let (stream, continuation) = AsyncStream.makeStream(
+            of: Result<Output, CoreDataError>.self,
+            bufferingPolicy: .unbounded
+        )
+        continuation.onTermination = { [self] _ in
+            cancel()
         }
+        streamContinuations.append(continuation)
+        return stream
     }
 
     func throwingStream() -> AsyncThrowingStream<Output, Error> {
-        AsyncThrowingStream { [self] continuation in
-            let task = Task {
-                self.manualFetch()
-                guard !Task.isCancelled else {
-                    self.cancel()
-                    continuation.finish()
-                    return
-                }
-                for try await items in self.subject.values {
-                    guard !Task.isCancelled else {
-                        self.cancel()
-                        continuation.finish()
-                        return
-                    }
-                    continuation.yield(with: .success(items))
-                    await Task.yield()
-                }
-            }
-            continuation.onTermination = { _ in
-                task.cancel()
-            }
+        let (stream, continuation) = AsyncThrowingStream.makeStream(
+            of: Output.self,
+            throwing: Error.self,
+            bufferingPolicy: .unbounded
+        )
+        continuation.onTermination = { [self] _ in
+            cancel()
         }
+        throwingStreamContinuations.append(continuation)
+        return stream
     }
 
     deinit {
-        self.subject.send(completion: .finished)
+        self.cancel()
     }
 }
 

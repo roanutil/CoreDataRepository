@@ -11,7 +11,7 @@ import Foundation
 /// Subscription provider that sends updates when a fetch request changes
 final class FetchSubscription<Model: UnmanagedModel>: Subscription<[Model], Model.ManagedModel, Model.ManagedModel> {
     override func fetch() {
-        frc.managedObjectContext.perform { [weak self, frc, subject, request] in
+        frc.managedObjectContext.perform { [weak self, frc, request] in
             guard frc.fetchedObjects != nil else {
                 self?.start()
                 return
@@ -19,18 +19,18 @@ final class FetchSubscription<Model: UnmanagedModel>: Subscription<[Model], Mode
 
             do {
                 let result = try frc.managedObjectContext.fetch(request)
-                try subject.send(result.map(Model.init(managed:)))
+                try self?.send(result.map(Model.init(managed:)))
             } catch let error as CocoaError {
-                subject.send(completion: .failure(.cocoa(error)))
+                self?.fail(.cocoa(error))
                 return
             } catch {
-                subject.send(completion: .failure(.unknown(error as NSError)))
+                self?.fail(.unknown(error as NSError))
                 return
             }
         }
     }
 
     deinit {
-        self.subject.send(completion: .finished)
+        self.cancel()
     }
 }

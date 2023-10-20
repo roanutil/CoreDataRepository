@@ -12,7 +12,7 @@ import Foundation
 /// Subscription provider that sends updates when an aggregate fetch request changes
 final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric {
     override func fetch() {
-        frc.managedObjectContext.perform { [weak self, frc, subject, request] in
+        frc.managedObjectContext.perform { [weak self, frc, request] in
             guard frc.fetchedObjects != nil else {
                 self?.start()
                 return
@@ -22,18 +22,18 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
             do {
                 result = try frc.managedObjectContext.fetch(request)
             } catch let error as CocoaError {
-                subject.send(completion: .failure(.cocoa(error)))
+                self?.fail(.cocoa(error))
                 return
             } catch {
-                subject.send(completion: .failure(.unknown(error as NSError)))
+                self?.fail(.unknown(error as NSError))
                 return
             }
 
             guard let value: Value = result.asAggregateValue() else {
-                subject.send(completion: .failure(.fetchedObjectFailedToCastToExpectedType))
+                self?.fail(.fetchedObjectFailedToCastToExpectedType)
                 return
             }
-            subject.send(value)
+            self?.send(value)
         }
     }
 
@@ -92,6 +92,6 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
     }
 
     deinit {
-        self.subject.send(completion: .finished)
+        self.cancel()
     }
 }

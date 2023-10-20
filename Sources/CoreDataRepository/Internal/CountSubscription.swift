@@ -12,17 +12,17 @@ import Foundation
 /// Subscription provider that sends updates when a count fetch request changes
 final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric {
     override func fetch() {
-        frc.managedObjectContext.perform { [weak self, frc, subject] in
+        frc.managedObjectContext.perform { [weak self, frc] in
             if (frc.fetchedObjects ?? []).isEmpty {
                 self?.start()
             }
             do {
                 let count = try frc.managedObjectContext.count(for: frc.fetchRequest)
-                subject.send(Value(exactly: count) ?? Value.zero)
+                self?.send(Value(exactly: count) ?? Value.zero)
             } catch let error as CocoaError {
-                subject.send(completion: .failure(.cocoa(error)))
+                self?.fail(.cocoa(error))
             } catch {
-                subject.send(completion: .failure(CoreDataError.unknown(error as NSError)))
+                self?.fail(CoreDataError.unknown(error as NSError))
             }
         }
     }
@@ -67,6 +67,6 @@ final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManage
     }
 
     deinit {
-        self.subject.send(completion: .finished)
+        self.cancel()
     }
 }
