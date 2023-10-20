@@ -6,8 +6,8 @@
 //
 // Copyright © 2023 Andrew Roan
 
-import Combine
 import CoreData
+import Foundation
 
 extension CoreDataRepository {
     /// Execute a NSBatchInsertRequest against the store.

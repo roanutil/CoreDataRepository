@@ -52,11 +52,11 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         }
     }
 
-    func testCountSubscription() async throws {
+    func testCountStreamProvider() async throws {
         let task = Task {
             var resultCount = 0
             let stream = try repository()
-                .countSubscription(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity(), as: Int.self)
+                .countStreamProvider(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity(), as: Int.self)
             for await _count in stream {
                 let count = try _count.get()
                 resultCount += 1
@@ -80,11 +80,11 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(finalCount, 2)
     }
 
-    func testCountThrowingSubscription() async throws {
+    func testCountThrowingStreamProvider() async throws {
         let task = Task {
             var resultCount = 0
             let stream = try repository()
-                .countThrowingSubscription(
+                .countThrowingStreamProvider(
                     predicate: NSPredicate(value: true),
                     entityDesc: RepoMovie.entity(),
                     as: Int.self
@@ -129,10 +129,10 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         }
     }
 
-    func testSumSubscription() async throws {
+    func testSumStreamProvider() async throws {
         let task = Task {
             var resultCount = 0
-            let stream = try repository().sumSubscription(
+            let stream = try repository().sumStreamProvider(
                 predicate: NSPredicate(value: true),
                 entityDesc: RepoMovie.entity(),
                 attributeDesc: XCTUnwrap(
@@ -164,10 +164,10 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(finalCount, 2)
     }
 
-    func testSumThrowingSubscription() async throws {
+    func testSumThrowingStreamProvider() async throws {
         let task = Task {
             var resultCount = 0
-            let stream = try repository().sumThrowingSubscription(
+            let stream = try repository().sumThrowingStreamProvider(
                 predicate: NSPredicate(value: true),
                 entityDesc: RepoMovie.entity(),
                 attributeDesc: XCTUnwrap(
@@ -220,10 +220,10 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         }
     }
 
-    func testAverageSubscription() async throws {
+    func testAverageStreamProvider() async throws {
         let task = Task {
             var resultCount = 0
-            let stream = try repository().averageSubscription(
+            let stream = try repository().averageStreamProvider(
                 predicate: NSPredicate(value: true),
                 entityDesc: RepoMovie.entity(),
                 attributeDesc: XCTUnwrap(
@@ -259,10 +259,10 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(finalCount, 2)
     }
 
-    func testAverageThrowingSubscription() async throws {
+    func testAverageThrowingStreamProvider() async throws {
         let task = Task {
             var resultCount = 0
-            let stream = try repository().averageThrowingSubscription(
+            let stream = try repository().averageThrowingStreamProvider(
                 predicate: NSPredicate(value: true),
                 entityDesc: RepoMovie.entity(),
                 attributeDesc: XCTUnwrap(
@@ -319,10 +319,10 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         }
     }
 
-    func testMinSubscription() async throws {
+    func testMinStreamProvider() async throws {
         let task = Task {
             var resultCount = 0
-            let stream = try repository().minSubscription(
+            let stream = try repository().minStreamProvider(
                 predicate: NSPredicate(value: true),
                 entityDesc: RepoMovie.entity(),
                 attributeDesc: XCTUnwrap(
@@ -354,10 +354,10 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(finalCount, 2)
     }
 
-    func testMinThrowingSubscription() async throws {
+    func testMinThrowingStreamProvider() async throws {
         let task = Task {
             var resultCount = 0
-            let stream = try repository().minThrowingSubscription(
+            let stream = try repository().minThrowingStreamProvider(
                 predicate: NSPredicate(value: true),
                 entityDesc: RepoMovie.entity(),
                 attributeDesc: XCTUnwrap(
@@ -410,10 +410,10 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         }
     }
 
-    func testMaxSubscription() async throws {
+    func testMaxStreamProvider() async throws {
         let task = Task {
             var resultCount = 0
-            let stream = try repository().maxSubscription(
+            let stream = try repository().maxStreamProvider(
                 predicate: NSPredicate(value: true),
                 entityDesc: RepoMovie.entity(),
                 attributeDesc: XCTUnwrap(
@@ -445,10 +445,10 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(finalCount, 2)
     }
 
-    func testMaxThrowingSubscription() async throws {
+    func testMaxThrowingStreamProvider() async throws {
         let task = Task {
             var resultCount = 0
-            let stream = try repository().maxThrowingSubscription(
+            let stream = try repository().maxThrowingStreamProvider(
                 predicate: NSPredicate(value: true),
                 entityDesc: RepoMovie.entity(),
                 attributeDesc: XCTUnwrap(

@@ -6,8 +6,8 @@
 //
 // Copyright © 2023 Andrew Roan
 
-import Combine
 import CoreData
+import Foundation
 
 extension CoreDataRepository {
     /// Create an instance in the store.
@@ -86,85 +86,55 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to updates of an instance in the store.
-    public func readSubscription<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
+    public func readStreamProvider<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
         -> AsyncStream<Result<Model, CoreDataError>>
     {
         let readContext = context.childContext()
         return AsyncStream { continuation in
-            let task = Task {
-                let provider: ReadSubscription<Model>
-                switch Self.getObjectId(fromUrl: url, context: readContext) {
-                case let .success(objectId):
-                    provider = ReadSubscription<Model>(
-                        objectId: objectId,
-                        context: readContext
-                    )
-                case let .failure(error):
-                    continuation.yield(.failure(error))
-                    continuation.finish()
-                    return
-                }
-                provider.start()
-                provider.manualFetch()
-                guard !Task.isCancelled else {
-                    provider.cancel()
-                    continuation.finish()
-                    return
-                }
-                for try await items in provider.subject.values {
-                    guard !Task.isCancelled else {
-                        provider.cancel()
-                        continuation.finish()
-                        return
-                    }
-                    continuation.yield(.success(items))
-                    await Task.yield()
-                }
+            let provider: ReadStreamProvider<Model>
+            switch Self.getObjectId(fromUrl: url, context: readContext) {
+            case let .success(objectId):
+                provider = ReadStreamProvider<Model>(
+                    objectId: objectId,
+                    context: readContext,
+                    continuation: continuation
+                )
+            case let .failure(error):
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
             }
+            provider.start()
+            provider.manualFetch()
             continuation.onTermination = { _ in
-                task.cancel()
+                provider.cancel()
             }
         }
     }
 
     /// Subscribe to updates of an instance in the store.
-    public func readThrowingSubscription<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
+    public func readThrowingStreamProvider<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
         -> AsyncThrowingStream<Model, Error>
     {
         let readContext = context.childContext()
         return AsyncThrowingStream { continuation in
-            let task = Task {
-                let provider: ReadSubscription<Model>
-                switch Self.getObjectId(fromUrl: url, context: readContext) {
-                case let .success(objectId):
-                    provider = ReadSubscription<Model>(
-                        objectId: objectId,
-                        context: readContext
-                    )
-                case let .failure(error):
-                    continuation.yield(with: .failure(error))
-                    continuation.finish()
-                    return
-                }
-                provider.start()
-                provider.manualFetch()
-                guard !Task.isCancelled else {
-                    provider.cancel()
-                    continuation.finish()
-                    return
-                }
-                for try await items in provider.subject.values {
-                    guard !Task.isCancelled else {
-                        provider.cancel()
-                        continuation.finish()
-                        return
-                    }
-                    continuation.yield(with: .success(items))
-                    await Task.yield()
-                }
+            let provider: ReadThrowingStreamProvider<Model>
+            switch Self.getObjectId(fromUrl: url, context: readContext) {
+            case let .success(objectId):
+                provider = ReadThrowingStreamProvider<Model>(
+                    objectId: objectId,
+                    context: readContext,
+                    continuation: continuation
+                )
+            case let .failure(error):
+                continuation.yield(with: .failure(error))
+                continuation.finish()
+                return
             }
+            provider.start()
+            provider.manualFetch()
             continuation.onTermination = { _ in
-                task.cancel()
+                provider.cancel()
             }
         }
     }

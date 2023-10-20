@@ -200,7 +200,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         }
     }
 
-    func testReadSubscriptionSuccess() async throws {
+    func testReadStreamProviderSuccess() async throws {
         var movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
 
         let count: Int = try await repositoryContext().perform { [self] in
@@ -226,7 +226,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
 
         let task = Task { [movie, editedMovie] in
             var resultCount = 0
-            let stream = try repository().readSubscription(repoMovieUrl, of: Movie.self)
+            let stream = try repository().readStreamProvider(repoMovieUrl, of: Movie.self)
             for await _movie in stream {
                 let receivedMovie = try _movie.get()
                 resultCount += 1
@@ -251,7 +251,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(finalCount, 2)
     }
 
-    func testReadThrowingSubscriptionSuccess() async throws {
+    func testReadThrowingStreamProviderSuccess() async throws {
         var movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
 
         let count: Int = try await repositoryContext().perform { [self] in
@@ -277,7 +277,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
 
         let task = Task { [movie, editedMovie] in
             var resultCount = 0
-            let stream = try repository().readThrowingSubscription(repoMovieUrl, of: Movie.self)
+            let stream = try repository().readThrowingStreamProvider(repoMovieUrl, of: Movie.self)
             for try await receivedMovie in stream {
                 resultCount += 1
                 switch resultCount {

@@ -9,8 +9,8 @@
 import CoreData
 import Foundation
 
-/// Subscription provider that sends updates when an aggregate fetch request changes
-final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric {
+/// StreamProvider provider that sends updates when an aggregate fetch request changes
+final class AggregateStreamProvider<Value>: StreamProvider<Value, NSDictionary, NSManagedObject> where Value: Numeric {
     override func fetch() {
         frc.managedObjectContext.perform { [weak self, frc, request] in
             guard frc.fetchedObjects != nil else {
@@ -43,7 +43,8 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
-        groupBy: NSAttributeDescription? = nil
+        groupBy: NSAttributeDescription? = nil,
+        continuation: AsyncStream<Result<Value, CoreDataError>>.Continuation
     ) {
         let request: NSFetchRequest<NSDictionary>
         do {
@@ -58,7 +59,8 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
             self.init(
                 fetchRequest: NSFetchRequest(),
                 fetchResultControllerRequest: NSFetchRequest(),
-                context: context
+                context: context,
+                continuation: continuation
             )
             self.fail(error)
             return
@@ -66,7 +68,8 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
             self.init(
                 fetchRequest: NSFetchRequest(),
                 fetchResultControllerRequest: NSFetchRequest(),
-                context: context
+                context: context,
+                continuation: continuation
             )
             self.fail(.cocoa(error))
             return
@@ -74,7 +77,8 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
             self.init(
                 fetchRequest: NSFetchRequest(),
                 fetchResultControllerRequest: NSFetchRequest(),
-                context: context
+                context: context,
+                continuation: continuation
             )
             fail(.unknown(error as NSError))
             return
@@ -83,12 +87,107 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
             self.init(
                 fetchRequest: NSFetchRequest(),
                 fetchResultControllerRequest: NSFetchRequest(),
-                context: context
+                context: context,
+                continuation: continuation
             )
             fail(.propertyDoesNotMatchEntity)
             return
         }
-        self.init(request: request, context: context)
+        self.init(request: request, context: context, continuation: continuation)
+    }
+
+    deinit {
+        self.cancel()
+    }
+}
+
+/// StreamProvider provider that sends updates when an aggregate fetch request changes
+final class AggregateThrowingStreamProvider<Value>: ThrowingStreamProvider<Value, NSDictionary, NSManagedObject>
+    where Value: Numeric
+{
+    override func fetch() {
+        frc.managedObjectContext.perform { [weak self, frc, request] in
+            guard frc.fetchedObjects != nil else {
+                self?.start()
+                return
+            }
+
+            let result: [NSDictionary]
+            do {
+                result = try frc.managedObjectContext.fetch(request)
+            } catch let error as CocoaError {
+                self?.fail(.cocoa(error))
+                return
+            } catch {
+                self?.fail(.unknown(error as NSError))
+                return
+            }
+
+            guard let value: Value = result.asAggregateValue() else {
+                self?.fail(.fetchedObjectFailedToCastToExpectedType)
+                return
+            }
+            self?.send(value)
+        }
+    }
+
+    convenience init(
+        function: CoreDataRepository.AggregateFunction,
+        context: NSManagedObjectContext,
+        predicate: NSPredicate,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        continuation: AsyncThrowingStream<Value, Error>.Continuation
+    ) {
+        let request: NSFetchRequest<NSDictionary>
+        do {
+            request = try NSFetchRequest<NSDictionary>.request(
+                function: function,
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy
+            )
+        } catch let error as CoreDataError {
+            self.init(
+                fetchRequest: NSFetchRequest(),
+                fetchResultControllerRequest: NSFetchRequest(),
+                context: context,
+                continuation: continuation
+            )
+            self.fail(error)
+            return
+        } catch let error as CocoaError {
+            self.init(
+                fetchRequest: NSFetchRequest(),
+                fetchResultControllerRequest: NSFetchRequest(),
+                context: context,
+                continuation: continuation
+            )
+            self.fail(.cocoa(error))
+            return
+        } catch {
+            self.init(
+                fetchRequest: NSFetchRequest(),
+                fetchResultControllerRequest: NSFetchRequest(),
+                context: context,
+                continuation: continuation
+            )
+            fail(.unknown(error as NSError))
+            return
+        }
+        guard entityDesc == attributeDesc.entity else {
+            self.init(
+                fetchRequest: NSFetchRequest(),
+                fetchResultControllerRequest: NSFetchRequest(),
+                context: context,
+                continuation: continuation
+            )
+            fail(.propertyDoesNotMatchEntity)
+            return
+        }
+        self.init(request: request, context: context, continuation: continuation)
     }
 
     deinit {
