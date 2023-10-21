@@ -10,7 +10,7 @@ import CoreData
 import Foundation
 
 /// Base class for other subscriptions.
-class StreamProvider<
+class Subscription<
     Output,
     RequestResult: NSFetchRequestResult,
     ControllerResult: NSFetchRequestResult
@@ -77,7 +77,7 @@ class StreamProvider<
 
 // MARK: where RequestResult == ControllerResult
 
-extension StreamProvider where RequestResult == ControllerResult {
+extension Subscription where RequestResult == ControllerResult {
     convenience init(
         request: NSFetchRequest<RequestResult>,
         context: NSManagedObjectContext,
@@ -94,7 +94,7 @@ extension StreamProvider where RequestResult == ControllerResult {
 
 // MARK: where RequestResult == NSDictionary, ControllerResult == NSManagedObject
 
-extension StreamProvider where RequestResult == NSDictionary, ControllerResult == NSManagedObject {
+extension Subscription where RequestResult == NSDictionary, ControllerResult == NSManagedObject {
     convenience init(
         request: NSFetchRequest<NSDictionary>,
         context: NSManagedObjectContext,

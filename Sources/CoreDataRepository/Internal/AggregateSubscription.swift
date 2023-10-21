@@ -9,8 +9,8 @@
 import CoreData
 import Foundation
 
-/// StreamProvider provider that sends updates when an aggregate fetch request changes
-final class AggregateStreamProvider<Value>: StreamProvider<Value, NSDictionary, NSManagedObject> where Value: Numeric {
+/// Subscription provider that sends updates when an aggregate fetch request changes
+final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric {
     override func fetch() {
         frc.managedObjectContext.perform { [weak self, frc, request] in
             guard frc.fetchedObjects != nil else {
@@ -101,8 +101,8 @@ final class AggregateStreamProvider<Value>: StreamProvider<Value, NSDictionary, 
     }
 }
 
-/// StreamProvider provider that sends updates when an aggregate fetch request changes
-final class AggregateThrowingStreamProvider<Value>: ThrowingStreamProvider<Value, NSDictionary, NSManagedObject>
+/// Subscription provider that sends updates when an aggregate fetch request changes
+final class AggregateThrowingSubscription<Value>: ThrowingSubscription<Value, NSDictionary, NSManagedObject>
     where Value: Numeric
 {
     override func fetch() {

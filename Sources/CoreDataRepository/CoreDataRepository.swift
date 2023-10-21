@@ -22,7 +22,7 @@ import Foundation
 /// addition to non-atomic options that individually perform the operation on each item.
 ///
 /// For fetch and aggregate operations, there are additional subscription and throwing subscription options.
-/// StreamProviders return an ``AsyncStream`` of
+/// Subscriptions return an ``AsyncStream`` of
 /// ``Result``s with strongly typed errors. Throwing subscriptions return an ``AsyncThrowingStream``.
 public final class CoreDataRepository {
     /// CoreData context the repository uses. A child or 'scratch' context is usually created from this context for work

@@ -33,13 +33,13 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to the count or quantity of managed object instances that satisfy the predicate.
-    public func countStreamProvider<Value: Numeric>(
+    public func countSubscription<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = CountStreamProvider(
+            let subscription = CountSubscription(
                 context: context.childContext(),
                 predicate: predicate,
                 entityDesc: entityDesc,
@@ -53,13 +53,13 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to the count or quantity of managed object instances that satisfy the predicate.
-    public func countThrowingStreamProvider<Value: Numeric>(
+    public func countThrowingSubscription<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = CountThrowingStreamProvider(
+            let subscription = CountThrowingSubscription(
                 context: context.childContext(),
                 predicate: predicate,
                 entityDesc: entityDesc,
@@ -93,7 +93,7 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to the sum of a managed object's numeric property for all instances that satisfy the predicate.
-    public func sumStreamProvider<Value: Numeric>(
+    public func sumSubscription<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
@@ -101,7 +101,7 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateStreamProvider(
+            let subscription = AggregateSubscription(
                 function: .sum,
                 context: context.childContext(),
                 predicate: predicate,
@@ -118,7 +118,7 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to the sum of a managed object's numeric property for all instances that satisfy the predicate.
-    public func sumThrowingStreamProvider<Value: Numeric>(
+    public func sumThrowingSubscription<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
@@ -126,7 +126,7 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingStreamProvider(
+            let subscription = AggregateThrowingSubscription(
                 function: .sum,
                 context: context.childContext(),
                 predicate: predicate,
@@ -163,7 +163,7 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to the average of a managed object's numeric property for all instances that satisfy the predicate.
-    public func averageStreamProvider<Value: Numeric>(
+    public func averageSubscription<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
@@ -171,7 +171,7 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateStreamProvider(
+            let subscription = AggregateSubscription(
                 function: .average,
                 context: context.childContext(),
                 predicate: predicate,
@@ -188,7 +188,7 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to the average of a managed object's numeric property for all instances that satisfy the predicate.
-    public func averageThrowingStreamProvider<Value: Numeric>(
+    public func averageThrowingSubscription<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
@@ -196,7 +196,7 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingStreamProvider(
+            let subscription = AggregateThrowingSubscription(
                 function: .average,
                 context: context.childContext(),
                 predicate: predicate,
@@ -234,7 +234,7 @@ extension CoreDataRepository {
 
     /// Subscribe to the min or minimum of a managed object's numeric property for all instances that satisfy the
     /// predicate.
-    public func minStreamProvider<Value: Numeric>(
+    public func minSubscription<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
@@ -242,7 +242,7 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateStreamProvider(
+            let subscription = AggregateSubscription(
                 function: .min,
                 context: context.childContext(),
                 predicate: predicate,
@@ -260,7 +260,7 @@ extension CoreDataRepository {
 
     /// Subscribe to the min or minimum of a managed object's numeric property for all instances that satisfy the
     /// predicate.
-    public func minThrowingStreamProvider<Value: Numeric>(
+    public func minThrowingSubscription<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
@@ -268,7 +268,7 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingStreamProvider(
+            let subscription = AggregateThrowingSubscription(
                 function: .min,
                 context: context.childContext(),
                 predicate: predicate,
@@ -306,7 +306,7 @@ extension CoreDataRepository {
 
     /// Subscribe to the max or maximum of a managed object's numeric property for all instances that satisfy the
     /// predicate.
-    public func maxStreamProvider<Value: Numeric>(
+    public func maxSubscription<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
@@ -314,7 +314,7 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateStreamProvider(
+            let subscription = AggregateSubscription(
                 function: .max,
                 context: context.childContext(),
                 predicate: predicate,
@@ -332,7 +332,7 @@ extension CoreDataRepository {
 
     /// Subscribe to the max or maximum of a managed object's numeric property for all instances that satisfy the
     /// predicate.
-    public func maxThrowingStreamProvider<Value: Numeric>(
+    public func maxThrowingSubscription<Value: Numeric>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
@@ -340,7 +340,7 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingStreamProvider(
+            let subscription = AggregateThrowingSubscription(
                 function: .max,
                 context: context.childContext(),
                 predicate: predicate,

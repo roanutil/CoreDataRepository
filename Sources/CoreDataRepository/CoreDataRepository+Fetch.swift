@@ -20,12 +20,12 @@ extension CoreDataRepository {
     }
 
     /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
-    public func fetchStreamProvider<Model: UnmanagedModel>(
+    public func fetchSubscription<Model: UnmanagedModel>(
         _ request: NSFetchRequest<Model.ManagedModel>,
         of _: Model.Type
     ) -> AsyncStream<Result<[Model], CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = FetchStreamProvider(
+            let subscription = FetchSubscription(
                 request: request,
                 context: context.childContext(),
                 continuation: continuation
@@ -38,12 +38,12 @@ extension CoreDataRepository {
     }
 
     /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
-    public func fetchThrowingStreamProvider<Model: UnmanagedModel>(
+    public func fetchThrowingSubscription<Model: UnmanagedModel>(
         _ request: NSFetchRequest<Model.ManagedModel>,
         of _: Model.Type
     ) -> AsyncThrowingStream<[Model], Error> {
         AsyncThrowingStream { continuation in
-            let subscription = FetchThrowingStreamProvider(
+            let subscription = FetchThrowingSubscription(
                 request: request,
                 context: context.childContext(),
                 continuation: continuation

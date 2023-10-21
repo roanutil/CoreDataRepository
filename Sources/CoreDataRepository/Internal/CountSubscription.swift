@@ -9,8 +9,8 @@
 import CoreData
 import Foundation
 
-/// StreamProvider provider that sends updates when a count fetch request changes
-final class CountStreamProvider<Value>: StreamProvider<Value, NSDictionary, NSManagedObject> where Value: Numeric {
+/// Subscription provider that sends updates when a count fetch request changes
+final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric {
     override func fetch() {
         frc.managedObjectContext.perform { [weak self, frc] in
             if (frc.fetchedObjects ?? []).isEmpty {
@@ -75,8 +75,8 @@ final class CountStreamProvider<Value>: StreamProvider<Value, NSDictionary, NSMa
     }
 }
 
-/// StreamProvider provider that sends updates when a count fetch request changes
-final class CountThrowingStreamProvider<Value>: ThrowingStreamProvider<Value, NSDictionary, NSManagedObject>
+/// Subscription provider that sends updates when a count fetch request changes
+final class CountThrowingSubscription<Value>: ThrowingSubscription<Value, NSDictionary, NSManagedObject>
     where Value: Numeric
 {
     override func fetch() {

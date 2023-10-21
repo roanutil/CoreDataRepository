@@ -10,7 +10,7 @@ import CoreData
 import Foundation
 
 /// Base class for other subscriptions.
-class ThrowingStreamProvider<
+class ThrowingSubscription<
     Output,
     RequestResult: NSFetchRequestResult,
     ControllerResult: NSFetchRequestResult
@@ -77,7 +77,7 @@ class ThrowingStreamProvider<
 
 // MARK: where RequestResult == ControllerResult
 
-extension ThrowingStreamProvider where RequestResult == ControllerResult {
+extension ThrowingSubscription where RequestResult == ControllerResult {
     convenience init(
         request: NSFetchRequest<RequestResult>,
         context: NSManagedObjectContext,
@@ -94,7 +94,7 @@ extension ThrowingStreamProvider where RequestResult == ControllerResult {
 
 // MARK: where RequestResult == NSDictionary, ControllerResult == NSManagedObject
 
-extension ThrowingStreamProvider where RequestResult == NSDictionary, ControllerResult == NSManagedObject {
+extension ThrowingSubscription where RequestResult == NSDictionary, ControllerResult == NSManagedObject {
     convenience init(
         request: NSFetchRequest<NSDictionary>,
         context: NSManagedObjectContext,

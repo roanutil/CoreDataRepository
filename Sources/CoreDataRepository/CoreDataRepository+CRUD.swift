@@ -86,15 +86,15 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to updates of an instance in the store.
-    public func readStreamProvider<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
+    public func readSubscription<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
         -> AsyncStream<Result<Model, CoreDataError>>
     {
         let readContext = context.childContext()
         return AsyncStream { continuation in
-            let provider: ReadStreamProvider<Model>
+            let provider: ReadSubscription<Model>
             switch Self.getObjectId(fromUrl: url, context: readContext) {
             case let .success(objectId):
-                provider = ReadStreamProvider<Model>(
+                provider = ReadSubscription<Model>(
                     objectId: objectId,
                     context: readContext,
                     continuation: continuation
@@ -113,15 +113,15 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to updates of an instance in the store.
-    public func readThrowingStreamProvider<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
+    public func readThrowingSubscription<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
         -> AsyncThrowingStream<Model, Error>
     {
         let readContext = context.childContext()
         return AsyncThrowingStream { continuation in
-            let provider: ReadThrowingStreamProvider<Model>
+            let provider: ReadThrowingSubscription<Model>
             switch Self.getObjectId(fromUrl: url, context: readContext) {
             case let .success(objectId):
-                provider = ReadThrowingStreamProvider<Model>(
+                provider = ReadThrowingSubscription<Model>(
                     objectId: objectId,
                     context: readContext,
                     continuation: continuation

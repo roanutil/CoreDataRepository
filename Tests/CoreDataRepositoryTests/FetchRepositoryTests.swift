@@ -51,11 +51,11 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         }
     }
 
-    func testFetchStreamProviderSuccess() async throws {
+    func testFetchSubscriptionSuccess() async throws {
         let task = Task {
             var resultCount = 0
             let stream = try repository()
-                .fetchStreamProvider(fetchRequest, of: Movie.self)
+                .fetchSubscription(fetchRequest, of: Movie.self)
             for await _items in stream {
                 let items = try _items.get()
                 resultCount += 1
@@ -82,10 +82,10 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(finalCount, 2)
     }
 
-    func testFetchThrowingStreamProviderSuccess() async throws {
+    func testFetchThrowingSubscriptionSuccess() async throws {
         let task = Task {
             var resultCount = 0
-            let stream = try repository().fetchThrowingStreamProvider(self.fetchRequest, of: Movie.self)
+            let stream = try repository().fetchThrowingSubscription(self.fetchRequest, of: Movie.self)
             for try await items in stream {
                 resultCount += 1
                 switch resultCount {

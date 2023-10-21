@@ -6,32 +6,45 @@
 //
 // Copyright © 2023 Andrew Roan
 
+import Combine
 import CoreData
 import Foundation
 
-final class ReadStreamProvider<Model: UnmanagedModel>: StreamProvider<Model, Model.ManagedModel, Model.ManagedModel> {
+/// Subscription provider that sends updates when a single ``NSManagedObject`` changes
+final class ReadSubscription<Model: UnmanagedModel> {
     private let objectId: NSManagedObjectID
+    private let context: NSManagedObjectContext
+    private var cancellables: Set<AnyCancellable>
+    private let continuation: AsyncStream<Result<Model, CoreDataError>>.Continuation
 
-    override func fetch() {
-        frc.managedObjectContext.perform { [weak self, frc, request] in
-            guard frc.fetchedObjects != nil else {
-                self?.start()
+    func manualFetch() {
+        context.perform { [weak self, context, objectId] in
+            guard let object = context.object(with: objectId) as? Model.ManagedModel else {
                 return
             }
-
             do {
-                let result = try frc.managedObjectContext.fetch(request)
-                guard let model = result.first, model.objectID == self?.objectId else {
-                    fatalError()
-                }
-                try self?.send(Model(managed: model))
-            } catch let error as CocoaError {
-                self?.fail(.cocoa(error))
-                return
+                let item = try Model(managed: object)
+                self?.continuation.yield(.success(item))
             } catch {
-                self?.fail(.unknown(error as NSError))
+                self?.continuation.yield(.failure(CoreDataError.unknown(error as NSError)))
+            }
+        }
+    }
+
+    func cancel() {
+        continuation.finish()
+        cancellables.forEach { $0.cancel() }
+    }
+
+    func start() {
+        context.perform { [weak self, context, objectId] in
+            guard let object = context.object(with: objectId) as? Model.ManagedModel else {
                 return
             }
+            let startCancellable = object.objectWillChange.sink { [weak self] _ in
+                self?.manualFetch()
+            }
+            self?.cancellables.insert(startCancellable)
         }
     }
 
@@ -41,54 +54,56 @@ final class ReadStreamProvider<Model: UnmanagedModel>: StreamProvider<Model, Mod
         continuation: AsyncStream<Result<Model, CoreDataError>>.Continuation
     ) {
         self.objectId = objectId
-        let fetchRequest = NSFetchRequest<Model.ManagedModel>(entityName: Model.ManagedModel.entity().name!)
-        fetchRequest.predicate = NSComparisonPredicate(
-            leftExpression: NSExpression(forKeyPath: \NSManagedObject.objectID),
-            rightExpression: NSExpression(forConstantValue: objectId),
-            modifier: .direct,
-            type: .equalTo
-        )
-        fetchRequest.sortDescriptors = []
-        super.init(
-            fetchRequest: fetchRequest,
-            fetchResultControllerRequest: fetchRequest,
-            context: context,
-            continuation: continuation
-        )
+        self.context = context
+        cancellables = []
+        self.continuation = continuation
     }
 
     deinit {
-        self.cancel()
+        self.cancellables.forEach { $0.cancel() }
+        self.continuation.finish()
     }
 }
 
-final class ReadThrowingStreamProvider<Model: UnmanagedModel>: ThrowingStreamProvider<
-    Model,
-    Model.ManagedModel,
-    Model.ManagedModel
-> {
+final class ReadThrowingSubscription<Model: UnmanagedModel> {
     private let objectId: NSManagedObjectID
+    private let context: NSManagedObjectContext
+    private var cancellables: Set<AnyCancellable>
+    private let continuation: AsyncThrowingStream<Model, Error>.Continuation
 
-    override func fetch() {
-        frc.managedObjectContext.perform { [weak self, frc, request] in
-            guard frc.fetchedObjects != nil else {
-                self?.start()
+    func manualFetch() {
+        context.perform { [weak self, context, objectId] in
+            guard let object = context.object(with: objectId) as? Model.ManagedModel else {
                 return
             }
-
             do {
-                let result = try frc.managedObjectContext.fetch(request)
-                guard let model = result.first, model.objectID == self?.objectId else {
-                    fatalError()
-                }
-                try self?.send(Model(managed: model))
-            } catch let error as CocoaError {
-                self?.fail(.cocoa(error))
-                return
+                let item = try Model(managed: object)
+                self?.continuation.yield(item)
             } catch {
-                self?.fail(.unknown(error as NSError))
+                self?.continuation.yield(with: .failure(CoreDataError.unknown(error as NSError)))
+            }
+        }
+    }
+
+    func cancel() {
+        continuation.finish()
+        cancellables.forEach { $0.cancel() }
+    }
+
+    func start() {
+        context.perform { [weak self, context, objectId] in
+            guard let object = context.object(with: objectId) as? Model.ManagedModel else {
                 return
             }
+            let startCancellable = object.objectWillChange.sink { [weak self] _ in
+                do {
+                    let item = try Model(managed: object)
+                    self?.continuation.yield(item)
+                } catch {
+                    self?.continuation.yield(with: .failure(CoreDataError.unknown(error as NSError)))
+                }
+            }
+            self?.cancellables.insert(startCancellable)
         }
     }
 
@@ -98,23 +113,13 @@ final class ReadThrowingStreamProvider<Model: UnmanagedModel>: ThrowingStreamPro
         continuation: AsyncThrowingStream<Model, Error>.Continuation
     ) {
         self.objectId = objectId
-        let fetchRequest = NSFetchRequest<Model.ManagedModel>(entityName: Model.ManagedModel.entity().name!)
-        fetchRequest.predicate = NSComparisonPredicate(
-            leftExpression: NSExpression(forKeyPath: \NSManagedObject.objectID),
-            rightExpression: NSExpression(forConstantValue: objectId),
-            modifier: .direct,
-            type: .equalTo
-        )
-        fetchRequest.sortDescriptors = []
-        super.init(
-            fetchRequest: fetchRequest,
-            fetchResultControllerRequest: fetchRequest,
-            context: context,
-            continuation: continuation
-        )
+        self.context = context
+        cancellables = []
+        self.continuation = continuation
     }
 
     deinit {
-        self.cancel()
+        self.cancellables.forEach { $0.cancel() }
+        self.continuation.finish()
     }
 }

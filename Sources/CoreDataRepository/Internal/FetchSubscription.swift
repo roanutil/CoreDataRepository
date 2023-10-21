@@ -9,8 +9,8 @@
 import CoreData
 import Foundation
 
-/// StreamProvider provider that sends updates when a fetch request changes
-final class FetchStreamProvider<Model: UnmanagedModel>: StreamProvider<
+/// Subscription provider that sends updates when a fetch request changes
+final class FetchSubscription<Model: UnmanagedModel>: Subscription<
     [Model],
     Model.ManagedModel,
     Model.ManagedModel
@@ -40,8 +40,8 @@ final class FetchStreamProvider<Model: UnmanagedModel>: StreamProvider<
     }
 }
 
-/// StreamProvider provider that sends updates when a fetch request changes
-final class FetchThrowingStreamProvider<Model: UnmanagedModel>: ThrowingStreamProvider<
+/// Subscription provider that sends updates when a fetch request changes
+final class FetchThrowingSubscription<Model: UnmanagedModel>: ThrowingSubscription<
     [Model],
     Model.ManagedModel,
     Model.ManagedModel
