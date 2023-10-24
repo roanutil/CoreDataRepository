@@ -42,7 +42,12 @@ final class ReadSubscription<Model: UnmanagedModel> {
                 return
             }
             let startCancellable = object.objectWillChange.sink { [weak self] _ in
-                self?.manualFetch()
+                do {
+                    let item = try Model(managed: object)
+                    self?.continuation.yield(.success(item))
+                } catch {
+                    self?.continuation.yield(.failure(CoreDataError.unknown(error as NSError)))
+                }
             }
             self?.cancellables.insert(startCancellable)
         }
