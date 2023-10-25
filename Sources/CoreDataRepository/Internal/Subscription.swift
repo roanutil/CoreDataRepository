@@ -14,10 +14,8 @@ class Subscription<
     Output,
     RequestResult: NSFetchRequestResult,
     ControllerResult: NSFetchRequestResult
->: NSObject, NSFetchedResultsControllerDelegate {
-    let request: NSFetchRequest<RequestResult>
-    let frc: NSFetchedResultsController<ControllerResult>
-    private let continuation: AsyncStream<Result<Output, CoreDataError>>.Continuation
+>: BaseSubscription<Output, RequestResult, ControllerResult> {
+    let continuation: AsyncStream<Result<Output, CoreDataError>>.Continuation
 
     init(
         fetchRequest: NSFetchRequest<RequestResult>,
@@ -25,53 +23,24 @@ class Subscription<
         context: NSManagedObjectContext,
         continuation: AsyncStream<Result<Output, CoreDataError>>.Continuation
     ) {
-        request = fetchRequest
-        frc = NSFetchedResultsController(
-            fetchRequest: fetchResultControllerRequest,
-            managedObjectContext: context,
-            sectionNameKeyPath: nil,
-            cacheName: nil
-        )
         self.continuation = continuation
-        super.init()
-        frc.delegate = self
-        start()
+        super.init(
+            fetchRequest: fetchRequest,
+            fetchResultControllerRequest: fetchResultControllerRequest,
+            context: context
+        )
     }
 
-    func fetch() {}
-
-    func controllerDidChangeContent(_: NSFetchedResultsController<NSFetchRequestResult>) {
-        fetch()
-    }
-
-    func start() {
-        do {
-            try frc.performFetch()
-        } catch let error as CocoaError {
-            fail(.cocoa(error))
-        } catch {
-            fail(.unknown(error as NSError))
-        }
-    }
-
-    func manualFetch() {
-        fetch()
-    }
-
-    func cancel() {
+    override func cancel() {
         continuation.finish()
     }
 
-    final func fail(_ error: CoreDataError) {
+    override final func fail(_ error: CoreDataError) {
         continuation.yield(.failure(error))
     }
 
-    final func send(_ value: Output) {
+    override final func send(_ value: Output) {
         continuation.yield(.success(value))
-    }
-
-    deinit {
-        self.cancel()
     }
 }
 

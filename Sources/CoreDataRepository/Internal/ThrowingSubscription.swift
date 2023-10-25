@@ -14,9 +14,7 @@ class ThrowingSubscription<
     Output,
     RequestResult: NSFetchRequestResult,
     ControllerResult: NSFetchRequestResult
->: NSObject, NSFetchedResultsControllerDelegate {
-    let request: NSFetchRequest<RequestResult>
-    let frc: NSFetchedResultsController<ControllerResult>
+>: BaseSubscription<Output, RequestResult, ControllerResult> {
     private let continuation: AsyncThrowingStream<Output, Error>.Continuation
 
     init(
@@ -25,53 +23,24 @@ class ThrowingSubscription<
         context: NSManagedObjectContext,
         continuation: AsyncThrowingStream<Output, Error>.Continuation
     ) {
-        request = fetchRequest
-        frc = NSFetchedResultsController(
-            fetchRequest: fetchResultControllerRequest,
-            managedObjectContext: context,
-            sectionNameKeyPath: nil,
-            cacheName: nil
-        )
         self.continuation = continuation
-        super.init()
-        frc.delegate = self
-        start()
+        super.init(
+            fetchRequest: fetchRequest,
+            fetchResultControllerRequest: fetchResultControllerRequest,
+            context: context
+        )
     }
 
-    func fetch() {}
-
-    func controllerDidChangeContent(_: NSFetchedResultsController<NSFetchRequestResult>) {
-        fetch()
-    }
-
-    func start() {
-        do {
-            try frc.performFetch()
-        } catch let error as CocoaError {
-            fail(.cocoa(error))
-        } catch {
-            fail(.unknown(error as NSError))
-        }
-    }
-
-    func manualFetch() {
-        fetch()
-    }
-
-    func cancel() {
+    override func cancel() {
         continuation.finish()
     }
 
-    final func fail(_ error: CoreDataError) {
+    override final func fail(_ error: CoreDataError) {
         continuation.yield(with: .failure(error))
     }
 
-    final func send(_ value: Output) {
+    override final func send(_ value: Output) {
         continuation.yield(with: .success(value))
-    }
-
-    deinit {
-        self.cancel()
     }
 }
 

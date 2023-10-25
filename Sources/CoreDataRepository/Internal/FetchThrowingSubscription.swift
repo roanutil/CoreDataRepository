@@ -1,4 +1,4 @@
-// FetchSubscription.swift
+// FetchThrowingSubscription.swift
 // CoreDataRepository
 //
 //
@@ -10,7 +10,7 @@ import CoreData
 import Foundation
 
 /// Subscription provider that sends updates when a fetch request changes
-final class FetchSubscription<Model: UnmanagedModel>: Subscription<
+final class FetchThrowingSubscription<Model: UnmanagedModel>: ThrowingSubscription<
     [Model],
     Model.ManagedModel,
     Model.ManagedModel

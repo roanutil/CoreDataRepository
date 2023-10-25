@@ -9,6 +9,8 @@
 import CoreData
 import Foundation
 
+// swiftlint:disable file_length
+
 extension CoreDataRepository {
     // MARK: Count
 
@@ -407,3 +409,5 @@ extension CoreDataRepository {
         }
     }
 }
+
+// swiftlint:enable file_length
