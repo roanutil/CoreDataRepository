@@ -6,14 +6,12 @@
 //
 // Copyright © 2023 Andrew Roan
 
-import Combine
 import CoreData
 import CoreDataRepository
 import CustomDump
 import XCTest
 
 class CoreDataXCTestCase: XCTestCase {
-    var cancellables: Set<AnyCancellable> = []
     var _container: NSPersistentContainer?
     var _repositoryContext: NSManagedObjectContext?
     var _repository: CoreDataRepository?
@@ -48,7 +46,6 @@ class CoreDataXCTestCase: XCTestCase {
         _container = nil
         _repositoryContext = nil
         _repository = nil
-        cancellables.forEach { $0.cancel() }
     }
 
     func verify<T>(_ item: T) async throws where T: UnmanagedModel {

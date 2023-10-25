@@ -1,4 +1,4 @@
-// CountSubscription.swift
+// CountThrowingSubscription.swift
 // CoreDataRepository
 //
 //
@@ -10,7 +10,9 @@ import CoreData
 import Foundation
 
 /// Subscription provider that sends updates when a count fetch request changes
-final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric {
+final class CountThrowingSubscription<Value>: ThrowingSubscription<Value, NSDictionary, NSManagedObject>
+    where Value: Numeric
+{
     override func fetch() {
         frc.managedObjectContext.perform { [weak self, frc] in
             if (frc.fetchedObjects ?? []).isEmpty {
@@ -31,7 +33,7 @@ final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManage
         context: NSManagedObjectContext,
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
-        continuation: AsyncStream<Result<Value, CoreDataError>>.Continuation
+        continuation: AsyncThrowingStream<Value, Error>.Continuation
     ) {
         let request: NSFetchRequest<NSDictionary>
         do {

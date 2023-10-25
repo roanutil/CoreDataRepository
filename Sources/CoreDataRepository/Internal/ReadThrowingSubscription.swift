@@ -1,4 +1,4 @@
-// ReadSubscription.swift
+// ReadThrowingSubscription.swift
 // CoreDataRepository
 //
 //
@@ -10,12 +10,11 @@ import Combine
 import CoreData
 import Foundation
 
-/// Subscription provider that sends updates when a single ``NSManagedObject`` changes
-final class ReadSubscription<Model: UnmanagedModel> {
+final class ReadThrowingSubscription<Model: UnmanagedModel> {
     private let objectId: NSManagedObjectID
     private let context: NSManagedObjectContext
     private var cancellables: Set<AnyCancellable>
-    private let continuation: AsyncStream<Result<Model, CoreDataError>>.Continuation
+    private let continuation: AsyncThrowingStream<Model, Error>.Continuation
 
     func manualFetch() {
         context.perform { [weak self, context, objectId] in
@@ -24,9 +23,9 @@ final class ReadSubscription<Model: UnmanagedModel> {
             }
             do {
                 let item = try Model(managed: object)
-                self?.continuation.yield(.success(item))
+                self?.continuation.yield(item)
             } catch {
-                self?.continuation.yield(.failure(CoreDataError.unknown(error as NSError)))
+                self?.continuation.yield(with: .failure(CoreDataError.unknown(error as NSError)))
             }
         }
     }
@@ -44,9 +43,9 @@ final class ReadSubscription<Model: UnmanagedModel> {
             let startCancellable = object.objectWillChange.sink { [weak self] _ in
                 do {
                     let item = try Model(managed: object)
-                    self?.continuation.yield(.success(item))
+                    self?.continuation.yield(item)
                 } catch {
-                    self?.continuation.yield(.failure(CoreDataError.unknown(error as NSError)))
+                    self?.continuation.yield(with: .failure(CoreDataError.unknown(error as NSError)))
                 }
             }
             self?.cancellables.insert(startCancellable)
@@ -56,7 +55,7 @@ final class ReadSubscription<Model: UnmanagedModel> {
     init(
         objectId: NSManagedObjectID,
         context: NSManagedObjectContext,
-        continuation: AsyncStream<Result<Model, CoreDataError>>.Continuation
+        continuation: AsyncThrowingStream<Model, Error>.Continuation
     ) {
         self.objectId = objectId
         self.context = context

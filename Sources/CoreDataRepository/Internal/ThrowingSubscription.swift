@@ -1,4 +1,4 @@
-// Subscription.swift
+// ThrowingSubscription.swift
 // CoreDataRepository
 //
 //
@@ -10,18 +10,18 @@ import CoreData
 import Foundation
 
 /// Base class for other subscriptions.
-class Subscription<
+class ThrowingSubscription<
     Output,
     RequestResult: NSFetchRequestResult,
     ControllerResult: NSFetchRequestResult
 >: BaseSubscription<Output, RequestResult, ControllerResult> {
-    let continuation: AsyncStream<Result<Output, CoreDataError>>.Continuation
+    private let continuation: AsyncThrowingStream<Output, Error>.Continuation
 
     init(
         fetchRequest: NSFetchRequest<RequestResult>,
         fetchResultControllerRequest: NSFetchRequest<ControllerResult>,
         context: NSManagedObjectContext,
-        continuation: AsyncStream<Result<Output, CoreDataError>>.Continuation
+        continuation: AsyncThrowingStream<Output, Error>.Continuation
     ) {
         self.continuation = continuation
         super.init(
@@ -36,21 +36,21 @@ class Subscription<
     }
 
     override final func fail(_ error: CoreDataError) {
-        continuation.yield(.failure(error))
+        continuation.yield(with: .failure(error))
     }
 
     override final func send(_ value: Output) {
-        continuation.yield(.success(value))
+        continuation.yield(with: .success(value))
     }
 }
 
 // MARK: where RequestResult == ControllerResult
 
-extension Subscription where RequestResult == ControllerResult {
+extension ThrowingSubscription where RequestResult == ControllerResult {
     convenience init(
         request: NSFetchRequest<RequestResult>,
         context: NSManagedObjectContext,
-        continuation: AsyncStream<Result<Output, CoreDataError>>.Continuation
+        continuation: AsyncThrowingStream<Output, Error>.Continuation
     ) {
         self.init(
             fetchRequest: request,
@@ -63,11 +63,11 @@ extension Subscription where RequestResult == ControllerResult {
 
 // MARK: where RequestResult == NSDictionary, ControllerResult == NSManagedObject
 
-extension Subscription where RequestResult == NSDictionary, ControllerResult == NSManagedObject {
+extension ThrowingSubscription where RequestResult == NSDictionary, ControllerResult == NSManagedObject {
     convenience init(
         request: NSFetchRequest<NSDictionary>,
         context: NSManagedObjectContext,
-        continuation: AsyncStream<Result<Output, CoreDataError>>.Continuation
+        continuation: AsyncThrowingStream<Output, Error>.Continuation
     ) {
         let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: request.entityName!)
         fetchRequest.predicate = request.predicate

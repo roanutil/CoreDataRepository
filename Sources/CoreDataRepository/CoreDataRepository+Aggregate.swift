@@ -6,8 +6,10 @@
 //
 // Copyright © 2023 Andrew Roan
 
-import Combine
 import CoreData
+import Foundation
+
+// swiftlint:disable file_length
 
 extension CoreDataRepository {
     // MARK: Count
@@ -38,11 +40,18 @@ extension CoreDataRepository {
         entityDesc: NSEntityDescription,
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
-        CountSubscription(
-            context: context.childContext(),
-            predicate: predicate,
-            entityDesc: entityDesc
-        ).stream()
+        AsyncStream { continuation in
+            let subscription = CountSubscription(
+                context: context.childContext(),
+                predicate: predicate,
+                entityDesc: entityDesc,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
     }
 
     /// Subscribe to the count or quantity of managed object instances that satisfy the predicate.
@@ -51,11 +60,18 @@ extension CoreDataRepository {
         entityDesc: NSEntityDescription,
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
-        CountSubscription(
-            context: context.childContext(),
-            predicate: predicate,
-            entityDesc: entityDesc
-        ).throwingStream()
+        AsyncThrowingStream { continuation in
+            let subscription = CountThrowingSubscription(
+                context: context.childContext(),
+                predicate: predicate,
+                entityDesc: entityDesc,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
     }
 
     // MARK: Sum
@@ -86,14 +102,21 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
-        AggregateSubscription(
-            function: .sum,
-            context: context.childContext(),
-            predicate: predicate,
-            entityDesc: entityDesc,
-            attributeDesc: attributeDesc,
-            groupBy: groupBy
-        ).stream()
+        AsyncStream { continuation in
+            let subscription = AggregateSubscription(
+                function: .sum,
+                context: context.childContext(),
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
     }
 
     /// Subscribe to the sum of a managed object's numeric property for all instances that satisfy the predicate.
@@ -104,14 +127,21 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
-        AggregateSubscription(
-            function: .sum,
-            context: context.childContext(),
-            predicate: predicate,
-            entityDesc: entityDesc,
-            attributeDesc: attributeDesc,
-            groupBy: groupBy
-        ).throwingStream()
+        AsyncThrowingStream { continuation in
+            let subscription = AggregateThrowingSubscription(
+                function: .sum,
+                context: context.childContext(),
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
     }
 
     // MARK: Average
@@ -142,14 +172,21 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
-        AggregateSubscription(
-            function: .average,
-            context: context.childContext(),
-            predicate: predicate,
-            entityDesc: entityDesc,
-            attributeDesc: attributeDesc,
-            groupBy: groupBy
-        ).stream()
+        AsyncStream { continuation in
+            let subscription = AggregateSubscription(
+                function: .average,
+                context: context.childContext(),
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
     }
 
     /// Subscribe to the average of a managed object's numeric property for all instances that satisfy the predicate.
@@ -160,14 +197,21 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
-        AggregateSubscription(
-            function: .average,
-            context: context.childContext(),
-            predicate: predicate,
-            entityDesc: entityDesc,
-            attributeDesc: attributeDesc,
-            groupBy: groupBy
-        ).throwingStream()
+        AsyncThrowingStream { continuation in
+            let subscription = AggregateThrowingSubscription(
+                function: .average,
+                context: context.childContext(),
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
     }
 
     // MARK: Min
@@ -199,14 +243,21 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
-        AggregateSubscription(
-            function: .min,
-            context: context.childContext(),
-            predicate: predicate,
-            entityDesc: entityDesc,
-            attributeDesc: attributeDesc,
-            groupBy: groupBy
-        ).stream()
+        AsyncStream { continuation in
+            let subscription = AggregateSubscription(
+                function: .min,
+                context: context.childContext(),
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
     }
 
     /// Subscribe to the min or minimum of a managed object's numeric property for all instances that satisfy the
@@ -218,14 +269,21 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
-        AggregateSubscription(
-            function: .min,
-            context: context.childContext(),
-            predicate: predicate,
-            entityDesc: entityDesc,
-            attributeDesc: attributeDesc,
-            groupBy: groupBy
-        ).throwingStream()
+        AsyncThrowingStream { continuation in
+            let subscription = AggregateThrowingSubscription(
+                function: .min,
+                context: context.childContext(),
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
     }
 
     // MARK: Max
@@ -257,14 +315,21 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
-        AggregateSubscription(
-            function: .max,
-            context: context.childContext(),
-            predicate: predicate,
-            entityDesc: entityDesc,
-            attributeDesc: attributeDesc,
-            groupBy: groupBy
-        ).stream()
+        AsyncStream { continuation in
+            let subscription = AggregateSubscription(
+                function: .max,
+                context: context.childContext(),
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
     }
 
     /// Subscribe to the max or maximum of a managed object's numeric property for all instances that satisfy the
@@ -276,14 +341,21 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
-        AggregateSubscription(
-            function: .max,
-            context: context.childContext(),
-            predicate: predicate,
-            entityDesc: entityDesc,
-            attributeDesc: attributeDesc,
-            groupBy: groupBy
-        ).throwingStream()
+        AsyncThrowingStream { continuation in
+            let subscription = AggregateThrowingSubscription(
+                function: .max,
+                context: context.childContext(),
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
     }
 
     // MARK: Internals
@@ -337,3 +409,5 @@ extension CoreDataRepository {
         }
     }
 }
+
+// swiftlint:enable file_length

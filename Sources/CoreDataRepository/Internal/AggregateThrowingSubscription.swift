@@ -1,4 +1,4 @@
-// CountSubscription.swift
+// AggregateThrowingSubscription.swift
 // CoreDataRepository
 //
 //
@@ -9,35 +9,53 @@
 import CoreData
 import Foundation
 
-/// Subscription provider that sends updates when a count fetch request changes
-final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric {
+/// Subscription provider that sends updates when an aggregate fetch request changes
+final class AggregateThrowingSubscription<Value>: ThrowingSubscription<Value, NSDictionary, NSManagedObject>
+    where Value: Numeric
+{
     override func fetch() {
-        frc.managedObjectContext.perform { [weak self, frc] in
-            if (frc.fetchedObjects ?? []).isEmpty {
+        frc.managedObjectContext.perform { [weak self, frc, request] in
+            guard frc.fetchedObjects != nil else {
                 self?.start()
+                return
             }
+
+            let result: [NSDictionary]
             do {
-                let count = try frc.managedObjectContext.count(for: frc.fetchRequest)
-                self?.send(Value(exactly: count) ?? Value.zero)
+                result = try frc.managedObjectContext.fetch(request)
             } catch let error as CocoaError {
                 self?.fail(.cocoa(error))
+                return
             } catch {
-                self?.fail(CoreDataError.unknown(error as NSError))
+                self?.fail(.unknown(error as NSError))
+                return
             }
+
+            guard let value: Value = result.asAggregateValue() else {
+                self?.fail(.fetchedObjectFailedToCastToExpectedType)
+                return
+            }
+            self?.send(value)
         }
     }
 
     convenience init(
+        function: CoreDataRepository.AggregateFunction,
         context: NSManagedObjectContext,
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
-        continuation: AsyncStream<Result<Value, CoreDataError>>.Continuation
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        continuation: AsyncThrowingStream<Value, Error>.Continuation
     ) {
         let request: NSFetchRequest<NSDictionary>
         do {
-            request = try NSFetchRequest<NSDictionary>.countRequest(
+            request = try NSFetchRequest<NSDictionary>.request(
+                function: function,
                 predicate: predicate,
-                entityDesc: entityDesc
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy
             )
         } catch let error as CoreDataError {
             self.init(
@@ -65,6 +83,16 @@ final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManage
                 continuation: continuation
             )
             fail(.unknown(error as NSError))
+            return
+        }
+        guard entityDesc == attributeDesc.entity else {
+            self.init(
+                fetchRequest: NSFetchRequest(),
+                fetchResultControllerRequest: NSFetchRequest(),
+                context: context,
+                continuation: continuation
+            )
+            fail(.propertyDoesNotMatchEntity)
             return
         }
         self.init(request: request, context: context, continuation: continuation)

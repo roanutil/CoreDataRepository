@@ -6,8 +6,8 @@
 //
 // Copyright © 2023 Andrew Roan
 
-import Combine
 import CoreData
+import Foundation
 
 extension CoreDataRepository {
     /// Create an instance in the store.
@@ -91,38 +91,23 @@ extension CoreDataRepository {
     {
         let readContext = context.childContext()
         return AsyncStream { continuation in
-            let task = Task {
-                let provider: ReadSubscription<Model>
-                switch Self.getObjectId(fromUrl: url, context: readContext) {
-                case let .success(objectId):
-                    provider = ReadSubscription<Model>(
-                        objectId: objectId,
-                        context: readContext
-                    )
-                case let .failure(error):
-                    continuation.yield(.failure(error))
-                    continuation.finish()
-                    return
-                }
-                provider.start()
-                provider.manualFetch()
-                guard !Task.isCancelled else {
-                    provider.cancel()
-                    continuation.finish()
-                    return
-                }
-                for try await items in provider.subject.values {
-                    guard !Task.isCancelled else {
-                        provider.cancel()
-                        continuation.finish()
-                        return
-                    }
-                    continuation.yield(.success(items))
-                    await Task.yield()
-                }
+            let provider: ReadSubscription<Model>
+            switch Self.getObjectId(fromUrl: url, context: readContext) {
+            case let .success(objectId):
+                provider = ReadSubscription<Model>(
+                    objectId: objectId,
+                    context: readContext,
+                    continuation: continuation
+                )
+            case let .failure(error):
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
             }
+            provider.start()
+            provider.manualFetch()
             continuation.onTermination = { _ in
-                task.cancel()
+                provider.cancel()
             }
         }
     }
@@ -133,38 +118,23 @@ extension CoreDataRepository {
     {
         let readContext = context.childContext()
         return AsyncThrowingStream { continuation in
-            let task = Task {
-                let provider: ReadSubscription<Model>
-                switch Self.getObjectId(fromUrl: url, context: readContext) {
-                case let .success(objectId):
-                    provider = ReadSubscription<Model>(
-                        objectId: objectId,
-                        context: readContext
-                    )
-                case let .failure(error):
-                    continuation.yield(with: .failure(error))
-                    continuation.finish()
-                    return
-                }
-                provider.start()
-                provider.manualFetch()
-                guard !Task.isCancelled else {
-                    provider.cancel()
-                    continuation.finish()
-                    return
-                }
-                for try await items in provider.subject.values {
-                    guard !Task.isCancelled else {
-                        provider.cancel()
-                        continuation.finish()
-                        return
-                    }
-                    continuation.yield(with: .success(items))
-                    await Task.yield()
-                }
+            let provider: ReadThrowingSubscription<Model>
+            switch Self.getObjectId(fromUrl: url, context: readContext) {
+            case let .success(objectId):
+                provider = ReadThrowingSubscription<Model>(
+                    objectId: objectId,
+                    context: readContext,
+                    continuation: continuation
+                )
+            case let .failure(error):
+                continuation.yield(with: .failure(error))
+                continuation.finish()
+                return
             }
+            provider.start()
+            provider.manualFetch()
             continuation.onTermination = { _ in
-                task.cancel()
+                provider.cancel()
             }
         }
     }
