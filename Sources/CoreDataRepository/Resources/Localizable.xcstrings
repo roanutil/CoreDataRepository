@@ -1,0 +1,27 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "No NSManagedObjectID found that correlates to the provided URL." : {
+      "comment" : "Error for when an ObjectID can't be found for the provided URL."
+    },
+    "No object ID URL found on the unmanaged model for an operation against an existing managed object." : {
+      "comment" : "Error for performing an operation against an existing NSManagedObject but the UnmanagedModel instance has no ManagedRepoUrl for looking up the NSManagedOjbectID."
+    },
+    "The managed object entity description does not have a name." : {
+      "comment" : "Error for when the NSEntityDescription does not have a name."
+    },
+    "The managed object entity has no attribute description. An attribute description is required for aggregate operations." : {
+      "comment" : "Error for when the NSEntityDescription has no NSAttributeDescription but one is required."
+    },
+    "The object corresponding to the provided NSManagedObjectID is an incorrect Entity or NSManagedObject subtype. It failed to cast to the requested type." : {
+      "comment" : "Error for when an object is found for a given ObjectID but it is not the expected type."
+    },
+    "The object corresponding to the provided NSManagedObjectID is deleted and cannot be fetched." : {
+      "comment" : "Error for when an object is fetched but is flagged as deleted and is no longer usable."
+    },
+    "There is a mismatch between a provided NSPropertyDescrption's entity and a NSEntityDescription. When a property description is provided, it must match any related entity descriptions." : {
+      "comment" : "Error for when the developer does not provide a valid pair of NSAttributeDescription and NSPropertyDescription (or any of their child types)."
+    }
+  },
+  "version" : "1.0"
+}

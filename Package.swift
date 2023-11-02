@@ -27,6 +27,7 @@ let package = Package(
     targets: [
         .target(
             name: "CoreDataRepository",
+            resources: [.process("Resources")],
             swiftSettings: [.enableUpcomingFeature("StrictConcurrency")]
         ),
         .testTarget(
