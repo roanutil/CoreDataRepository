@@ -28,7 +28,7 @@ extension Movie: UnmanagedModel {
         )
     }
 
-    var managedRepoUrl: URL? {
+    var managedIdUrl: URL? {
         get {
             url
         }

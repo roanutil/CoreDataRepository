@@ -17,7 +17,7 @@ public protocol UnmanagedModel: Equatable {
     /// URL representation of the ``ManagedModel``'s ``NSManagedObjectID``
     ///
     /// A `nil` value should mean that this instance has not been saved in the repository
-    var managedRepoUrl: URL? { get set }
+    var managedIdUrl: URL? { get set }
 
     /// Create an instance of ``ManagedModel`` in the provided ``NSManagedObjectContext``
     func asManagedModel(in context: NSManagedObjectContext) -> ManagedModel

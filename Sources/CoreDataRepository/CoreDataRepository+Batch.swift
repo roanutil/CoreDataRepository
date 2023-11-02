@@ -134,7 +134,7 @@ extension CoreDataRepository {
             }
             for item in items {
                 let added = group.addTaskUnlessCancelled {
-                    guard let url = item.managedRepoUrl else {
+                    guard let url = item.managedIdUrl else {
                         return .failure(CoreDataBatchError(item: item, error: .noUrlOnItemToMapToObjectId))
                     }
                     async let result: Result<Model, CoreDataError> = self

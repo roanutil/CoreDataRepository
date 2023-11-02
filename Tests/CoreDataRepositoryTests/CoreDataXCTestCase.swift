@@ -49,7 +49,7 @@ class CoreDataXCTestCase: XCTestCase {
     }
 
     func verify<T>(_ item: T) async throws where T: UnmanagedModel {
-        guard let url = item.managedRepoUrl else {
+        guard let url = item.managedIdUrl else {
             XCTFail("Failed to verify item in store because it has no URL")
             return
         }
