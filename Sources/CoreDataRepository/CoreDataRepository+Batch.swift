@@ -27,6 +27,8 @@ extension CoreDataRepository {
     }
 
     /// Create a batch of unmanaged models.
+    ///
+    /// This operation is non-atomic. Each instance may succeed or fail individually.
     public func create<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -66,6 +68,8 @@ extension CoreDataRepository {
     }
 
     /// Read a batch of unmanaged models.
+    ///
+    /// This operation is non-atomic. Each instance may succeed or fail individually.
     public func read<Model: UnmanagedModel>(
         urls: [URL],
         as _: Model.Type
@@ -119,8 +123,9 @@ extension CoreDataRepository {
         }
     }
 
-    /// Update the store with a batch of unmanaged models. This operation is non-atomic. Each instance may succeed or
-    /// fail individually.
+    /// Update the store with a batch of unmanaged models.
+    ///
+    /// This operation is non-atomic. Each instance may succeed or fail individually.
     public func update<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -178,8 +183,9 @@ extension CoreDataRepository {
         }
     }
 
-    /// Delete from the store with a batch of unmanaged models. This operation is non-atomic. Each instance may succeed
-    /// or fail individually.
+    /// Delete from the store with a batch of unmanaged models.
+    ///
+    /// This operation is non-atomic. Each instance may succeed or fail individually.
     public func delete(
         urls: [URL],
         transactionAuthor: String? = nil

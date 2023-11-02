@@ -52,7 +52,7 @@ public enum CoreDataError: Error, Hashable, Sendable {
         switch self {
         case .failedToGetObjectIdFromUrl:
             return NSLocalizedString(
-                "No ``NSManagedObjectID`` found that correlates to the provided URL.",
+                "No NSManagedObjectID found that correlates to the provided URL.",
                 bundle: .module,
                 comment: "Error for when an ObjectID can't be found for the provided URL."
             )
@@ -66,14 +66,14 @@ public enum CoreDataError: Error, Hashable, Sendable {
             )
         case .fetchedObjectFailedToCastToExpectedType:
             return NSLocalizedString(
-                "The object corresponding to the provided ``NSManagedObjectID`` is an incorrect Entity or "
+                "The object corresponding to the provided NSManagedObjectID is an incorrect Entity or "
                     + "NSManagedObject subtype. It failed to cast to the requested type.",
                 bundle: .module,
                 comment: "Error for when an object is found for a given ObjectID but it is not the expected type."
             )
         case .fetchedObjectIsFlaggedAsDeleted:
             return NSLocalizedString(
-                "The object corresponding to the provided ``NSManagedObjectID`` is deleted and cannot be fetched.",
+                "The object corresponding to the provided NSManagedObjectID is deleted and cannot be fetched.",
                 bundle: .module,
                 comment: "Error for when an object is fetched but is flagged as deleted and is no longer usable."
             )
@@ -92,7 +92,7 @@ public enum CoreDataError: Error, Hashable, Sendable {
                 "The managed object entity has no attribute description. An attribute description is required for "
                     + "aggregate operations.",
                 bundle: .module,
-                comment: "Error for when  the NSEntityDescription has no NSAttributeDescription but one is required."
+                comment: "Error for when the NSEntityDescription has no NSAttributeDescription but one is required."
             )
         case .noUrlOnItemToMapToObjectId:
             return NSLocalizedString(

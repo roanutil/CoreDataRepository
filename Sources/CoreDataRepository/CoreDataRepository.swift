@@ -11,9 +11,9 @@ import Foundation
 
 /// A wrapper around CoreData that improves the ergonomics and safety of using CoreData.
 ///
-/// CoreDataRepository only exposes value types that bridge to the internal ``NSManagedObject`` sub-classes. This makes
-/// it a lot easier to use CoreData
-/// asynchronously. ``NSManagedObject``s are not thread safe and are not simple Swift classes.
+/// CoreDataRepository only exposes value types that bridge to the internal ``NSManagedObject``
+/// sub-classes. This makesit a lot easier to use CoreData asynchronously. ``NSManagedObject``s
+/// are not thread safe and are not simple Swift classes.
 ///
 /// CRUD, batch CRUD, fetch, and aggregate operations are available.
 ///
