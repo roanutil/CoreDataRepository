@@ -12,6 +12,7 @@ CoreDataRepository is a library for using CoreData on a background queue. It fea
 
 Since ```NSManagedObject```s are not thread safe, a value type model must exist for each ```NSMangaedObject``` subclass.
 
+### [Documentation](https://swiftpackageindex.com/roanutil/CoreDataRepository/documentation/coredatarepository)
 
 ## Motivation
 
