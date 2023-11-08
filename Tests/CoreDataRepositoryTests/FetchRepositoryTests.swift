@@ -41,8 +41,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
     }
 
     func testFetchSuccess() async throws {
-        let result: Result<[Movie], CoreDataError> = try await repository().fetch(fetchRequest)
-        switch result {
+        switch try await repository().fetch(fetchRequest, as: Movie.self) {
         case let .success(movies):
             XCTAssertEqual(movies.count, 5, "Result items count should match expectation")
             XCTAssertEqual(movies, expectedMovies, "Result items should match expectations")

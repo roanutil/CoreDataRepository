@@ -11,9 +11,10 @@ import Foundation
 
 extension CoreDataRepository {
     /// Fetch items from the store with a ``NSFetchRequest``.
-    public func fetch<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.ManagedModel>) async
-        -> Result<[Model], CoreDataError>
-    {
+    public func fetch<Model: UnmanagedModel>(
+        _ request: NSFetchRequest<Model.ManagedModel>,
+        as _: Model.Type
+    ) async -> Result<[Model], CoreDataError> {
         await context.performInChild { fetchContext in
             try fetchContext.fetch(request).map(Model.init(managed:))
         }

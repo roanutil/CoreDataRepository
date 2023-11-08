@@ -87,8 +87,7 @@ final class FileCabinetsViewModel {
 
     @Sendable
     func loadFileCabinets() async {
-        let result: Result<[FileCabinet], CoreDataError> = await repository.fetch(Self.fetchRequest)
-        switch result {
+        switch await repository.fetch(Self.fetchRequest, as: FileCabinet.self) {
         case let .success(success):
             state.fileCabinets = success
         case let .failure(error):
