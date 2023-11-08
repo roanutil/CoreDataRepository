@@ -28,7 +28,7 @@ let package = Package(
         .target(
             name: "CoreDataRepository",
             resources: [.process("Resources")],
-            swiftSettings: [.enableUpcomingFeature("StrictConcurrency")]
+            swiftSettings: .swiftSix
         ),
         .testTarget(
             name: "CoreDataRepositoryTests",
@@ -36,7 +36,20 @@ let package = Package(
                 "CoreDataRepository",
                 .product(name: "CustomDump", package: "swift-custom-dump"),
             ],
-            swiftSettings: [.enableUpcomingFeature("StrictConcurrency")]
+            swiftSettings: .swiftSix
         ),
     ]
 )
+
+extension [SwiftSetting] {
+    static let swiftSix: Self = [
+        .enableUpcomingFeature("BareSlashRegexLiterals"),
+        .enableUpcomingFeature("ConciseMagicFile"),
+        .enableUpcomingFeature("DeprecateApplicationMain"),
+        .enableUpcomingFeature("DisableOutwardActorInference"),
+        .enableUpcomingFeature("ForwardTrailingClosures"),
+        .enableUpcomingFeature("ImportObjcForwardDeclarations"),
+        .enableUpcomingFeature("InternalImportsByDefault"),
+        .enableUpcomingFeature("StrictConcurrency"),
+    ]
+}
