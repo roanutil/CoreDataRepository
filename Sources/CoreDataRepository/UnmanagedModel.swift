@@ -20,10 +20,10 @@ public protocol UnmanagedModel: Equatable {
     var managedIdUrl: URL? { get set }
 
     /// Create an instance of ``ManagedModel`` in the provided ``NSManagedObjectContext``
-    func asManagedModel(in context: NSManagedObjectContext) -> ManagedModel
+    func asManagedModel(in context: NSManagedObjectContext) throws -> ManagedModel
 
     /// Update the properties of the ``ManagedModel`` instance from `self`
-    func updating(managed: ManagedModel)
+    func updating(managed: ManagedModel) throws
 
     /// Initialize of new instance of `Self` from an instance of ``ManagedModel``
     init(managed: ManagedModel) throws

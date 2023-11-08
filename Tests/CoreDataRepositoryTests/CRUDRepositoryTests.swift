@@ -35,9 +35,9 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
             let object = try RepoMovie(context: self.repositoryContext())
-            movie.updating(managed: object)
+            try movie.updating(managed: object)
             try self.repositoryContext().save()
-            return Movie(managed: object)
+            return try Movie(managed: object)
         }
 
         let result: Result<Movie, CoreDataError> = try await repository()
@@ -61,9 +61,9 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let movie = Movie(id: UUID(), title: "Read Failure", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform {
             let object = try RepoMovie(context: self.repositoryContext())
-            movie.updating(managed: object)
+            try movie.updating(managed: object)
             try self.repositoryContext().save()
-            return Movie(managed: object)
+            return try Movie(managed: object)
         }
         _ = try await repositoryContext().perform {
             let objectID = try self.repositoryContext().persistentStoreCoordinator?
@@ -88,9 +88,9 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         var movie = Movie(id: UUID(), title: "Update Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
             let object = try RepoMovie(context: self.repositoryContext())
-            movie.updating(managed: object)
+            try movie.updating(managed: object)
             try self.repositoryContext().save()
-            return Movie(managed: object)
+            return try Movie(managed: object)
         }
 
         movie.title = "Update Success - Edited"
@@ -120,9 +120,9 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         var movie = Movie(id: UUID(), title: "Update Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
             let object = try RepoMovie(context: self.repositoryContext())
-            movie.updating(managed: object)
+            try movie.updating(managed: object)
             try self.repositoryContext().save()
-            return Movie(managed: object)
+            return try Movie(managed: object)
         }
 
         _ = try await repositoryContext().perform {
@@ -150,9 +150,9 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let movie = Movie(id: UUID(), title: "Delete Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
             let object = try RepoMovie(context: self.repositoryContext())
-            movie.updating(managed: object)
+            try movie.updating(managed: object)
             try self.repositoryContext().save()
-            return Movie(managed: object)
+            return try Movie(managed: object)
         }
 
         let historyTimeStamp = Date()
@@ -175,9 +175,9 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         let movie = Movie(id: UUID(), title: "Delete Failure", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
             let object = try RepoMovie(context: self.repositoryContext())
-            movie.updating(managed: object)
+            try movie.updating(managed: object)
             try self.repositoryContext().save()
-            return Movie(managed: object)
+            return try Movie(managed: object)
         }
 
         _ = try await repositoryContext().perform {

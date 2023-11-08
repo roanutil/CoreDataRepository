@@ -18,7 +18,7 @@ struct Movie: Hashable {
 }
 
 extension Movie: UnmanagedModel {
-    init(managed: RepoMovie) {
+    init(managed: RepoMovie) throws {
         self.init(
             id: managed.id!,
             title: managed.title!,
@@ -37,7 +37,7 @@ extension Movie: UnmanagedModel {
         }
     }
 
-    func asManagedModel(in context: NSManagedObjectContext) -> RepoMovie {
+    func asManagedModel(in context: NSManagedObjectContext) throws -> RepoMovie {
         let object = RepoMovie(context: context)
         object.id = id
         object.title = title
@@ -46,7 +46,7 @@ extension Movie: UnmanagedModel {
         return object
     }
 
-    func updating(managed: RepoMovie) {
+    func updating(managed: RepoMovie) throws {
         managed.id = id
         managed.title = title
         managed.releaseDate = releaseDate
