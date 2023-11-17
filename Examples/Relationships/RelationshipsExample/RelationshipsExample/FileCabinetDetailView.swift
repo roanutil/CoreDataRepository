@@ -16,44 +16,37 @@ struct FileCabinetDetailView: View {
     let viewModel: FileCabinetDetailViewModel
 
     var body: some View {
-        NavigationSplitView(
-            sidebar: sidebar,
-            content: content,
-            detail: detail
-        )
-    }
-
-    @ViewBuilder @MainActor
-    private func sidebar() -> some View {
-        VStack {
-            Text(viewModel.state.fileCabinet.id.uuidString)
-            Button(
-                action: {
-                    Task {
-                        await viewModel.newDrawer()
+        Section {
+            List(viewModel.state.fileCabinet.drawers) { drawer in
+                Text(drawer.id.uuidString)
+                    .swipeActions {
+                        Button(role: .destructive) {
+                            Task {
+                                await viewModel.delete(drawer: drawer)
+                            }
+                        } label: {
+                            Label("Delete", systemImage: "trash.fill")
+                        }
                     }
-                },
-                label: {
-                    Text("+")
-                }
-            )
-            List {
-                ForEach(viewModel.state.fileCabinet.drawers) { drawer in
-                    Text(drawer.id.uuidString)
-                }
             }
             .refreshable(action: viewModel.refreshFileCabinet)
+        } header: {
+            HStack {
+                Text("Drawers")
+                Button(
+                    action: {
+                        Task {
+                            await viewModel.newDrawer()
+                        }
+                    },
+                    label: {
+                        Image(systemName: "plus")
+                            .padding()
+                    }
+                )
+            }
         }
-    }
-
-    @ViewBuilder @MainActor
-    private func content() -> some View {
-        EmptyView()
-    }
-
-    @ViewBuilder @MainActor
-    private func detail() -> some View {
-        EmptyView()
+        .navigationTitle("File Cabinet \(viewModel.state.fileCabinet.id.uuidString)")
     }
 }
 
@@ -91,6 +84,19 @@ final class FileCabinetDetailViewModel {
             state.fileCabinet = success
         case let .failure(error):
             print(error.localizedDescription)
+        }
+    }
+    
+    @Sendable
+    func delete(drawer: FileCabinet.Drawer) async {
+        guard let url = drawer.managedIdUrl else {
+            return
+        }
+        switch await repository.delete(url) {
+        case .success:
+            return
+        case let .failure(error):
+            print("Failed to delete drawer \(drawer.id.uuidString): \(error.localizedDescription)")
         }
     }
 

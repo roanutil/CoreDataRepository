@@ -13,7 +13,7 @@ import SwiftUI
 struct RelationshipsExampleApp: App {
     let fileCabinetsViewModel =
         FileCabinetsViewModel(repository: CoreDataRepository(
-            context: CoreDataStack.persistentContainer()
+            context: CoreDataStack.shared.container
                 .newBackgroundContext()
         ))
 

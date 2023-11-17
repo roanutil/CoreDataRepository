@@ -16,16 +16,36 @@ struct FileCabinetsView: View {
     let viewModel: FileCabinetsViewModel
 
     var body: some View {
-        NavigationSplitView(
-            sidebar: sidebar,
-            content: content,
-            detail: detail
-        )
+        NavigationSplitView(columnVisibility: .constant(.all)) {
+            sidebar()
+        } content: {
+            content()
+        } detail: {
+            detail()
+        }
     }
 
     @ViewBuilder @MainActor
     private func sidebar() -> some View {
-        VStack {
+        List(viewModel.state.fileCabinets) { fileCabinet in
+            Text(fileCabinet.id.uuidString)
+                .onTapGesture {
+                    Task {
+                        await viewModel.select(fileCabinet: fileCabinet)
+                    }
+                }
+                .swipeActions {
+                    Button(role: .destructive) {
+                        Task {
+                            await viewModel.delete(fileCabinet: fileCabinet)
+                        }
+                    } label: {
+                        Label("Delete", systemImage: "trash.fill")
+                    }
+                }
+        }
+        .refreshable(action: viewModel.loadFileCabinets)
+        .toolbar {
             Button(
                 action: {
                     Task {
@@ -33,21 +53,12 @@ struct FileCabinetsView: View {
                     }
                 },
                 label: {
-                    Text("+")
+                    Image(systemName: "plus")
+                        .padding()
                 }
             )
-            List {
-                ForEach(viewModel.state.fileCabinets) { fileCabinet in
-                    Text(fileCabinet.id.uuidString)
-                        .onTapGesture {
-                            Task {
-                                await viewModel.select(fileCabinet: fileCabinet)
-                            }
-                        }
-                }
-            }
-            .refreshable(action: viewModel.loadFileCabinets)
         }
+        .navigationTitle("File Cabinets")
     }
 
     @ViewBuilder @MainActor
@@ -103,6 +114,19 @@ final class FileCabinetsViewModel {
         )
         detailViewModel = detail
         await detail.refreshFileCabinet()
+    }
+    
+    @Sendable
+    func delete(fileCabinet: FileCabinet) async {
+        guard let url = fileCabinet.managedIdUrl else {
+            return
+        }
+        switch await repository.delete(url) {
+        case .success:
+            return
+        case let .failure(error):
+            print("Failed to delete file cabinet \(fileCabinet.id.uuidString): \(error.localizedDescription)")
+        }
     }
 
     private static let fetchRequest: NSFetchRequest<FileCabinet.Managed> = {
