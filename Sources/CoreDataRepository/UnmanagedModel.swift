@@ -27,4 +27,16 @@ public protocol UnmanagedModel: Equatable {
 
     /// Initialize of new instance of `Self` from an instance of ``ManagedModel``
     init(managed: ManagedModel) throws
+
+    /// ``NSFetchRequest`` for ``ManagedModel`` with a strongly typed ``NSFetchRequest.ResultType``
+    static func managedFetchRequest() -> NSFetchRequest<ManagedModel>
+}
+
+extension UnmanagedModel {
+    public static func managedFetchRequest() -> NSFetchRequest<ManagedModel> {
+        NSFetchRequest<ManagedModel>(
+            entityName: ManagedModel.entity().name ?? ManagedModel.entity()
+                .managedObjectClassName
+        )
+    }
 }
