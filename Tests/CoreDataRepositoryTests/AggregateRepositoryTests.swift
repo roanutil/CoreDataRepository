@@ -11,9 +11,9 @@ import CoreDataRepository
 import XCTest
 
 final class AggregateRepositoryTests: CoreDataXCTestCase {
-    let fetchRequest: NSFetchRequest<RepoMovie> = {
-        let request = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \RepoMovie.title, ascending: true)]
+    let fetchRequest: NSFetchRequest<ManagedMovie> = {
+        let request = Movie.managedFetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \ManagedMovie.title, ascending: true)]
         return request
     }()
 
@@ -42,7 +42,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
 
     func testCountSuccess() async throws {
         let result = try await repository()
-            .count(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity(), as: Int.self)
+            .count(predicate: NSPredicate(value: true), entityDesc: ManagedMovie.entity(), as: Int.self)
         switch result {
         case let .success(value):
             XCTAssertEqual(value, 5, "Result value (count) should equal number of movies.")
@@ -55,7 +55,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         let task = Task {
             var resultCount = 0
             let stream = try repository()
-                .countSubscription(predicate: NSPredicate(value: true), entityDesc: RepoMovie.entity(), as: Int.self)
+                .countSubscription(predicate: NSPredicate(value: true), entityDesc: ManagedMovie.entity(), as: Int.self)
             for await _count in stream {
                 let count = try _count.get()
                 resultCount += 1
@@ -85,7 +85,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
             let stream = try repository()
                 .countThrowingSubscription(
                     predicate: NSPredicate(value: true),
-                    entityDesc: RepoMovie.entity(),
+                    entityDesc: ManagedMovie.entity(),
                     as: Int.self
                 )
             for try await count in stream {
@@ -113,9 +113,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testSumSuccess() async throws {
         let result = try await repository().sum(
             predicate: NSPredicate(value: true),
-            entityDesc: RepoMovie.entity(),
+            entityDesc: ManagedMovie.entity(),
             attributeDesc: XCTUnwrap(
-                RepoMovie.entity().attributesByName.values
+                ManagedMovie.entity().attributesByName.values
                     .first(where: { $0.name == "boxOffice" })
             ),
             as: Decimal.self
@@ -133,9 +133,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
             var resultCount = 0
             let stream = try repository().sumSubscription(
                 predicate: NSPredicate(value: true),
-                entityDesc: RepoMovie.entity(),
+                entityDesc: ManagedMovie.entity(),
                 attributeDesc: XCTUnwrap(
-                    RepoMovie.entity().attributesByName.values
+                    ManagedMovie.entity().attributesByName.values
                         .first(where: { $0.name == "boxOffice" })
                 ),
                 as: Decimal.self
@@ -168,9 +168,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
             var resultCount = 0
             let stream = try repository().sumThrowingSubscription(
                 predicate: NSPredicate(value: true),
-                entityDesc: RepoMovie.entity(),
+                entityDesc: ManagedMovie.entity(),
                 attributeDesc: XCTUnwrap(
-                    RepoMovie.entity().attributesByName.values
+                    ManagedMovie.entity().attributesByName.values
                         .first(where: { $0.name == "boxOffice" })
                 ),
                 as: Decimal.self
@@ -200,9 +200,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testAverageSuccess() async throws {
         let result = try await repository().average(
             predicate: NSPredicate(value: true),
-            entityDesc: RepoMovie.entity(),
+            entityDesc: ManagedMovie.entity(),
             attributeDesc: XCTUnwrap(
-                RepoMovie.entity().attributesByName.values
+                ManagedMovie.entity().attributesByName.values
                     .first(where: { $0.name == "boxOffice" })
             ),
             as: Decimal.self
@@ -224,9 +224,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
             var resultCount = 0
             let stream = try repository().averageSubscription(
                 predicate: NSPredicate(value: true),
-                entityDesc: RepoMovie.entity(),
+                entityDesc: ManagedMovie.entity(),
                 attributeDesc: XCTUnwrap(
-                    RepoMovie.entity().attributesByName.values
+                    ManagedMovie.entity().attributesByName.values
                         .first(where: { $0.name == "boxOffice" })
                 ),
                 as: Decimal.self
@@ -263,9 +263,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
             var resultCount = 0
             let stream = try repository().averageThrowingSubscription(
                 predicate: NSPredicate(value: true),
-                entityDesc: RepoMovie.entity(),
+                entityDesc: ManagedMovie.entity(),
                 attributeDesc: XCTUnwrap(
-                    RepoMovie.entity().attributesByName.values
+                    ManagedMovie.entity().attributesByName.values
                         .first(where: { $0.name == "boxOffice" })
                 ),
                 as: Decimal.self
@@ -299,9 +299,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testMinSuccess() async throws {
         let result = try await repository().min(
             predicate: NSPredicate(value: true),
-            entityDesc: RepoMovie.entity(),
+            entityDesc: ManagedMovie.entity(),
             attributeDesc: XCTUnwrap(
-                RepoMovie.entity().attributesByName.values
+                ManagedMovie.entity().attributesByName.values
                     .first(where: { $0.name == "boxOffice" })
             ),
             as: Decimal.self
@@ -323,9 +323,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
             var resultCount = 0
             let stream = try repository().minSubscription(
                 predicate: NSPredicate(value: true),
-                entityDesc: RepoMovie.entity(),
+                entityDesc: ManagedMovie.entity(),
                 attributeDesc: XCTUnwrap(
-                    RepoMovie.entity().attributesByName.values
+                    ManagedMovie.entity().attributesByName.values
                         .first(where: { $0.name == "boxOffice" })
                 ),
                 as: Decimal.self
@@ -358,9 +358,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
             var resultCount = 0
             let stream = try repository().minThrowingSubscription(
                 predicate: NSPredicate(value: true),
-                entityDesc: RepoMovie.entity(),
+                entityDesc: ManagedMovie.entity(),
                 attributeDesc: XCTUnwrap(
-                    RepoMovie.entity().attributesByName.values
+                    ManagedMovie.entity().attributesByName.values
                         .first(where: { $0.name == "boxOffice" })
                 ),
                 as: Decimal.self
@@ -390,9 +390,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testMaxSuccess() async throws {
         let result = try await repository().max(
             predicate: NSPredicate(value: true),
-            entityDesc: RepoMovie.entity(),
+            entityDesc: ManagedMovie.entity(),
             attributeDesc: XCTUnwrap(
-                RepoMovie.entity().attributesByName.values
+                ManagedMovie.entity().attributesByName.values
                     .first(where: { $0.name == "boxOffice" })
             ),
             as: Decimal.self
@@ -414,9 +414,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
             var resultCount = 0
             let stream = try repository().maxSubscription(
                 predicate: NSPredicate(value: true),
-                entityDesc: RepoMovie.entity(),
+                entityDesc: ManagedMovie.entity(),
                 attributeDesc: XCTUnwrap(
-                    RepoMovie.entity().attributesByName.values
+                    ManagedMovie.entity().attributesByName.values
                         .first(where: { $0.name == "boxOffice" })
                 ),
                 as: Decimal.self
@@ -449,9 +449,9 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
             var resultCount = 0
             let stream = try repository().maxThrowingSubscription(
                 predicate: NSPredicate(value: true),
-                entityDesc: RepoMovie.entity(),
+                entityDesc: ManagedMovie.entity(),
                 attributeDesc: XCTUnwrap(
-                    RepoMovie.entity().attributesByName.values
+                    ManagedMovie.entity().attributesByName.values
                         .first(where: { $0.name == "boxOffice" })
                 ),
                 as: Decimal.self
@@ -482,12 +482,12 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
         let result = try await repository()
             .count(
                 predicate: NSComparisonPredicate(
-                    leftExpression: NSExpression(forKeyPath: \RepoMovie.title),
+                    leftExpression: NSExpression(forKeyPath: \ManagedMovie.title),
                     rightExpression: NSExpression(forConstantValue: "A"),
                     modifier: .direct,
                     type: .notEqualTo
                 ),
-                entityDesc: RepoMovie.entity(),
+                entityDesc: ManagedMovie.entity(),
                 as: Int.self
             )
         switch result {
@@ -501,14 +501,14 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
     func testSumWithPredicate() async throws {
         let result = try await repository().sum(
             predicate: NSComparisonPredicate(
-                leftExpression: NSExpression(forKeyPath: \RepoMovie.title),
+                leftExpression: NSExpression(forKeyPath: \ManagedMovie.title),
                 rightExpression: NSExpression(forConstantValue: "A"),
                 modifier: .direct,
                 type: .notEqualTo
             ),
-            entityDesc: RepoMovie.entity(),
+            entityDesc: ManagedMovie.entity(),
             attributeDesc: XCTUnwrap(
-                RepoMovie.entity().attributesByName.values
+                ManagedMovie.entity().attributesByName.values
                     .first(where: { $0.name == "boxOffice" })
             ),
             as: Decimal.self

@@ -77,13 +77,6 @@ extension FileCabinet.Drawer.Managed {
 }
 
 extension FileCabinet.Drawer.Managed {
-    static func fetchRequest() -> NSFetchRequest<FileCabinet.Drawer.Managed> {
-        let request = NSFetchRequest<FileCabinet.Drawer.Managed>(entityName: "ManagedFileCabinetDrawer")
-        return request
-    }
-}
-
-extension FileCabinet.Drawer.Managed {
     static var entityDescription: NSEntityDescription {
         let desc = NSEntityDescription()
         desc.name = "ManagedFileCabinetDrawer"

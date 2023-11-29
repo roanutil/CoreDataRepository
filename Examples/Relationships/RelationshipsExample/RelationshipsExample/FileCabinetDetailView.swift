@@ -95,7 +95,7 @@ final class FileCabinetDetailViewModel {
     }
 
     private static let fetchRequest: NSFetchRequest<FileCabinet.Managed> = {
-        let request = FileCabinet.Managed.fetchRequest()
+        let request = FileCabinet.managedFetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \(FileCabinet.Managed).id, ascending: true)]
         return request
     }()

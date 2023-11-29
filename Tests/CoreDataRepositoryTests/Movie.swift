@@ -18,7 +18,7 @@ struct Movie: Hashable {
 }
 
 extension Movie: UnmanagedModel {
-    init(managed: RepoMovie) throws {
+    init(managed: ManagedMovie) throws {
         self.init(
             id: managed.id!,
             title: managed.title!,
@@ -37,8 +37,8 @@ extension Movie: UnmanagedModel {
         }
     }
 
-    func asManagedModel(in context: NSManagedObjectContext) throws -> RepoMovie {
-        let object = RepoMovie(context: context)
+    func asManagedModel(in context: NSManagedObjectContext) throws -> ManagedMovie {
+        let object = ManagedMovie(context: context)
         object.id = id
         object.title = title
         object.releaseDate = releaseDate
@@ -46,7 +46,7 @@ extension Movie: UnmanagedModel {
         return object
     }
 
-    func updating(managed: RepoMovie) throws {
+    func updating(managed: ManagedMovie) throws {
         managed.id = id
         managed.title = title
         managed.releaseDate = releaseDate
@@ -54,17 +54,67 @@ extension Movie: UnmanagedModel {
     }
 }
 
-@objc(RepoMovie)
-final class RepoMovie: NSManagedObject {
+@objc(ManagedMovie)
+final class ManagedMovie: NSManagedObject {
     @NSManaged var id: UUID?
     @NSManaged var title: String?
     @NSManaged var releaseDate: Date?
     @NSManaged var boxOffice: NSDecimalNumber?
 }
 
-extension RepoMovie {
-    static func fetchRequest() -> NSFetchRequest<RepoMovie> {
-        let request = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
+extension ManagedMovie {
+    override class func entity() -> NSEntityDescription {
+        entityDescription
+    }
+
+    private static let entityDescription: NSEntityDescription = {
+        let desc = NSEntityDescription()
+        desc.name = "ManagedMovie"
+        desc.managedObjectClassName = NSStringFromClass(ManagedMovie.self)
+        desc.properties = [
+            movieIDDescription,
+            movieTitleDescription,
+            movieReleaseDateDescription,
+            movieBoxOfficeDescription,
+        ]
+        desc.uniquenessConstraints = [[movieIDDescription]]
+        return desc
+    }()
+
+    private static var movieIDDescription: NSAttributeDescription {
+        let desc = NSAttributeDescription()
+        desc.name = "id"
+        desc.attributeType = .UUIDAttributeType
+        return desc
+    }
+
+    private static var movieTitleDescription: NSAttributeDescription {
+        let desc = NSAttributeDescription()
+        desc.name = "title"
+        desc.attributeType = .stringAttributeType
+        desc.defaultValue = ""
+        return desc
+    }
+
+    private static var movieReleaseDateDescription: NSAttributeDescription {
+        let desc = NSAttributeDescription()
+        desc.name = "releaseDate"
+        desc.attributeType = .dateAttributeType
+        return desc
+    }
+
+    private static var movieBoxOfficeDescription: NSAttributeDescription {
+        let desc = NSAttributeDescription()
+        desc.name = "boxOffice"
+        desc.attributeType = .decimalAttributeType
+        desc.defaultValue = 0
+        return desc
+    }
+}
+
+extension ManagedMovie {
+    static func fetchRequest() -> NSFetchRequest<ManagedMovie> {
+        let request = Movie.managedFetchRequest()
         return request
     }
 }

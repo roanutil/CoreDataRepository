@@ -11,9 +11,9 @@ import CoreDataRepository
 import XCTest
 
 final class FetchRepositoryTests: CoreDataXCTestCase {
-    let fetchRequest: NSFetchRequest<RepoMovie> = {
-        let request = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \RepoMovie.title, ascending: true)]
+    let fetchRequest: NSFetchRequest<ManagedMovie> = {
+        let request = Movie.managedFetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \ManagedMovie.title, ascending: true)]
         return request
     }()
 

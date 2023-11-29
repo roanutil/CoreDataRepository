@@ -45,15 +45,15 @@ There are two protocols that handle bridging between the value type and managed 
 #### RepositoryManagedModel
 
 ```swift
-@objc(RepoMovie)
-public final class RepoMovie: NSManagedObject {
+@objc(ManagedMovie)
+public final class ManagedMovie: NSManagedObject {
     @NSManaged var id: UUID?
     @NSManaged var title: String?
     @NSManaged var releaseDate: Date?
     @NSManaged var boxOffice: NSDecimalNumber?
 }
 
-extension RepoMovie: RepositoryManagedModel {
+extension ManagedMovie: RepositoryManagedModel {
     public func create(from unmanaged: Movie) {
         update(from: unmanaged)
     }
@@ -74,11 +74,6 @@ extension RepoMovie: RepositoryManagedModel {
         title = unmanaged.title
         releaseDate = unmanaged.releaseDate
         boxOffice = NSDecimalNumber(decimal: unmanaged.boxOffice)
-    }
-
-    static func fetchRequest() -> NSFetchRequest<RepoMovie> {
-        let request = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        return request
     }
 }
 ```
@@ -104,8 +99,8 @@ extension Movie: UnmanagedModel {
         }
     }
 
-    public func asManagedModel(in context: NSManagedObjectContext) -> RepoMovie {
-        let object = RepoMovie(context: context)
+    public func asManagedModel(in context: NSManagedObjectContext) -> ManagedMovie {
+        let object = ManagedMovie(context: context)
         object.id = id
         object.title = title
         object.releaseDate = releaseDate
@@ -128,8 +123,8 @@ if case let .success(movie) = result {
 ### Fetch
 
 ```swift
-let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \RepoMovie.title, ascending: true)]
+let fetchRequest = Movie.managedFetchRequest
+fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \ManagedMovie.title, ascending: true)]
 fetchRequest.predicate = NSPredicate(value: true)
 let result: Result<[Movie], CoreDataError> = await repository.fetch(fetchRequest)
 if case let .success(movies) = result {
@@ -164,8 +159,8 @@ cancellable.cancel()
 ```swift
 let result: Result<[[String: Decimal]], CoreDataError> = await repository.sum(
     predicate: NSPredicate(value: true),
-    entityDesc: RepoMovie.entity(),
-    attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
+    entityDesc: ManagedMovie.entity(),
+    attributeDesc: ManagedMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
 )
 if case let .success(values) = result {
     os_log("The sum of all movies' boxOffice is \(values.first!.values.first!)")
@@ -182,7 +177,7 @@ let movies: [[String: Any]] = [
     ["id": UUID(), "title": "D", "releaseDate": Date()],
     ["id": UUID(), "title": "E", "releaseDate": Date()]
 ]
-let request = NSBatchInsertRequest(entityName: RepoMovie.entity().name!, objects: movies)
+let request = NSBatchInsertRequest(entityName: ManagedMovie.entity().name!, objects: movies)
 let result: Result<NSBatchInsertResult, CoreDataError> = await repository.insert(request)
 
 ```

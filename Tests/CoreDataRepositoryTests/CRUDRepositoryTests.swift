@@ -34,7 +34,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testReadSuccess() async throws {
         let movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
-            let object = try RepoMovie(context: self.repositoryContext())
+            let object = try ManagedMovie(context: self.repositoryContext())
             try movie.updating(managed: object)
             try self.repositoryContext().save()
             return try Movie(managed: object)
@@ -60,7 +60,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testReadFailure() async throws {
         let movie = Movie(id: UUID(), title: "Read Failure", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform {
-            let object = try RepoMovie(context: self.repositoryContext())
+            let object = try ManagedMovie(context: self.repositoryContext())
             try movie.updating(managed: object)
             try self.repositoryContext().save()
             return try Movie(managed: object)
@@ -87,7 +87,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testUpdateSuccess() async throws {
         var movie = Movie(id: UUID(), title: "Update Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
-            let object = try RepoMovie(context: self.repositoryContext())
+            let object = try ManagedMovie(context: self.repositoryContext())
             try movie.updating(managed: object)
             try self.repositoryContext().save()
             return try Movie(managed: object)
@@ -119,7 +119,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testUpdateFailure() async throws {
         var movie = Movie(id: UUID(), title: "Update Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
-            let object = try RepoMovie(context: self.repositoryContext())
+            let object = try ManagedMovie(context: self.repositoryContext())
             try movie.updating(managed: object)
             try self.repositoryContext().save()
             return try Movie(managed: object)
@@ -149,7 +149,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testDeleteSuccess() async throws {
         let movie = Movie(id: UUID(), title: "Delete Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
-            let object = try RepoMovie(context: self.repositoryContext())
+            let object = try ManagedMovie(context: self.repositoryContext())
             try movie.updating(managed: object)
             try self.repositoryContext().save()
             return try Movie(managed: object)
@@ -174,7 +174,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     func testDeleteFailure() async throws {
         let movie = Movie(id: UUID(), title: "Delete Failure", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
-            let object = try RepoMovie(context: self.repositoryContext())
+            let object = try ManagedMovie(context: self.repositoryContext())
             try movie.updating(managed: object)
             try self.repositoryContext().save()
             return try Movie(managed: object)
@@ -203,20 +203,20 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         var movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
 
         let count: Int = try await repositoryContext().perform { [self] in
-            try repositoryContext().count(for: RepoMovie.fetchRequest())
+            try repositoryContext().count(for: Movie.managedFetchRequest())
         }
 
         XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
-        let repoMovieUrl: URL = try await repositoryContext().perform { [self] in
-            let repoMovie = try movie.asManagedModel(in: repositoryContext())
+        let managedMovieUrl: URL = try await repositoryContext().perform { [self] in
+            let managedMovie = try movie.asManagedModel(in: repositoryContext())
             try repositoryContext().save()
-            return repoMovie.objectID.uriRepresentation()
+            return managedMovie.objectID.uriRepresentation()
         }
 
-        movie.url = repoMovieUrl
+        movie.url = managedMovieUrl
         let countAfterCreate: Int = try await repositoryContext().perform {
-            try self.repositoryContext().count(for: RepoMovie.fetchRequest())
+            try self.repositoryContext().count(for: Movie.managedFetchRequest())
         }
         XCTAssertEqual(countAfterCreate, 1, "Count of objects in CoreData should be 1 for read test.")
 
@@ -225,7 +225,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
 
         let task = Task { [movie, editedMovie] in
             var resultCount = 0
-            let stream = try repository().readSubscription(repoMovieUrl, of: Movie.self)
+            let stream = try repository().readSubscription(managedMovieUrl, of: Movie.self)
             for await _movie in stream {
                 let receivedMovie = try _movie.get()
                 resultCount += 1
@@ -234,7 +234,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                     XCTAssertEqual(receivedMovie, movie, "Success response should match local object.")
                     let crudRepository = try CoreDataRepository(context: repositoryContext())
                     let _: Result<Movie, CoreDataError> = await crudRepository
-                        .update(repoMovieUrl, with: editedMovie)
+                        .update(managedMovieUrl, with: editedMovie)
                     await Task.yield()
                 case 2:
                     XCTAssertEqual(receivedMovie, editedMovie, "Second success response should match local object.")
@@ -254,20 +254,20 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         var movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
 
         let count: Int = try await repositoryContext().perform { [self] in
-            try repositoryContext().count(for: RepoMovie.fetchRequest())
+            try repositoryContext().count(for: Movie.managedFetchRequest())
         }
 
         XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
-        let repoMovieUrl: URL = try await repositoryContext().perform { [self] in
-            let repoMovie = try movie.asManagedModel(in: repositoryContext())
+        let managedMovieUrl: URL = try await repositoryContext().perform { [self] in
+            let managedMovie = try movie.asManagedModel(in: repositoryContext())
             try repositoryContext().save()
-            return repoMovie.objectID.uriRepresentation()
+            return managedMovie.objectID.uriRepresentation()
         }
 
-        movie.url = repoMovieUrl
+        movie.url = managedMovieUrl
         let countAfterCreate: Int = try await repositoryContext().perform {
-            try self.repositoryContext().count(for: RepoMovie.fetchRequest())
+            try self.repositoryContext().count(for: Movie.managedFetchRequest())
         }
         XCTAssertEqual(countAfterCreate, 1, "Count of objects in CoreData should be 1 for read test.")
 
@@ -276,7 +276,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
 
         let task = Task { [movie, editedMovie] in
             var resultCount = 0
-            let stream = try repository().readThrowingSubscription(repoMovieUrl, of: Movie.self)
+            let stream = try repository().readThrowingSubscription(managedMovieUrl, of: Movie.self)
             for try await receivedMovie in stream {
                 resultCount += 1
                 switch resultCount {
@@ -284,7 +284,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                     XCTAssertEqual(receivedMovie, movie, "Success response should match local object.")
                     let crudRepository = try CoreDataRepository(context: repositoryContext())
                     let _: Result<Movie, CoreDataError> = await crudRepository
-                        .update(repoMovieUrl, with: editedMovie)
+                        .update(managedMovieUrl, with: editedMovie)
                     await Task.yield()
                 case 2:
                     XCTAssertEqual(receivedMovie, editedMovie, "Second success response should match local object.")

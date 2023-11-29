@@ -51,13 +51,6 @@ extension Document {
 }
 
 extension Document.Managed {
-    static func fetchRequest() -> NSFetchRequest<Document.Managed> {
-        let request = NSFetchRequest<Document.Managed>(entityName: "ManagedDocument")
-        return request
-    }
-}
-
-extension Document.Managed {
     static var entityDescription: NSEntityDescription {
         let desc = NSEntityDescription()
         desc.name = "ManagedDocument"
