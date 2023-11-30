@@ -68,7 +68,7 @@ extension CoreDataRepository {
     }
 
     /// Create a batch of unmanaged models.
-    public func createAtomiclly<Model: UnmanagedModel>(
+    public func createAtomically<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
     ) async -> Result<[Model], CoreDataError> {
@@ -131,8 +131,8 @@ extension CoreDataRepository {
 
     /// Read a batch of unmanaged models.
     public func readAtomically<Model: UnmanagedModel>(
-        _ urls: [URL],
-        of _: Model.Type
+        urls: [URL],
+        as _: Model.Type
     ) async -> Result<[Model], CoreDataError> {
         await context.performInChild(schedule: .enqueued) { readContext in
             try urls.map { url in
@@ -157,33 +157,6 @@ extension CoreDataRepository {
             }
             context.transactionAuthor = nil
             return result
-        }
-    }
-
-    /// Update the store with a batch of unmanaged models.
-    public func updateAtomically<Model: UnmanagedModel>(
-        _ items: [Model],
-        transactionAuthor: String? = nil
-    ) async -> Result<[Model], CoreDataError> {
-        await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
-            scratchPad.transactionAuthor = transactionAuthor
-            let objects = try items.map { item in
-                guard let url = item.managedIdUrl else {
-                    throw CoreDataError.noUrlOnItemToMapToObjectId
-                }
-                let id = try scratchPad.objectId(from: url).get()
-                let object = try scratchPad.notDeletedObject(for: id)
-                let managed: Model.ManagedModel = try object.asManagedModel()
-                try item.updating(managed: managed)
-                return managed
-            }
-            try scratchPad.save()
-            try context.performAndWait {
-                context.transactionAuthor = transactionAuthor
-                try context.save()
-                context.transactionAuthor = nil
-            }
-            return try objects.map(Model.init(managed:))
         }
     }
 
@@ -229,6 +202,33 @@ extension CoreDataRepository {
             }
         })
         return (success: successes, failed: failures)
+    }
+
+    /// Update the store with a batch of unmanaged models.
+    public func updateAtomically<Model: UnmanagedModel>(
+        _ items: [Model],
+        transactionAuthor: String? = nil
+    ) async -> Result<[Model], CoreDataError> {
+        await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
+            scratchPad.transactionAuthor = transactionAuthor
+            let objects = try items.map { item in
+                guard let url = item.managedIdUrl else {
+                    throw CoreDataError.noUrlOnItemToMapToObjectId
+                }
+                let id = try scratchPad.objectId(from: url).get()
+                let object = try scratchPad.notDeletedObject(for: id)
+                let managed: Model.ManagedModel = try object.asManagedModel()
+                try item.updating(managed: managed)
+                return managed
+            }
+            try scratchPad.save()
+            try context.performAndWait {
+                context.transactionAuthor = transactionAuthor
+                try context.save()
+                context.transactionAuthor = nil
+            }
+            return try objects.map(Model.init(managed:))
+        }
     }
 
     /// Execute a NSBatchDeleteRequest against the store.
@@ -290,7 +290,7 @@ extension CoreDataRepository {
 
     /// Delete from the store with a batch of unmanaged models.
     public func deleteAtomically(
-        _ urls: [URL],
+        urls: [URL],
         transactionAuthor: String? = nil
     ) async -> Result<Void, CoreDataError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in

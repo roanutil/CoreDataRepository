@@ -141,6 +141,55 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
     }
 
+    func testCreateAtomicallySuccess() async throws {
+        let fetchRequest = Movie.managedFetchRequest()
+        try await repositoryContext().perform {
+            let count = try self.repositoryContext().count(for: fetchRequest)
+            XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
+        }
+
+        let historyTimeStamp = Date()
+        let transactionAuthor: String = #function
+
+        let newMovies = try movies.map(mapDictToMovie(_:))
+        let createdMovies: [Movie]
+        switch try await repository()
+            .createAtomically(newMovies, transactionAuthor: transactionAuthor)
+        {
+        case let .success(_createdMovies):
+            createdMovies = _createdMovies
+        case let .failure(error):
+            XCTFail("Not expecting failure: \(error.localizedDescription)")
+            return
+        }
+
+        XCTAssertEqual(createdMovies.count, newMovies.count)
+
+        for movie in createdMovies {
+            try await verify(movie)
+        }
+
+        let createdMoviesForEquality = createdMovies.map { movie in
+            var movie = movie
+            XCTAssertNotNil(movie.url)
+            movie.url = nil
+            return movie
+        }
+
+        XCTAssertNoDifference(createdMoviesForEquality, newMovies)
+
+        try await repositoryContext().perform {
+            let data = try self.repositoryContext().fetch(fetchRequest)
+            XCTAssertEqual(
+                data.map { $0.title ?? "" }.sorted(),
+                ["A", "B", "C", "D", "E"],
+                "Inserted titles should match expectation"
+            )
+        }
+
+        try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+    }
+
     func testReadSuccess() async throws {
         let fetchRequest = Movie.managedFetchRequest()
         var movies = [Movie]()
@@ -160,6 +209,33 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(result.failed.count, 0)
 
         XCTAssertEqual(Set(movies), Set(result.success))
+    }
+
+    func testReadAtomicallySuccess() async throws {
+        let fetchRequest = Movie.managedFetchRequest()
+        var movies = [Movie]()
+        try await repositoryContext().perform {
+            let count = try self.repositoryContext().count(for: fetchRequest)
+            XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
+
+            let managedMovies = try self.movies
+                .map(self.mapDictToManagedMovie(_:))
+            try self.repositoryContext().save()
+            movies = try managedMovies.map(Movie.init(managed:))
+        }
+
+        let readMovies: [Movie]
+        switch try await repository().readAtomically(urls: movies.compactMap(\.url), as: Movie.self) {
+        case let .success(_readMovies):
+            readMovies = _readMovies
+        case let .failure(error):
+            XCTFail("Not expecting failure: \(error.localizedDescription)")
+            return
+        }
+
+        XCTAssertEqual(readMovies.count, movies.count)
+
+        XCTAssertNoDifference(readMovies, movies)
     }
 
     func testUpdateSuccess() async throws {
@@ -226,6 +302,44 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
     }
 
+    func testAltUpdateAtomicallySuccess() async throws {
+        let fetchRequest = Movie.managedFetchRequest()
+        var movies = [Movie]()
+        try await repositoryContext().perform {
+            let count = try self.repositoryContext().count(for: fetchRequest)
+            XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
+
+            let managedMovies = try self.movies
+                .map(self.mapDictToManagedMovie(_:))
+            try self.repositoryContext().save()
+            movies = try managedMovies.map(Movie.init(managed:))
+        }
+
+        var editedMovies = movies
+        let newTitles = ["ZA", "ZB", "ZC", "ZD", "ZE"]
+        newTitles.enumerated().forEach { index, title in editedMovies[index].title = title }
+
+        let historyTimeStamp = Date()
+        let transactionAuthor: String = #function
+
+        let updatedMovies: [Movie]
+        switch try await repository()
+            .updateAtomically(editedMovies, transactionAuthor: transactionAuthor)
+        {
+        case let .success(_updatedMovies):
+            updatedMovies = _updatedMovies
+        case let .failure(error):
+            XCTFail("Not expecting failure: \(error.localizedDescription)")
+            return
+        }
+
+        XCTAssertEqual(updatedMovies.count, movies.count)
+
+        XCTAssertNoDifference(updatedMovies, editedMovies)
+
+        try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+    }
+
     func testDeleteSuccess() async throws {
         let fetchRequest = Movie.managedFetchRequest()
         try await repositoryContext().perform {
@@ -277,6 +391,39 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
 
         XCTAssertEqual(result.success.count, movies.count)
         XCTAssertEqual(result.failed.count, 0)
+
+        try await repositoryContext().perform {
+            let data = try self.repositoryContext().fetch(fetchRequest)
+            XCTAssertEqual(data.map { $0.title ?? "" }.sorted(), [], "There should be no remaining values.")
+        }
+        try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+    }
+
+    func testAltDeleteAtomicallySuccess() async throws {
+        let fetchRequest = Movie.managedFetchRequest()
+        var movies = [Movie]()
+        try await repositoryContext().perform {
+            let count = try self.repositoryContext().count(for: fetchRequest)
+            XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
+
+            let managedMovies = try self.movies
+                .map(self.mapDictToManagedMovie(_:))
+            try self.repositoryContext().save()
+            movies = try managedMovies.map(Movie.init(managed:))
+        }
+
+        let historyTimeStamp = Date()
+        let transactionAuthor: String = #function
+
+        switch try await repository()
+            .deleteAtomically(urls: movies.compactMap(\.url), transactionAuthor: transactionAuthor)
+        {
+        case .success:
+            break
+        case let .failure(error):
+            XCTFail("Not expecting failure: \(error.localizedDescription)")
+            return
+        }
 
         try await repositoryContext().perform {
             let data = try self.repositoryContext().fetch(fetchRequest)
