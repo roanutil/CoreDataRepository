@@ -72,23 +72,23 @@ extension ManagedMovie {
         desc.name = "ManagedMovie"
         desc.managedObjectClassName = NSStringFromClass(ManagedMovie.self)
         desc.properties = [
-            movieIDDescription,
-            movieTitleDescription,
-            movieReleaseDateDescription,
-            movieBoxOfficeDescription,
+            iDDescription,
+            titleDescription,
+            releaseDateDescription,
+            boxOfficeDescription,
         ]
-        desc.uniquenessConstraints = [[movieIDDescription]]
+        desc.uniquenessConstraints = [[iDDescription]]
         return desc
     }()
 
-    private static var movieIDDescription: NSAttributeDescription {
+    private static var iDDescription: NSAttributeDescription {
         let desc = NSAttributeDescription()
         desc.name = "id"
         desc.attributeType = .UUIDAttributeType
         return desc
     }
 
-    private static var movieTitleDescription: NSAttributeDescription {
+    private static var titleDescription: NSAttributeDescription {
         let desc = NSAttributeDescription()
         desc.name = "title"
         desc.attributeType = .stringAttributeType
@@ -96,14 +96,14 @@ extension ManagedMovie {
         return desc
     }
 
-    private static var movieReleaseDateDescription: NSAttributeDescription {
+    private static var releaseDateDescription: NSAttributeDescription {
         let desc = NSAttributeDescription()
         desc.name = "releaseDate"
         desc.attributeType = .dateAttributeType
         return desc
     }
 
-    private static var movieBoxOfficeDescription: NSAttributeDescription {
+    private static var boxOfficeDescription: NSAttributeDescription {
         let desc = NSAttributeDescription()
         desc.name = "boxOffice"
         desc.attributeType = .decimalAttributeType
