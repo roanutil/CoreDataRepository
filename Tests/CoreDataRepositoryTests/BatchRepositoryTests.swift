@@ -13,11 +13,11 @@ import XCTest
 
 final class BatchRepositoryTests: CoreDataXCTestCase {
     let movies: [[String: Any]] = [
-        ["id": UUID(), "title": "A", "releaseDate": Date()],
-        ["id": UUID(), "title": "B", "releaseDate": Date()],
-        ["id": UUID(), "title": "C", "releaseDate": Date()],
-        ["id": UUID(), "title": "D", "releaseDate": Date()],
-        ["id": UUID(), "title": "E", "releaseDate": Date()],
+        ["id": UUID(uniform: "A"), "title": "A", "releaseDate": Date(timeIntervalSinceReferenceDate: 0)],
+        ["id": UUID(uniform: "B"), "title": "B", "releaseDate": Date(timeIntervalSinceReferenceDate: 1)],
+        ["id": UUID(uniform: "C"), "title": "C", "releaseDate": Date(timeIntervalSinceReferenceDate: 2)],
+        ["id": UUID(uniform: "D"), "title": "D", "releaseDate": Date(timeIntervalSinceReferenceDate: 3)],
+        ["id": UUID(uniform: "E"), "title": "E", "releaseDate": Date(timeIntervalSinceReferenceDate: 4)],
     ]
     let failureInsertMovies: [[String: Any]] = [
         ["id": "A", "title": 1, "releaseDate": "A"],
@@ -26,16 +26,13 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         ["id": "D", "title": 4, "releaseDate": "D"],
         ["id": "E", "title": 5, "releaseDate": "E"],
     ]
-    let failureCreateMovies: [[String: Any]] = {
-        let id = UUID()
-        return [
-            ["id": id, "title": "A", "releaseDate": Date()],
-            ["id": id, "title": "B", "releaseDate": Date()],
-            ["id": id, "title": "C", "releaseDate": Date()],
-            ["id": id, "title": "D", "releaseDate": Date()],
-            ["id": id, "title": "E", "releaseDate": Date()],
-        ]
-    }()
+    let failureCreateMovies: [[String: Any]] = [
+        ["id": UUID(uniform: "A"), "title": "A", "releaseDate": Date()],
+        ["id": UUID(uniform: "A"), "title": "B", "releaseDate": Date()],
+        ["id": UUID(uniform: "A"), "title": "C", "releaseDate": Date()],
+        ["id": UUID(uniform: "A"), "title": "D", "releaseDate": Date()],
+        ["id": UUID(uniform: "A"), "title": "E", "releaseDate": Date()],
+    ]
 
     func mapDictToManagedMovie(_ dict: [String: Any]) throws -> ManagedMovie {
         try mapDictToMovie(dict)
@@ -297,7 +294,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(result.success.count, movies.count)
         XCTAssertEqual(result.failed.count, 0)
 
-        XCTAssertEqual(Set(editedMovies), Set(result.success))
+        XCTAssertNoDifference(Set(editedMovies), Set(result.success))
 
         try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
     }
