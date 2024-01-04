@@ -4,13 +4,13 @@
 //
 // MIT License
 //
-// Copyright © 2023 Andrew Roan
+// Copyright © 2024 Andrew Roan
 
 import Combine
 import CoreData
 import Foundation
 
-final class ReadThrowingSubscription<Model: UnmanagedModel> {
+final class ReadThrowingSubscription<Model: UnmanagedReadOnlyModel> {
     private let objectId: NSManagedObjectID
     private let context: NSManagedObjectContext
     private var cancellables: Set<AnyCancellable>

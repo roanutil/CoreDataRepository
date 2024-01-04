@@ -4,14 +4,14 @@
 //
 // MIT License
 //
-// Copyright © 2023 Andrew Roan
+// Copyright © 2024 Andrew Roan
 
 import CoreData
 import Foundation
 
 extension CoreDataRepository {
     /// Fetch items from the store with a ``NSFetchRequest``.
-    public func fetch<Model: UnmanagedModel>(
+    public func fetch<Model: UnmanagedReadOnlyModel>(
         _ request: NSFetchRequest<Model.ManagedModel>,
         as _: Model.Type
     ) async -> Result<[Model], CoreDataError> {
@@ -21,7 +21,7 @@ extension CoreDataRepository {
     }
 
     /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
-    public func fetchSubscription<Model: UnmanagedModel>(
+    public func fetchSubscription<Model: UnmanagedReadOnlyModel>(
         _ request: NSFetchRequest<Model.ManagedModel>,
         of _: Model.Type
     ) -> AsyncStream<Result<[Model], CoreDataError>> {
@@ -39,7 +39,7 @@ extension CoreDataRepository {
     }
 
     /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
-    public func fetchThrowingSubscription<Model: UnmanagedModel>(
+    public func fetchThrowingSubscription<Model: UnmanagedReadOnlyModel>(
         _ request: NSFetchRequest<Model.ManagedModel>,
         of _: Model.Type
     ) -> AsyncThrowingStream<[Model], Error> {
