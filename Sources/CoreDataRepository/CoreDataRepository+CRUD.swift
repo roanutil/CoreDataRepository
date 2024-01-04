@@ -4,7 +4,7 @@
 //
 // MIT License
 //
-// Copyright © 2023 Andrew Roan
+// Copyright © 2024 Andrew Roan
 
 import CoreData
 import Foundation
@@ -30,7 +30,7 @@ extension CoreDataRepository {
     }
 
     /// Read an instance from the store.
-    public func read<Model: UnmanagedModel>(
+    public func read<Model: UnmanagedReadOnlyModel>(
         _ url: URL,
         of _: Model.Type
     ) async -> Result<Model, CoreDataError> {
@@ -86,7 +86,7 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to updates of an instance in the store.
-    public func readSubscription<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
+    public func readSubscription<Model: UnmanagedReadOnlyModel>(_ url: URL, of _: Model.Type)
         -> AsyncStream<Result<Model, CoreDataError>>
     {
         let readContext = context.childContext()
@@ -113,7 +113,7 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to updates of an instance in the store.
-    public func readThrowingSubscription<Model: UnmanagedModel>(_ url: URL, of _: Model.Type)
+    public func readThrowingSubscription<Model: UnmanagedReadOnlyModel>(_ url: URL, of _: Model.Type)
         -> AsyncThrowingStream<Model, Error>
     {
         let readContext = context.childContext()
