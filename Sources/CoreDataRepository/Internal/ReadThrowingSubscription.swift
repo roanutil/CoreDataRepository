@@ -10,7 +10,7 @@ import Combine
 import CoreData
 import Foundation
 
-final class ReadThrowingSubscription<Model: UnmanagedModel> {
+final class ReadThrowingSubscription<Model: UnmanagedReadOnlyModel> {
     private let objectId: NSManagedObjectID
     private let context: NSManagedObjectContext
     private var cancellables: Set<AnyCancellable>
