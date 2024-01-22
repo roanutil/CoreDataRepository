@@ -21,16 +21,19 @@ extension NSManagedObjectContext {
         } catch let error as CoreDataError {
             await scratchPad.perform {
                 scratchPad.rollback()
+                scratchPad.parent?.rollback()
             }
             return .failure(error)
         } catch let error as CocoaError {
             await scratchPad.perform {
                 scratchPad.rollback()
+                scratchPad.parent?.rollback()
             }
             return .failure(.cocoa(error))
         } catch let error as NSError {
             await scratchPad.perform {
                 scratchPad.rollback()
+                scratchPad.parent?.rollback()
             }
             return .failure(CoreDataError.unknown(error))
         }
