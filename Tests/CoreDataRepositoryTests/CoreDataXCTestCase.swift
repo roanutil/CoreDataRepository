@@ -90,9 +90,19 @@ class CoreDataXCTestCase: XCTestCase {
             let historyResult = try XCTUnwrap(repositoryContext().execute(historyRequest) as? NSPersistentHistoryResult)
             let history = try XCTUnwrap(historyResult.result as? [NSPersistentHistoryTransaction])
             XCTAssertGreaterThan(history.count, 0)
-            history.forEach { historyTransaction in
+            for historyTransaction in history {
                 XCTAssertEqual(historyTransaction.author, transactionAuthor)
             }
         }
+    }
+
+    func removeManagedUrl<T>(from item: T) -> T where T: UnmanagedModel {
+        var item = item
+        item[keyPath: \.managedIdUrl] = nil
+        return item
+    }
+
+    func removeManagedUrls<T>(from items: some Sequence<T>) -> [T] where T: UnmanagedModel {
+        items.map(removeManagedUrl(from:))
     }
 }

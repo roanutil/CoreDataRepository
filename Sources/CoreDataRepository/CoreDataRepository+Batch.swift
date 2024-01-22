@@ -35,35 +35,14 @@ extension CoreDataRepository {
     ) async -> (success: [Model], failed: [CoreDataBatchError<Model>]) {
         var successes = [Model]()
         var failures = [CoreDataBatchError<Model>]()
-        await withTaskGroup(of: Result<Model, CoreDataBatchError<Model>>.self, body: { [weak self] group in
-            guard let self else {
-                group.cancelAll()
-                return
+        for item in items {
+            switch await create(item, transactionAuthor: transactionAuthor) {
+            case let .success(created):
+                successes.append(created)
+            case let .failure(error):
+                failures.append(CoreDataBatchError(item: item, error: error))
             }
-            for item in items {
-                let added = group.addTaskUnlessCancelled {
-                    async let result: Result<Model, CoreDataError> = self
-                        .create(item, transactionAuthor: transactionAuthor)
-                    switch await result {
-                    case let .success(created):
-                        return .success(created)
-                    case let .failure(error):
-                        return .failure(CoreDataBatchError(item: item, error: error))
-                    }
-                }
-                if !added {
-                    return
-                }
-            }
-            for await result in group {
-                switch result {
-                case let .success(success):
-                    successes.append(success)
-                case let .failure(failure):
-                    failures.append(failure)
-                }
-            }
-        })
+        }
         return (success: successes, failed: failures)
     }
 
@@ -98,34 +77,14 @@ extension CoreDataRepository {
     ) async -> (success: [Model], failed: [CoreDataBatchError<URL>]) {
         var successes = [Model]()
         var failures = [CoreDataBatchError<URL>]()
-        await withTaskGroup(of: Result<Model, CoreDataBatchError<URL>>.self, body: { [weak self] group in
-            guard let self else {
-                group.cancelAll()
-                return
+        for url in urls {
+            switch await read(url, of: Model.self) {
+            case let .success(created):
+                successes.append(created)
+            case let .failure(error):
+                failures.append(CoreDataBatchError(item: url, error: error))
             }
-            for url in urls {
-                let added = group.addTaskUnlessCancelled {
-                    async let result = self.read(url, of: Model.self)
-                    switch await result {
-                    case let .success(created):
-                        return .success(created)
-                    case let .failure(error):
-                        return .failure(CoreDataBatchError(item: url, error: error))
-                    }
-                }
-                if !added {
-                    return
-                }
-            }
-            for await result in group {
-                switch result {
-                case let .success(success):
-                    successes.append(success)
-                case let .failure(failure):
-                    failures.append(failure)
-                }
-            }
-        })
+        }
         return (success: successes, failed: failures)
     }
 
@@ -169,38 +128,23 @@ extension CoreDataRepository {
     ) async -> (success: [Model], failed: [CoreDataBatchError<Model>]) {
         var successes = [Model]()
         var failures = [CoreDataBatchError<Model>]()
-        await withTaskGroup(of: Result<Model, CoreDataBatchError<Model>>.self, body: { [weak self] group in
-            guard let self else {
-                group.cancelAll()
-                return
+        for item in items {
+            guard let url = item.managedIdUrl else {
+                failures.append(CoreDataBatchError(item: item, error: .noUrlOnItemToMapToObjectId))
+                continue
             }
-            for item in items {
-                let added = group.addTaskUnlessCancelled {
-                    guard let url = item.managedIdUrl else {
-                        return .failure(CoreDataBatchError(item: item, error: .noUrlOnItemToMapToObjectId))
-                    }
-                    async let result: Result<Model, CoreDataError> = self
-                        .update(url, with: item, transactionAuthor: transactionAuthor)
-                    switch await result {
-                    case let .success(created):
-                        return .success(created)
-                    case let .failure(error):
-                        return .failure(CoreDataBatchError(item: item, error: error))
-                    }
-                }
-                if !added {
-                    return
-                }
+            async let result: Result<Model, CoreDataError> = update(
+                url,
+                with: item,
+                transactionAuthor: transactionAuthor
+            )
+            switch await result {
+            case let .success(created):
+                successes.append(created)
+            case let .failure(error):
+                failures.append(CoreDataBatchError(item: item, error: error))
             }
-            for await result in group {
-                switch result {
-                case let .success(success):
-                    successes.append(success)
-                case let .failure(failure):
-                    failures.append(failure)
-                }
-            }
-        })
+        }
         return (success: successes, failed: failures)
     }
 
@@ -256,35 +200,14 @@ extension CoreDataRepository {
     ) async -> (success: [URL], failed: [CoreDataBatchError<URL>]) {
         var successes = [URL]()
         var failures = [CoreDataBatchError<URL>]()
-        await withTaskGroup(of: Result<URL, CoreDataBatchError<URL>>.self, body: { [weak self] group in
-            guard let self else {
-                group.cancelAll()
-                return
+        for url in urls {
+            switch await delete(url, transactionAuthor: transactionAuthor) {
+            case .success:
+                successes.append(url)
+            case let .failure(error):
+                failures.append(CoreDataBatchError(item: url, error: error))
             }
-            for url in urls {
-                let added = group.addTaskUnlessCancelled {
-                    async let result: Result<Void, CoreDataError> = self
-                        .delete(url, transactionAuthor: transactionAuthor)
-                    switch await result {
-                    case .success:
-                        return .success(url)
-                    case let .failure(error):
-                        return .failure(CoreDataBatchError(item: url, error: error))
-                    }
-                }
-                if !added {
-                    return
-                }
-            }
-            for await result in group {
-                switch result {
-                case let .success(success):
-                    successes.append(success)
-                case let .failure(failure):
-                    failures.append(failure)
-                }
-            }
-        })
+        }
         return (success: successes, failed: failures)
     }
 
