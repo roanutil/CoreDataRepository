@@ -55,4 +55,14 @@ extension CoreDataRepository {
             subscription.manualFetch()
         }
     }
+
+    /// Fetch items from the store with a ``NSFetchRequest`` and transform the results.
+    public func fetch<Managed, Output>(
+        request: NSFetchRequest<Managed>,
+        operation: @escaping (_ results: [Managed]) throws -> Output
+    ) async -> Result<Output, CoreDataError> where Managed: NSManagedObject {
+        await context.performInChild { fetchContext in
+            try operation(fetchContext.fetch(request))
+        }
+    }
 }
