@@ -20,10 +20,10 @@ struct Movie: Hashable {
 extension Movie: UnmanagedModel {
     init(managed: ManagedMovie) throws {
         self.init(
-            id: managed.id,
-            title: managed.title,
-            releaseDate: managed.releaseDate,
-            boxOffice: managed.boxOffice as Decimal,
+            id: managed.id!,
+            title: managed.title!,
+            releaseDate: managed.releaseDate!,
+            boxOffice: managed.boxOffice! as Decimal,
             url: managed.objectID.uriRepresentation()
         )
     }
@@ -56,10 +56,10 @@ extension Movie: UnmanagedModel {
 
 @objc(ManagedMovie)
 final class ManagedMovie: NSManagedObject {
-    @NSManaged var id: UUID
-    @NSManaged var title: String
-    @NSManaged var releaseDate: Date
-    @NSManaged var boxOffice: NSDecimalNumber
+    @NSManaged var id: UUID?
+    @NSManaged var title: String?
+    @NSManaged var releaseDate: Date?
+    @NSManaged var boxOffice: NSDecimalNumber?
 }
 
 extension ManagedMovie {
@@ -84,32 +84,30 @@ extension ManagedMovie {
     private static var iDDescription: NSAttributeDescription {
         let desc = NSAttributeDescription()
         desc.name = "id"
-        desc.type = .uuid
-        desc.isOptional = false
+        desc.attributeType = .UUIDAttributeType
         return desc
     }
 
     private static var titleDescription: NSAttributeDescription {
         let desc = NSAttributeDescription()
         desc.name = "title"
-        desc.type = .string
-        desc.isOptional = false
+        desc.attributeType = .stringAttributeType
+        desc.defaultValue = ""
         return desc
     }
 
     private static var releaseDateDescription: NSAttributeDescription {
         let desc = NSAttributeDescription()
         desc.name = "releaseDate"
-        desc.type = .date
-        desc.isOptional = false
+        desc.attributeType = .dateAttributeType
         return desc
     }
 
     private static var boxOfficeDescription: NSAttributeDescription {
         let desc = NSAttributeDescription()
         desc.name = "boxOffice"
-        desc.type = .decimal
-        desc.isOptional = false
+        desc.attributeType = .decimalAttributeType
+        desc.defaultValue = 0
         return desc
     }
 }

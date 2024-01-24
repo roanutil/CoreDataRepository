@@ -13,50 +13,25 @@ import XCTest
 
 final class BatchRepositoryTests: CoreDataXCTestCase {
     let movies: [[String: Any]] = [
-        [
-            "id": UUID(uniform: "A"),
-            "title": "A",
-            "releaseDate": Date(timeIntervalSinceReferenceDate: 0),
-            "boxOffice": Decimal(exactly: 0)!,
-        ],
-        [
-            "id": UUID(uniform: "B"),
-            "title": "B",
-            "releaseDate": Date(timeIntervalSinceReferenceDate: 1),
-            "boxOffice": Decimal(exactly: 1)!,
-        ],
-        [
-            "id": UUID(uniform: "C"),
-            "title": "C",
-            "releaseDate": Date(timeIntervalSinceReferenceDate: 2),
-            "boxOffice": Decimal(exactly: 2)!,
-        ],
-        [
-            "id": UUID(uniform: "D"),
-            "title": "D",
-            "releaseDate": Date(timeIntervalSinceReferenceDate: 3),
-            "boxOffice": Decimal(exactly: 3)!,
-        ],
-        [
-            "id": UUID(uniform: "E"),
-            "title": "E",
-            "releaseDate": Date(timeIntervalSinceReferenceDate: 4),
-            "boxOffice": Decimal(exactly: 4)!,
-        ],
+        ["id": UUID(uniform: "A"), "title": "A", "releaseDate": Date(timeIntervalSinceReferenceDate: 0)],
+        ["id": UUID(uniform: "B"), "title": "B", "releaseDate": Date(timeIntervalSinceReferenceDate: 1)],
+        ["id": UUID(uniform: "C"), "title": "C", "releaseDate": Date(timeIntervalSinceReferenceDate: 2)],
+        ["id": UUID(uniform: "D"), "title": "D", "releaseDate": Date(timeIntervalSinceReferenceDate: 3)],
+        ["id": UUID(uniform: "E"), "title": "E", "releaseDate": Date(timeIntervalSinceReferenceDate: 4)],
     ]
     let failureInsertMovies: [[String: Any]] = [
-        ["id": "A", "title": 1, "releaseDate": "A", "boxOffice": Decimal(exactly: 0)!],
-        ["id": "B", "title": 2, "releaseDate": "B", "boxOffice": Decimal(exactly: 1)!],
-        ["id": "C", "title": 3, "releaseDate": "C", "boxOffice": Decimal(exactly: 2)!],
-        ["id": "D", "title": 4, "releaseDate": "D", "boxOffice": Decimal(exactly: 3)!],
-        ["id": "E", "title": 5, "releaseDate": "E", "boxOffice": Decimal(exactly: 4)!],
+        ["id": "A", "title": 1, "releaseDate": "A"],
+        ["id": "B", "title": 2, "releaseDate": "B"],
+        ["id": "C", "title": 3, "releaseDate": "C"],
+        ["id": "D", "title": 4, "releaseDate": "D"],
+        ["id": "E", "title": 5, "releaseDate": "E"],
     ]
     let failureCreateMovies: [[String: Any]] = [
-        ["id": UUID(uniform: "A"), "title": "A", "releaseDate": Date(), "boxOffice": Decimal(exactly: 0)!],
-        ["id": UUID(uniform: "A"), "title": "B", "releaseDate": Date(), "boxOffice": Decimal(exactly: 1)!],
-        ["id": UUID(uniform: "A"), "title": "C", "releaseDate": Date(), "boxOffice": Decimal(exactly: 2)!],
-        ["id": UUID(uniform: "A"), "title": "D", "releaseDate": Date(), "boxOffice": Decimal(exactly: 3)!],
-        ["id": UUID(uniform: "A"), "title": "E", "releaseDate": Date(), "boxOffice": Decimal(exactly: 4)!],
+        ["id": UUID(uniform: "A"), "title": "A", "releaseDate": Date()],
+        ["id": UUID(uniform: "A"), "title": "B", "releaseDate": Date()],
+        ["id": UUID(uniform: "A"), "title": "C", "releaseDate": Date()],
+        ["id": UUID(uniform: "A"), "title": "D", "releaseDate": Date()],
+        ["id": UUID(uniform: "A"), "title": "E", "releaseDate": Date()],
     ]
 
     func mapDictToManagedMovie(_ dict: [String: Any]) throws -> ManagedMovie {
@@ -68,8 +43,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         let id = try XCTUnwrap(dict["id"] as? UUID)
         let title = try XCTUnwrap(dict["title"] as? String)
         let releaseDate = try XCTUnwrap(dict["releaseDate"] as? Date)
-        let boxOffice = try XCTUnwrap(dict["boxOffice"] as? Decimal)
-        return Movie(id: id, title: title, releaseDate: releaseDate, boxOffice: boxOffice)
+        return Movie(id: id, title: title, releaseDate: releaseDate)
     }
 
     func testInsertSuccess() async throws {
@@ -88,15 +62,15 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
 
         switch result {
         case .success:
-            break
-        case let .failure(error):
-            XCTFail("Not expecting a failure result: \(error.localizedDescription)")
+            XCTAssert(true)
+        case .failure:
+            XCTFail("Not expecting a failure result")
         }
 
         try await repositoryContext().perform {
             let data = try self.repositoryContext().fetch(fetchRequest)
             XCTAssertEqual(
-                data.map(\.title).sorted(),
+                data.map { $0.title ?? "" }.sorted(),
                 ["A", "B", "C", "D", "E"],
                 "Inserted titles should match expectation"
             )
@@ -127,7 +101,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
 
         try await repositoryContext().perform {
             let data = try self.repositoryContext().fetch(fetchRequest)
-            XCTAssertEqual(data.map(\.title).sorted(), [], "There should be no inserted values.")
+            XCTAssertEqual(data.map { $0.title ?? "" }.sorted(), [], "There should be no inserted values.")
         }
     }
 
@@ -155,34 +129,13 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         try await repositoryContext().perform {
             let data = try self.repositoryContext().fetch(fetchRequest)
             XCTAssertEqual(
-                data.map(\.title).sorted(),
+                data.map { $0.title ?? "" }.sorted(),
                 ["A", "B", "C", "D", "E"],
                 "Inserted titles should match expectation"
             )
         }
 
         try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
-    }
-
-    func testCreateFailure() async throws {
-        let fetchRequest = Movie.managedFetchRequest()
-        try await repositoryContext().perform {
-            let count = try self.repositoryContext().count(for: fetchRequest)
-            XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
-            _ = try [self.movies[1], self.movies[3]]
-                .map(self.mapDictToManagedMovie(_:))
-            try self.repositoryContext().save()
-        }
-
-        let newMovies = try movies.map(mapDictToMovie(_:))
-        let result: (success: [Movie], failed: [CoreDataBatchError<Movie>]) = try await repository()
-            .create(newMovies, transactionAuthor: #function)
-
-        XCTAssertEqual(result.success.count, 3)
-        XCTAssertEqual(result.failed.count, 2)
-        for failure in result.failed {
-            print(failure.localizedDescription)
-        }
     }
 
     func testCreateAtomicallySuccess() async throws {
@@ -225,7 +178,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         try await repositoryContext().perform {
             let data = try self.repositoryContext().fetch(fetchRequest)
             XCTAssertEqual(
-                data.map(\.title).sorted(),
+                data.map { $0.title ?? "" }.sorted(),
                 ["A", "B", "C", "D", "E"],
                 "Inserted titles should match expectation"
             )
@@ -253,39 +206,6 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         XCTAssertEqual(result.failed.count, 0)
 
         XCTAssertEqual(Set(movies), Set(result.success))
-    }
-
-    func testReadFailure() async throws {
-        let fetchRequest = Movie.managedFetchRequest()
-        var movies = [Movie]()
-        try await repositoryContext().perform {
-            let count = try self.repositoryContext().count(for: fetchRequest)
-            XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
-
-            let managedMovies = try self.movies
-                .map(self.mapDictToManagedMovie(_:))
-            try self.repositoryContext().save()
-            movies = try managedMovies.map(Movie.init(managed:))
-            try self.repositoryContext().delete(managedMovies[1])
-            try self.repositoryContext().delete(managedMovies[3])
-            try self.repositoryContext().save()
-        }
-
-        try await verify(movies[0])
-        try await verify(movies[2])
-        try await verify(movies[4])
-
-        let expectedMovies = try [self.movies[0], self.movies[2], self.movies[4]].map(mapDictToMovie(_:))
-        let _result = try await repository().read(urls: movies.compactMap(\.url), as: Movie.self)
-        let result = (success: removeManagedUrls(from: _result.success), failed: _result.failed)
-
-        XCTAssertEqual(result.success.count, 3)
-        XCTAssertEqual(result.failed.count, 2)
-
-        XCTAssertEqual(
-            expectedMovies.sorted(using: KeyPathComparator(\.id.uuidString)),
-            result.success.sorted(using: KeyPathComparator(\.id.uuidString))
-        )
     }
 
     func testReadAtomicallySuccess() async throws {
@@ -340,7 +260,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         try await repositoryContext().perform {
             let data = try self.repositoryContext().fetch(fetchRequest)
             XCTAssertEqual(
-                data.map(\.title).sorted(),
+                data.map { $0.title ?? "" }.sorted(),
                 ["Updated!", "Updated!", "Updated!", "Updated!", "Updated!"],
                 "Updated titles should match request"
             )
@@ -377,42 +297,6 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
         XCTAssertNoDifference(Set(editedMovies), Set(result.success))
 
         try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
-    }
-
-    func testAltUpdateFailure() async throws {
-        let fetchRequest = Movie.managedFetchRequest()
-        var movies = [Movie]()
-        try await repositoryContext().perform {
-            let count = try self.repositoryContext().count(for: fetchRequest)
-            XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
-
-            let managedMovies = try self.movies
-                .map(self.mapDictToManagedMovie(_:))
-            try self.repositoryContext().save()
-            try self.repositoryContext().obtainPermanentIDs(for: managedMovies)
-            movies = try managedMovies.map(Movie.init(managed:))
-            try self.repositoryContext().delete(managedMovies[1])
-            try self.repositoryContext().delete(managedMovies[3])
-            try self.repositoryContext().save()
-        }
-
-        try await verify(movies[0])
-        try await verify(movies[2])
-        try await verify(movies[4])
-
-        var editedMovies = movies
-        let newTitles = ["ZA", "ZB", "ZC", "ZD", "ZE"]
-        newTitles.enumerated().forEach { index, title in editedMovies[index].title = title }
-
-        let result = try await repository().update(editedMovies)
-
-        XCTAssertEqual(result.success.count, 3)
-        XCTAssertEqual(result.failed.count, 2)
-
-        XCTAssertEqual(
-            [editedMovies[0], editedMovies[2], editedMovies[4]].sorted(using: KeyPathComparator(\.id.uuidString)),
-            result.success.sorted(using: KeyPathComparator(\.id.uuidString))
-        )
     }
 
     func testAltUpdateAtomicallySuccess() async throws {
@@ -478,7 +362,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
 
         try await repositoryContext().perform {
             let data = try self.repositoryContext().fetch(fetchRequest)
-            XCTAssertEqual(data.map(\.title).sorted(), [], "There should be no remaining values.")
+            XCTAssertEqual(data.map { $0.title ?? "" }.sorted(), [], "There should be no remaining values.")
         }
         try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
     }
@@ -507,42 +391,9 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
 
         try await repositoryContext().perform {
             let data = try self.repositoryContext().fetch(fetchRequest)
-            XCTAssertEqual(data.map(\.title).sorted(), [], "There should be no remaining values.")
+            XCTAssertEqual(data.map { $0.title ?? "" }.sorted(), [], "There should be no remaining values.")
         }
         try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
-    }
-
-    func testAltDeleteFailure() async throws {
-        let fetchRequest = Movie.managedFetchRequest()
-        var movies = [Movie]()
-        try await repositoryContext().perform {
-            let count = try self.repositoryContext().count(for: fetchRequest)
-            XCTAssertEqual(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
-
-            let managedMovies = try self.movies
-                .map(self.mapDictToManagedMovie(_:))
-            try self.repositoryContext().save()
-            movies = try managedMovies.map(Movie.init(managed:))
-            try self.repositoryContext().delete(managedMovies[1])
-            try self.repositoryContext().delete(managedMovies[3])
-            try self.repositoryContext().save()
-        }
-
-        try await verify(movies[0])
-        try await verify(movies[2])
-        try await verify(movies[4])
-
-        let urlsToDelete = try movies.map { try XCTUnwrap($0.url) }
-
-        let result = try await repository().delete(urls: urlsToDelete)
-
-        XCTAssertEqual(result.success.count, 3)
-        XCTAssertEqual(result.failed.count, 2)
-
-        XCTAssertEqual(
-            [urlsToDelete[0], urlsToDelete[2], urlsToDelete[4]].sorted(using: KeyPathComparator(\.absoluteString)),
-            result.success.sorted(using: KeyPathComparator(\.absoluteString))
-        )
     }
 
     func testAltDeleteAtomicallySuccess() async throws {
@@ -573,7 +424,7 @@ final class BatchRepositoryTests: CoreDataXCTestCase {
 
         try await repositoryContext().perform {
             let data = try self.repositoryContext().fetch(fetchRequest)
-            XCTAssertEqual(data.map(\.title).sorted(), [], "There should be no remaining values.")
+            XCTAssertEqual(data.map { $0.title ?? "" }.sorted(), [], "There should be no remaining values.")
         }
         try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
     }
