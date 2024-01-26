@@ -72,16 +72,16 @@ extension ManagedMovie {
         desc.name = "ManagedMovie"
         desc.managedObjectClassName = NSStringFromClass(ManagedMovie.self)
         desc.properties = [
-            iDDescription,
+            idDescription,
             titleDescription,
             releaseDateDescription,
             boxOfficeDescription,
         ]
-        desc.uniquenessConstraints = [[iDDescription]]
+        desc.uniquenessConstraints = [[idDescription]]
         return desc
     }()
 
-    private static var iDDescription: NSAttributeDescription {
+    private static var idDescription: NSAttributeDescription {
         let desc = NSAttributeDescription()
         desc.name = "id"
         desc.attributeType = .UUIDAttributeType

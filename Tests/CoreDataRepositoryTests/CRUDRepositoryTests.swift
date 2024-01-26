@@ -31,6 +31,31 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
         try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
     }
 
+    func testCreateFailure() async throws {
+        let historyTimeStamp = Date()
+        let transactionAuthor: String = #function
+        let movie = Movie(id: UUID(), title: "Create Success", releaseDate: Date(), boxOffice: 100)
+        var existingMovie = try await repositoryContext().perform(schedule: .immediate) {
+            let object = try ManagedMovie(context: self.repositoryContext())
+            try movie.updating(managed: object)
+            try self.repositoryContext().save()
+            return try Movie(managed: object)
+        }
+        var tempResultMovie = existingMovie
+        XCTAssertNotNil(tempResultMovie.url)
+        tempResultMovie.url = nil
+        XCTAssertNoDifference(tempResultMovie, movie)
+
+        try await verify(existingMovie)
+
+        let result: Result<Movie, CoreDataError> = try await repository()
+            .create(movie, transactionAuthor: transactionAuthor)
+        guard case .failure = result else {
+            XCTFail("Expecting a failed result")
+            return
+        }
+    }
+
     func testReadSuccess() async throws {
         let movie = Movie(id: UUID(), title: "Read Success", releaseDate: Date(), boxOffice: 100)
         let createdMovie: Movie = try await repositoryContext().perform(schedule: .immediate) {
