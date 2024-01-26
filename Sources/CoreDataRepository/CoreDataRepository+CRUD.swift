@@ -17,11 +17,18 @@ extension CoreDataRepository {
     ) async -> Result<Model, CoreDataError> {
         await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             let object = Model.ManagedModel(context: scratchPad)
+            let tempObjectId = object.objectID
             try item.updating(managed: object)
             try scratchPad.save()
             try context.performAndWait {
                 context.transactionAuthor = transactionAuthor
-                try context.save()
+                do {
+                    try context.save()
+                } catch {
+                    let parentContextObject = context.object(with: tempObjectId)
+                    context.delete(parentContextObject)
+                    throw error
+                }
                 context.transactionAuthor = nil
             }
             try scratchPad.obtainPermanentIDs(for: [object])
