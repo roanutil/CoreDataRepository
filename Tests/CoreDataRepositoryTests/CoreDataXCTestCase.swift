@@ -90,7 +90,7 @@ class CoreDataXCTestCase: XCTestCase {
             let historyResult = try XCTUnwrap(repositoryContext().execute(historyRequest) as? NSPersistentHistoryResult)
             let history = try XCTUnwrap(historyResult.result as? [NSPersistentHistoryTransaction])
             XCTAssertGreaterThan(history.count, 0)
-            history.forEach { historyTransaction in
+            for historyTransaction in history {
                 XCTAssertEqual(historyTransaction.author, transactionAuthor)
             }
         }

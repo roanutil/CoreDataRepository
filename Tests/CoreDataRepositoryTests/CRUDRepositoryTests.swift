@@ -32,10 +32,9 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
     }
 
     func testCreateFailure() async throws {
-        let historyTimeStamp = Date()
         let transactionAuthor: String = #function
         let movie = Movie(id: UUID(), title: "Create Success", releaseDate: Date(), boxOffice: 100)
-        var existingMovie = try await repositoryContext().perform(schedule: .immediate) {
+        let existingMovie = try await repositoryContext().perform(schedule: .immediate) {
             let object = try ManagedMovie(context: self.repositoryContext())
             try movie.updating(managed: object)
             try self.repositoryContext().save()
