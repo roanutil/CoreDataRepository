@@ -62,7 +62,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                 case 1:
                     XCTAssertEqual(items.count, 5, "Result items count should match expectation")
                     XCTAssertEqual(items, self.expectedMovies, "Result items should match expectations")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     let _: Result<Void, CoreDataError> = try await crudRepository
                         .delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
@@ -91,7 +91,7 @@ final class FetchRepositoryTests: CoreDataXCTestCase {
                 case 1:
                     XCTAssertEqual(items.count, 5, "Result items count should match expectation")
                     XCTAssertEqual(items, self.expectedMovies, "Result items should match expectations")
-                    let crudRepository = try CoreDataRepository(context: self.repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: self.repositoryContext())
                     let _: Result<Void, CoreDataError> = try await crudRepository
                         .delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()

@@ -84,7 +84,7 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) async -> Result<Value, CoreDataError> {
-        await Self.send(
+        await send(
             function: .sum,
             context: context,
             predicate: predicate,
@@ -154,7 +154,7 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) async -> Result<Value, CoreDataError> {
-        await Self.send(
+        await send(
             function: .average,
             context: context,
             predicate: predicate,
@@ -224,7 +224,7 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) async -> Result<Value, CoreDataError> {
-        await Self.send(
+        await send(
             function: .min,
             context: context,
             predicate: predicate,
@@ -296,7 +296,7 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
     ) async -> Result<Value, CoreDataError> {
-        await Self.send(
+        await send(
             function: .max,
             context: context,
             predicate: predicate,
@@ -360,14 +360,6 @@ extension CoreDataRepository {
 
     // MARK: Internals
 
-    enum AggregateFunction: String {
-        case count
-        case sum
-        case average
-        case min
-        case max
-    }
-
     private static func aggregate<Value: Numeric>(
         context: NSManagedObjectContext,
         request: NSFetchRequest<NSDictionary>
@@ -379,7 +371,7 @@ extension CoreDataRepository {
         return value
     }
 
-    private static func send<Value>(
+    private func send<Value>(
         function: AggregateFunction,
         context: NSManagedObjectContext,
         predicate: NSPredicate,

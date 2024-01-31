@@ -12,7 +12,7 @@ import Foundation
 extension NSExpression {
     /// Convenience initializer for NSExpression that represent an aggregate function on a keypath
     convenience init(
-        function: CoreDataRepository.AggregateFunction,
+        function: AggregateFunction,
         attributeDesc: NSAttributeDescription
     ) {
         let keyPathExp = NSExpression(forKeyPath: attributeDesc.name)
@@ -23,7 +23,7 @@ extension NSExpression {
 extension NSExpressionDescription {
     /// Convenience initializer for NSExpressionDescription that represent the properties to fetch in NSFetchRequest
     static func aggregate(
-        function: CoreDataRepository.AggregateFunction,
+        function: AggregateFunction,
         attributeDesc: NSAttributeDescription
     ) -> NSExpressionDescription {
         let expression = NSExpression(function: function, attributeDesc: attributeDesc)

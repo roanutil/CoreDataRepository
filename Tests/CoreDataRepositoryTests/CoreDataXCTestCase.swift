@@ -37,7 +37,7 @@ class CoreDataXCTestCase: XCTestCase {
             _repositoryContext = container.newBackgroundContext()
             _repositoryContext?.automaticallyMergesChangesFromParent = true
         }
-        _repository = try CoreDataRepository(context: repositoryContext())
+        _repository = try TestCoreDataRepository(context: repositoryContext())
         try super.setUpWithError()
     }
 

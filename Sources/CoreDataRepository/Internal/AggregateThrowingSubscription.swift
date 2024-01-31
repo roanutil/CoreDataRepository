@@ -40,7 +40,7 @@ final class AggregateThrowingSubscription<Value>: ThrowingSubscription<Value, NS
     }
 
     convenience init(
-        function: CoreDataRepository.AggregateFunction,
+        function: AggregateFunction,
         context: NSManagedObjectContext,
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,

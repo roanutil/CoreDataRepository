@@ -62,7 +62,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(count, 5, "Result value (count) should equal number of movies.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     _ = try await crudRepository.delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:
@@ -93,7 +93,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(count, 5, "Result value (count) should equal number of movies.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     _ = try await crudRepository.delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:
@@ -146,7 +146,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(sum, 150, "Result value (sum) should equal number of movies.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     _ = try await crudRepository.delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:
@@ -180,7 +180,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(sum, 150, "Result value (sum) should equal number of movies.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     _ = try await crudRepository.delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:
@@ -237,7 +237,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(average, 30, "Result value (average) should equal number of movies.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     _ = try await crudRepository.delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:
@@ -275,7 +275,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(average, 30, "Result value (average) should equal number of movies.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     _ = try await crudRepository.delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:
@@ -336,7 +336,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(min, 10, "Result value (min) should equal number of movies.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     _ = try await crudRepository.delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:
@@ -370,7 +370,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(min, 10, "Result value (min) should equal number of movies.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     _ = try await crudRepository.delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:
@@ -427,7 +427,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(max, 50, "Result value (max) should equal number of movies.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     _ = try await crudRepository.delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:
@@ -461,7 +461,7 @@ final class AggregateRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(max, 50, "Result value (max) should equal number of movies.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     _ = try await crudRepository.delete(XCTUnwrap(expectedMovies.last?.url))
                     await Task.yield()
                 case 2:

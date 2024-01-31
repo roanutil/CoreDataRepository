@@ -38,7 +38,7 @@ final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSMa
     }
 
     convenience init(
-        function: CoreDataRepository.AggregateFunction,
+        function: AggregateFunction,
         context: NSManagedObjectContext,
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,

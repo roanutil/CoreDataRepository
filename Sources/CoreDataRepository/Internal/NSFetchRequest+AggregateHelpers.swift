@@ -12,7 +12,7 @@ import Foundation
 extension NSFetchRequest<NSDictionary> {
     /// Helper function for building an aggregate fetch request
     static func request(
-        function: CoreDataRepository.AggregateFunction,
+        function: AggregateFunction,
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,

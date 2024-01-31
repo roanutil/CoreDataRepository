@@ -256,7 +256,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(receivedMovie, movie, "Success response should match local object.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     let _: Result<Movie, CoreDataError> = await crudRepository
                         .update(managedMovieUrl, with: editedMovie)
                     await Task.yield()
@@ -306,7 +306,7 @@ final class CRUDRepositoryTests: CoreDataXCTestCase {
                 switch resultCount {
                 case 1:
                     XCTAssertEqual(receivedMovie, movie, "Success response should match local object.")
-                    let crudRepository = try CoreDataRepository(context: repositoryContext())
+                    let crudRepository = try TestCoreDataRepository(context: repositoryContext())
                     let _: Result<Movie, CoreDataError> = await crudRepository
                         .update(managedMovieUrl, with: editedMovie)
                     await Task.yield()
