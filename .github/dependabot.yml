@@ -3,7 +3,5 @@ updates:
   - package-ecosystem: "swift"
     directory: "/"
     schedule:
-      interval: "weekly"
-    reviewers:
-      - "roanutil"
+      interval: "daily"
     versioning-strategy: "increase-if-necessary"
