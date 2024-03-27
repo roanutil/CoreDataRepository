@@ -1,4 +1,4 @@
-// NSManagedObject+CRUDHelpers.swift
+// NSManagedObject+Helpers.swift
 // CoreDataRepository
 //
 //
@@ -11,7 +11,7 @@ import Foundation
 
 extension NSManagedObject {
     /// Helper function to handle casting ``NSManagedObject`` to a sub-class.
-    func asManagedModel<T>() throws -> T where T: NSManagedObject {
+    public func asManagedModel<T>() throws -> T where T: NSManagedObject {
         guard let repoManaged = self as? T else {
             throw CoreDataError.fetchedObjectFailedToCastToExpectedType
         }
