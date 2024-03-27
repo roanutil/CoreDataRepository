@@ -11,6 +11,7 @@ import Foundation
 
 extension NSFetchRequest<NSDictionary> {
     /// Helper function for building an aggregate fetch request
+    @usableFromInline
     static func request(
         function: CoreDataRepository.AggregateFunction,
         predicate: NSPredicate,
@@ -39,6 +40,7 @@ extension NSFetchRequest<NSDictionary> {
     }
 
     /// Helper function for building a count fetch request
+    @usableFromInline
     static func countRequest(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription

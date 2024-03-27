@@ -10,9 +10,11 @@ import CoreData
 import Foundation
 
 /// Subscription provider that sends updates when an aggregate fetch request changes
+@usableFromInline
 final class AggregateThrowingSubscription<Value>: ThrowingSubscription<Value, NSDictionary, NSManagedObject>
     where Value: Numeric
 {
+    @usableFromInline
     override func fetch() {
         frc.managedObjectContext.perform { [weak self, frc, request] in
             guard frc.fetchedObjects != nil else {
@@ -39,6 +41,7 @@ final class AggregateThrowingSubscription<Value>: ThrowingSubscription<Value, NS
         }
     }
 
+    @usableFromInline
     convenience init(
         function: CoreDataRepository.AggregateFunction,
         context: NSManagedObjectContext,

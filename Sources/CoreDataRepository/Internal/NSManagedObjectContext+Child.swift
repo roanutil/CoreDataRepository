@@ -11,6 +11,7 @@ import Foundation
 
 extension NSManagedObjectContext {
     /// Helper function for error mapping a throwing operation in a temporary context
+    @usableFromInline
     func performInChild<Output>(
         schedule: NSManagedObjectContext.ScheduledTaskType = .immediate,
         _ block: @escaping (NSManagedObjectContext) throws -> Output
@@ -30,6 +31,7 @@ extension NSManagedObjectContext {
     }
 
     /// Helper function for getting a temporary context
+    @usableFromInline
     func childContext() -> NSManagedObjectContext {
         let child = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
         child.automaticallyMergesChangesFromParent = true

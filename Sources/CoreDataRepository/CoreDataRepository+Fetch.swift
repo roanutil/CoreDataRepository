@@ -11,6 +11,7 @@ import Foundation
 
 extension CoreDataRepository {
     /// Fetch items from the store with a ``NSFetchRequest``.
+    @inlinable
     public func fetch<Model: UnmanagedReadOnlyModel>(
         _ request: NSFetchRequest<Model.ManagedModel>,
         as _: Model.Type
@@ -21,6 +22,7 @@ extension CoreDataRepository {
     }
 
     /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
+    @inlinable
     public func fetchSubscription<Model: UnmanagedReadOnlyModel>(
         _ request: NSFetchRequest<Model.ManagedModel>,
         of _: Model.Type
@@ -39,6 +41,7 @@ extension CoreDataRepository {
     }
 
     /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
+    @inlinable
     public func fetchThrowingSubscription<Model: UnmanagedReadOnlyModel>(
         _ request: NSFetchRequest<Model.ManagedModel>,
         of _: Model.Type
@@ -57,6 +60,7 @@ extension CoreDataRepository {
     }
 
     /// Fetch items from the store with a ``NSFetchRequest`` and transform the results.
+    @inlinable
     public func fetch<Managed, Output>(
         request: NSFetchRequest<Managed>,
         operation: @escaping (_ results: [Managed]) throws -> Output

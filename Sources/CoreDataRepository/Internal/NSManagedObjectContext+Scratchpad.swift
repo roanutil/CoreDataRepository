@@ -10,6 +10,7 @@ import CoreData
 import Foundation
 
 extension NSManagedObjectContext {
+    @usableFromInline
     func performInScratchPad<Output>(
         schedule: NSManagedObjectContext.ScheduledTaskType = .immediate,
         _ block: @escaping (NSManagedObjectContext) throws -> Output

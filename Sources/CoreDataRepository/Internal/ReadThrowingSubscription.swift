@@ -10,12 +10,14 @@ import Combine
 import CoreData
 import Foundation
 
+@usableFromInline
 final class ReadThrowingSubscription<Model: UnmanagedReadOnlyModel> {
     private let objectId: NSManagedObjectID
     private let context: NSManagedObjectContext
     private var cancellables: Set<AnyCancellable>
     private let continuation: AsyncThrowingStream<Model, Error>.Continuation
 
+    @usableFromInline
     func manualFetch() {
         context.perform { [weak self, context, objectId] in
             guard let object = context.object(with: objectId) as? Model.ManagedModel else {
@@ -30,11 +32,13 @@ final class ReadThrowingSubscription<Model: UnmanagedReadOnlyModel> {
         }
     }
 
+    @usableFromInline
     func cancel() {
         continuation.finish()
         cancellables.forEach { $0.cancel() }
     }
 
+    @usableFromInline
     func start() {
         context.perform { [weak self, context, objectId] in
             guard let object = context.object(with: objectId) as? Model.ManagedModel else {
@@ -52,6 +56,7 @@ final class ReadThrowingSubscription<Model: UnmanagedReadOnlyModel> {
         }
     }
 
+    @usableFromInline
     init(
         objectId: NSManagedObjectID,
         context: NSManagedObjectContext,

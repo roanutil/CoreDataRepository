@@ -29,6 +29,7 @@ extension CoreDataRepository {
     /// Create a batch of unmanaged models.
     ///
     /// This operation is non-atomic. Each instance may succeed or fail individually.
+    @inlinable
     public func create<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -68,6 +69,7 @@ extension CoreDataRepository {
     }
 
     /// Create a batch of unmanaged models.
+    @inlinable
     public func createAtomically<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -92,6 +94,7 @@ extension CoreDataRepository {
     /// Read a batch of unmanaged models.
     ///
     /// This operation is non-atomic. Each instance may succeed or fail individually.
+    @inlinable
     public func read<Model: UnmanagedModel>(
         urls: [URL],
         as _: Model.Type
@@ -130,6 +133,7 @@ extension CoreDataRepository {
     }
 
     /// Read a batch of unmanaged models.
+    @inlinable
     public func readAtomically<Model: UnmanagedModel>(
         urls: [URL],
         as _: Model.Type
@@ -163,6 +167,7 @@ extension CoreDataRepository {
     /// Update the store with a batch of unmanaged models.
     ///
     /// This operation is non-atomic. Each instance may succeed or fail individually.
+    @inlinable
     public func update<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -205,6 +210,7 @@ extension CoreDataRepository {
     }
 
     /// Update the store with a batch of unmanaged models.
+    @inlinable
     public func updateAtomically<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
