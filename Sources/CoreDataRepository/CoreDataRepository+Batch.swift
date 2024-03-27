@@ -11,6 +11,7 @@ import Foundation
 
 extension CoreDataRepository {
     /// Execute a NSBatchInsertRequest against the store.
+    @inlinable
     public func insert(
         _ request: NSBatchInsertRequest,
         transactionAuthor: String? = nil
@@ -149,6 +150,7 @@ extension CoreDataRepository {
     }
 
     /// Execute a NSBatchUpdateRequest against the store.
+    @inlinable
     public func update(
         _ request: NSBatchUpdateRequest,
         transactionAuthor: String? = nil
@@ -238,6 +240,7 @@ extension CoreDataRepository {
     }
 
     /// Execute a NSBatchDeleteRequest against the store.
+    @inlinable
     public func delete(
         _ request: NSBatchDeleteRequest,
         transactionAuthor: String? = nil
@@ -256,6 +259,7 @@ extension CoreDataRepository {
     /// Delete from the store with a batch of unmanaged models.
     ///
     /// This operation is non-atomic. Each instance may succeed or fail individually.
+    @inlinable
     public func delete(
         urls: [URL],
         transactionAuthor: String? = nil
@@ -295,6 +299,7 @@ extension CoreDataRepository {
     }
 
     /// Delete from the store with a batch of unmanaged models.
+    @inlinable
     public func deleteAtomically(
         urls: [URL],
         transactionAuthor: String? = nil

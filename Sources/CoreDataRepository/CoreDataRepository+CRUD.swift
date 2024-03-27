@@ -75,6 +75,7 @@ extension CoreDataRepository {
     }
 
     /// Delete an instance from the store.
+    @inlinable
     public func delete(
         _ url: URL,
         transactionAuthor: String? = nil
