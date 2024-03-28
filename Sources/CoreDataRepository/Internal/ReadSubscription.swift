@@ -11,12 +11,14 @@ import CoreData
 import Foundation
 
 /// Subscription provider that sends updates when a single ``NSManagedObject`` changes
+@usableFromInline
 final class ReadSubscription<Model: UnmanagedReadOnlyModel> {
     private let objectId: NSManagedObjectID
     private let context: NSManagedObjectContext
     private var cancellables: Set<AnyCancellable>
     private let continuation: AsyncStream<Result<Model, CoreDataError>>.Continuation
 
+    @usableFromInline
     func manualFetch() {
         context.perform { [weak self, context, objectId] in
             guard let object = context.object(with: objectId) as? Model.ManagedModel else {
@@ -31,11 +33,13 @@ final class ReadSubscription<Model: UnmanagedReadOnlyModel> {
         }
     }
 
+    @usableFromInline
     func cancel() {
         continuation.finish()
         cancellables.forEach { $0.cancel() }
     }
 
+    @usableFromInline
     func start() {
         context.perform { [weak self, context, objectId] in
             guard let object = context.object(with: objectId) as? Model.ManagedModel else {
@@ -53,6 +57,7 @@ final class ReadSubscription<Model: UnmanagedReadOnlyModel> {
         }
     }
 
+    @usableFromInline
     init(
         objectId: NSManagedObjectID,
         context: NSManagedObjectContext,

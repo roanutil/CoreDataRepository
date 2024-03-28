@@ -10,6 +10,7 @@ import CoreData
 import Foundation
 
 /// Base class for other subscriptions.
+@usableFromInline
 class BaseSubscription<
     Output,
     RequestResult: NSFetchRequestResult,
@@ -18,6 +19,7 @@ class BaseSubscription<
     let request: NSFetchRequest<RequestResult>
     let frc: NSFetchedResultsController<ControllerResult>
 
+    @usableFromInline
     init(
         fetchRequest: NSFetchRequest<RequestResult>,
         fetchResultControllerRequest: NSFetchRequest<ControllerResult>,
@@ -35,14 +37,17 @@ class BaseSubscription<
         start()
     }
 
+    @usableFromInline
     func fetch() {
         fatalError("\(Self.self).\(#function) is not implemented.")
     }
 
+    @usableFromInline
     func controllerDidChangeContent(_: NSFetchedResultsController<NSFetchRequestResult>) {
         fetch()
     }
 
+    @usableFromInline
     func start() {
         do {
             try frc.performFetch()
@@ -53,18 +58,22 @@ class BaseSubscription<
         }
     }
 
+    @usableFromInline
     func manualFetch() {
         fetch()
     }
 
+    @usableFromInline
     func cancel() {
         fatalError("\(Self.self).\(#function) is not implemented.")
     }
 
+    @usableFromInline
     func fail(_: CoreDataError) {
         fatalError("\(Self.self).\(#function) is not implemented.")
     }
 
+    @usableFromInline
     func send(_: Output) {
         fatalError("\(Self.self).\(#function) is not implemented.")
     }

@@ -81,6 +81,7 @@ public protocol UnmanagedReadOnlyModel: Equatable {
 }
 
 extension UnmanagedReadOnlyModel {
+    @inlinable
     public static func managedFetchRequest() -> NSFetchRequest<ManagedModel> {
         NSFetchRequest<ManagedModel>(
             entityName: ManagedModel.entity().name ?? ManagedModel.entity()

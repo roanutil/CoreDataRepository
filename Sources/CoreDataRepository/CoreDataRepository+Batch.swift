@@ -11,6 +11,7 @@ import Foundation
 
 extension CoreDataRepository {
     /// Execute a NSBatchInsertRequest against the store.
+    @inlinable
     public func insert(
         _ request: NSBatchInsertRequest,
         transactionAuthor: String? = nil
@@ -29,6 +30,7 @@ extension CoreDataRepository {
     /// Create a batch of unmanaged models.
     ///
     /// This operation is non-atomic. Each instance may succeed or fail individually.
+    @inlinable
     public func create<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -68,6 +70,7 @@ extension CoreDataRepository {
     }
 
     /// Create a batch of unmanaged models.
+    @inlinable
     public func createAtomically<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -92,6 +95,7 @@ extension CoreDataRepository {
     /// Read a batch of unmanaged models.
     ///
     /// This operation is non-atomic. Each instance may succeed or fail individually.
+    @inlinable
     public func read<Model: UnmanagedModel>(
         urls: [URL],
         as _: Model.Type
@@ -130,6 +134,7 @@ extension CoreDataRepository {
     }
 
     /// Read a batch of unmanaged models.
+    @inlinable
     public func readAtomically<Model: UnmanagedModel>(
         urls: [URL],
         as _: Model.Type
@@ -145,6 +150,7 @@ extension CoreDataRepository {
     }
 
     /// Execute a NSBatchUpdateRequest against the store.
+    @inlinable
     public func update(
         _ request: NSBatchUpdateRequest,
         transactionAuthor: String? = nil
@@ -163,6 +169,7 @@ extension CoreDataRepository {
     /// Update the store with a batch of unmanaged models.
     ///
     /// This operation is non-atomic. Each instance may succeed or fail individually.
+    @inlinable
     public func update<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -205,6 +212,7 @@ extension CoreDataRepository {
     }
 
     /// Update the store with a batch of unmanaged models.
+    @inlinable
     public func updateAtomically<Model: UnmanagedModel>(
         _ items: [Model],
         transactionAuthor: String? = nil
@@ -232,6 +240,7 @@ extension CoreDataRepository {
     }
 
     /// Execute a NSBatchDeleteRequest against the store.
+    @inlinable
     public func delete(
         _ request: NSBatchDeleteRequest,
         transactionAuthor: String? = nil
@@ -250,6 +259,7 @@ extension CoreDataRepository {
     /// Delete from the store with a batch of unmanaged models.
     ///
     /// This operation is non-atomic. Each instance may succeed or fail individually.
+    @inlinable
     public func delete(
         urls: [URL],
         transactionAuthor: String? = nil
@@ -289,6 +299,7 @@ extension CoreDataRepository {
     }
 
     /// Delete from the store with a batch of unmanaged models.
+    @inlinable
     public func deleteAtomically(
         urls: [URL],
         transactionAuthor: String? = nil

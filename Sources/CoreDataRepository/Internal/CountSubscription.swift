@@ -10,7 +10,9 @@ import CoreData
 import Foundation
 
 /// Subscription provider that sends updates when a count fetch request changes
+@usableFromInline
 final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric {
+    @usableFromInline
     override func fetch() {
         frc.managedObjectContext.perform { [weak self, frc] in
             if (frc.fetchedObjects ?? []).isEmpty {
@@ -27,6 +29,7 @@ final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManage
         }
     }
 
+    @usableFromInline
     convenience init(
         context: NSManagedObjectContext,
         predicate: NSPredicate,

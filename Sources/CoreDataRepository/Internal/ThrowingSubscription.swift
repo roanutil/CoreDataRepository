@@ -10,6 +10,7 @@ import CoreData
 import Foundation
 
 /// Base class for other subscriptions.
+@usableFromInline
 class ThrowingSubscription<
     Output,
     RequestResult: NSFetchRequestResult,
@@ -17,6 +18,7 @@ class ThrowingSubscription<
 >: BaseSubscription<Output, RequestResult, ControllerResult> {
     private let continuation: AsyncThrowingStream<Output, Error>.Continuation
 
+    @usableFromInline
     init(
         fetchRequest: NSFetchRequest<RequestResult>,
         fetchResultControllerRequest: NSFetchRequest<ControllerResult>,
@@ -31,14 +33,17 @@ class ThrowingSubscription<
         )
     }
 
+    @usableFromInline
     override func cancel() {
         continuation.finish()
     }
 
+    @usableFromInline
     override final func fail(_ error: CoreDataError) {
         continuation.yield(with: .failure(error))
     }
 
+    @usableFromInline
     override final func send(_ value: Output) {
         continuation.yield(with: .success(value))
     }
@@ -47,6 +52,7 @@ class ThrowingSubscription<
 // MARK: where RequestResult == ControllerResult
 
 extension ThrowingSubscription where RequestResult == ControllerResult {
+    @usableFromInline
     convenience init(
         request: NSFetchRequest<RequestResult>,
         context: NSManagedObjectContext,
@@ -64,6 +70,7 @@ extension ThrowingSubscription where RequestResult == ControllerResult {
 // MARK: where RequestResult == NSDictionary, ControllerResult == NSManagedObject
 
 extension ThrowingSubscription where RequestResult == NSDictionary, ControllerResult == NSManagedObject {
+    @usableFromInline
     convenience init(
         request: NSFetchRequest<NSDictionary>,
         context: NSManagedObjectContext,

@@ -10,11 +10,13 @@ import CoreData
 import Foundation
 
 /// Subscription provider that sends updates when a fetch request changes
+@usableFromInline
 final class FetchSubscription<Model: UnmanagedReadOnlyModel>: Subscription<
     [Model],
     Model.ManagedModel,
     Model.ManagedModel
 > {
+    @usableFromInline
     override func fetch() {
         frc.managedObjectContext.perform { [weak self, frc, request] in
             guard frc.fetchedObjects != nil else {

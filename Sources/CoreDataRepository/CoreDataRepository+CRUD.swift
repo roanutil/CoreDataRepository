@@ -11,6 +11,7 @@ import Foundation
 
 extension CoreDataRepository {
     /// Create an instance in the store.
+    @inlinable
     public func create<Model: UnmanagedModel>(
         _ item: Model,
         transactionAuthor: String? = nil
@@ -37,6 +38,7 @@ extension CoreDataRepository {
     }
 
     /// Read an instance from the store.
+    @inlinable
     public func read<Model: UnmanagedReadOnlyModel>(
         _ url: URL,
         of _: Model.Type
@@ -50,6 +52,7 @@ extension CoreDataRepository {
     }
 
     /// Update the store with an unmanaged model.
+    @inlinable
     public func update<Model: UnmanagedModel>(
         _ url: URL,
         with item: Model,
@@ -72,6 +75,7 @@ extension CoreDataRepository {
     }
 
     /// Delete an instance from the store.
+    @inlinable
     public func delete(
         _ url: URL,
         transactionAuthor: String? = nil
@@ -93,6 +97,7 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to updates of an instance in the store.
+    @inlinable
     public func readSubscription<Model: UnmanagedReadOnlyModel>(_ url: URL, of _: Model.Type)
         -> AsyncStream<Result<Model, CoreDataError>>
     {
@@ -120,6 +125,7 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to updates of an instance in the store.
+    @inlinable
     public func readThrowingSubscription<Model: UnmanagedReadOnlyModel>(_ url: URL, of _: Model.Type)
         -> AsyncThrowingStream<Model, Error>
     {
@@ -146,7 +152,8 @@ extension CoreDataRepository {
         }
     }
 
-    private static func getObjectId(
+    @usableFromInline
+    static func getObjectId(
         fromUrl url: URL,
         context: NSManagedObjectContext
     ) -> Result<NSManagedObjectID, CoreDataError> {
