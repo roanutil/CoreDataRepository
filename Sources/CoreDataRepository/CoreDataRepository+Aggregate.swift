@@ -29,9 +29,9 @@ extension CoreDataRepository {
     ) async -> Result<Value, CoreDataError> {
         switch function {
         case .count:
-            return await count(predicate: predicate, entityDesc: entityDesc, as: valueType)
+            await count(predicate: predicate, entityDesc: entityDesc, as: valueType)
         default:
-            return await Self.send(
+            await Self.send(
                 function: function,
                 context: context,
                 predicate: predicate,

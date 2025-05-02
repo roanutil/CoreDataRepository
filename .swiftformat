@@ -1,6 +1,6 @@
 --extensionacl on-declarations
 --redundanttype explicit
---swiftversion 5.8
+--swiftversion 5.10
 --maxwidth 120
 --header "{file}\nCoreDataRepository\n\nThis source code is licensed under the MIT License (MIT) found in the\nLICENSE file in the root directory of this source tree."
 --allman false
