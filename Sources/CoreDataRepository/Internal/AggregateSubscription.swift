@@ -9,7 +9,8 @@ import Foundation
 
 /// Subscription provider that sends updates when an aggregate fetch request changes
 @usableFromInline
-final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric,
+final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject>,
+    @unchecked Sendable where Value: Numeric,
     Value: Sendable
 {
     @usableFromInline

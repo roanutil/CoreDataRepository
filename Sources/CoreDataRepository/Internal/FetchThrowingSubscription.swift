@@ -13,7 +13,7 @@ final class FetchThrowingSubscription<Model: FetchableUnmanagedModel>: ThrowingS
     [Model],
     Model.ManagedModel,
     Model.ManagedModel
-> {
+>, @unchecked Sendable {
     @usableFromInline
     override func fetch() {
         frc.managedObjectContext.perform { [weak self, frc, request] in
