@@ -22,7 +22,10 @@ import Foundation
 /// For fetch and aggregate operations, there are additional subscription and throwing subscription options.
 /// Subscriptions return an ``AsyncStream`` of
 /// ``Result``s with strongly typed errors. Throwing subscriptions return an ``AsyncThrowingStream``.
-public final class CoreDataRepository {
+///
+/// All uses of ``context`` are wrapped in `perform` or `performAndWait` blocks so ``CoreDataRepository`` is concurrency
+/// safe.
+public final class CoreDataRepository: @unchecked Sendable {
     /// CoreData context the repository uses. A child or 'scratch' context is usually created from this context for work
     /// to be performed in.
     public let context: NSManagedObjectContext
