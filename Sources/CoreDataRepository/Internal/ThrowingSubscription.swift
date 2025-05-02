@@ -13,7 +13,7 @@ class ThrowingSubscription<
     Output,
     RequestResult: NSFetchRequestResult,
     ControllerResult: NSFetchRequestResult
->: BaseSubscription<Output, RequestResult, ControllerResult> {
+>: BaseSubscription<Output, RequestResult, ControllerResult> where Output: Sendable {
     private let continuation: AsyncThrowingStream<Output, Error>.Continuation
 
     @usableFromInline

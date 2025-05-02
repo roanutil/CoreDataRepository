@@ -13,7 +13,7 @@ class Subscription<
     Output,
     RequestResult: NSFetchRequestResult,
     ControllerResult: NSFetchRequestResult
->: BaseSubscription<Output, RequestResult, ControllerResult> {
+>: BaseSubscription<Output, RequestResult, ControllerResult> where Output: Sendable {
     let continuation: AsyncStream<Result<Output, CoreDataError>>.Continuation
 
     @usableFromInline
