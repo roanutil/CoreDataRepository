@@ -10,6 +10,14 @@ import CustomDump
 import Internal
 import XCTest
 
+extension FetchableUnmanagedModel {
+    static func initFromManaged(_ managed: ManagedModel) throws -> Self {
+        try managed.managedObjectContext!.performAndWait {
+            try Self.init(managed: managed)
+        }
+    }
+}
+
 class CoreDataXCTestCase: XCTestCase {
     var _container: NSPersistentContainer?
     var _repositoryContext: NSManagedObjectContext?
@@ -54,6 +62,12 @@ class CoreDataXCTestCase: XCTestCase {
         _container = nil
         _repositoryContext = nil
         _repository = nil
+    }
+    
+    func mapInContext<I, O>(_ input: I, transform: (I) throws -> O) throws -> O {
+        try repositoryContext().performAndWait {
+            try transform(input)
+        }
     }
 
     func verify<T>(_ item: T) async throws where T: FetchableUnmanagedModel, T: Equatable {

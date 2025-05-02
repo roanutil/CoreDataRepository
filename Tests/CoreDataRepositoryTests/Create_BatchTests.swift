@@ -431,7 +431,7 @@ final class Create_BatchTests: CoreDataXCTestCase {
             try self.repositoryContext().parent?.save()
             return value
         }
-        try await verify(modelType.init(managed: existingValue))
+        try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
 
         let result = try await repository()
             .createAtomically(_values)
@@ -514,7 +514,7 @@ final class Create_BatchTests: CoreDataXCTestCase {
             try self.repositoryContext().parent?.save()
             return value
         }
-        try await verify(modelType.init(managed: existingValue))
+        try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
 
         let result = try await repository()
             .createAtomically(_values)
@@ -597,7 +597,7 @@ final class Create_BatchTests: CoreDataXCTestCase {
             try self.repositoryContext().parent?.save()
             return value
         }
-        try await verify(modelType.init(managed: existingValue))
+        try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
 
         let result = try await repository()
             .createAtomically(_values)
@@ -680,7 +680,7 @@ final class Create_BatchTests: CoreDataXCTestCase {
             try self.repositoryContext().parent?.save()
             return value
         }
-        try await verify(modelType.init(managed: existingValue))
+        try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
 
         let result = try await repository()
             .createAtomically(_values)
