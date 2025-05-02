@@ -13,7 +13,7 @@ import XCTest
 extension FetchableUnmanagedModel {
     static func initFromManaged(_ managed: ManagedModel) throws -> Self {
         try managed.managedObjectContext!.performAndWait {
-            try Self.init(managed: managed)
+            try Self(managed: managed)
         }
     }
 }
@@ -63,7 +63,7 @@ class CoreDataXCTestCase: XCTestCase {
         _repositoryContext = nil
         _repository = nil
     }
-    
+
     func mapInContext<I, O>(_ input: I, transform: (I) throws -> O) throws -> O {
         try repositoryContext().performAndWait {
             try transform(input)
