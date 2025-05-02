@@ -76,7 +76,7 @@ extension [SwiftSetting] {
         .enableUpcomingFeature("DisableOutwardActorInference"),
         .enableUpcomingFeature("ForwardTrailingClosures"),
         .enableUpcomingFeature("ImportObjcForwardDeclarations"),
-        .enableExperimentalFeature("StrictConcurrency"),
+        .enableUpcomingFeature("StrictConcurrency"),
     ]
 }
 
