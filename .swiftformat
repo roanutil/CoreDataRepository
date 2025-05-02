@@ -2,7 +2,7 @@
 --redundanttype explicit
 --swiftversion 5.8
 --maxwidth 120
---header "{file}\nCoreDataRepository\n\n\nMIT License\n\nCopyright © {year} Andrew Roan"
+--header "{file}\nCoreDataRepository\n\nThis source code is licensed under the MIT License (MIT) found in the\nLICENSE file in the root directory of this source tree."
 --allman false
 --wraparguments before-first
 --wrapcollections before-first
