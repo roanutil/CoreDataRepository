@@ -17,7 +17,7 @@ extension ManagedModel_UuidId {
         entityDescription
     }
 
-    package static let entityDescription: NSEntityDescription = {
+    package nonisolated(unsafe) static let entityDescription: NSEntityDescription = {
         let desc = NSEntityDescription()
         desc.name = "ManagedModel_UuidId"
         desc.managedObjectClassName = NSStringFromClass(ManagedModel_UuidId.self)

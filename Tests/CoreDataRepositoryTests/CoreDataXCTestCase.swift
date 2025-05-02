@@ -59,9 +59,9 @@ class CoreDataXCTestCase: XCTestCase {
     func verify<T>(_ item: T) async throws where T: FetchableUnmanagedModel, T: Equatable {
         let context = try repositoryContext()
         context.performAndWait {
-            var _managed: T.ManagedModel?
+            var managed: T.ManagedModel?
             do {
-                _managed = try context.fetch(T.managedFetchRequest()).first { try T(managed: $0) == item }
+                managed = try context.fetch(T.managedFetchRequest()).first { try T(managed: $0) == item }
             } catch {
                 XCTFail(
                     "Failed to verify item in store because fetching failed. Error: \(error.localizedDescription)"
@@ -69,7 +69,7 @@ class CoreDataXCTestCase: XCTestCase {
                 return
             }
 
-            guard let managed = _managed else {
+            guard managed != nil else {
                 XCTFail("Failed to verify item in store because it was not found.")
                 return
             }

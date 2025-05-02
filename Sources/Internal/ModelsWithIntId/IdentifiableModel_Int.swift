@@ -101,7 +101,7 @@ extension IdentifiableModel_IntId: IdentifiedUnmanagedModel {
 
     @inlinable
     package static var unmanagedIdAccessor: (IdentifiableModel_IntId) -> Int { \.id }
-    package static let managedIdExpression = NSExpression(forKeyPath: \ManagedModel_IntId.id)
+    package nonisolated(unsafe) static let managedIdExpression = NSExpression(forKeyPath: \ManagedModel_IntId.id)
 }
 
 extension IdentifiableModel_IntId: WritableUnmanagedModel {
