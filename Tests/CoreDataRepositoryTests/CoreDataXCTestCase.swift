@@ -10,14 +10,6 @@ import CustomDump
 import Internal
 import XCTest
 
-extension FetchableUnmanagedModel {
-    static func initFromManaged(_ managed: ManagedModel) throws -> Self {
-        try managed.managedObjectContext!.performAndWait {
-            try Self(managed: managed)
-        }
-    }
-}
-
 class CoreDataXCTestCase: XCTestCase {
     var _container: NSPersistentContainer?
     var _repositoryContext: NSManagedObjectContext?
