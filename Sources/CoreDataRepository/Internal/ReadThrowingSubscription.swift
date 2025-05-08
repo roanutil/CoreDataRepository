@@ -9,7 +9,7 @@ import CoreData
 import Foundation
 
 @usableFromInline
-final class ReadThrowingSubscription<Model: ReadableUnmanagedModel> {
+final class ReadThrowingSubscription<Model: ReadableUnmanagedModel>: @unchecked Sendable {
     private let objectId: NSManagedObjectID
     private let context: NSManagedObjectContext
     private var cancellables: Set<AnyCancellable>

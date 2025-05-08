@@ -13,7 +13,7 @@ class BaseSubscription<
     Output,
     RequestResult: NSFetchRequestResult,
     ControllerResult: NSFetchRequestResult
->: NSObject, NSFetchedResultsControllerDelegate {
+>: NSObject, NSFetchedResultsControllerDelegate, @unchecked Sendable {
     let request: NSFetchRequest<RequestResult>
     let frc: NSFetchedResultsController<ControllerResult>
 

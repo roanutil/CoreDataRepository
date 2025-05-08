@@ -632,7 +632,6 @@ final class Read_BatchTests: CoreDataXCTestCase {
 
     func testReadAtomically_ManagedIdUrl_Success() async throws {
         let modelType = ManagedIdUrlModel_UuidId.self
-        let transactionAuthor: String = #function
         let _values = [
             modelType.seeded(1),
             modelType.seeded(2),

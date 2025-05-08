@@ -45,27 +45,25 @@ let package = Package(
 )
 
 extension [SupportedPlatform] {
-    static let shared: Self = {
-        if ProcessInfo.benchmarkingEnabled {
-            [
-                .iOS(.v15),
-                .macOS(.v12),
-                .tvOS(.v15),
-                .watchOS(.v8),
-                .macCatalyst(.v15),
-                .visionOS(.v1),
-            ]
-        } else {
-            [
-                .iOS(.v15),
-                .macOS(.v13),
-                .tvOS(.v15),
-                .watchOS(.v8),
-                .macCatalyst(.v15),
-                .visionOS(.v1),
-            ]
-        }
-    }()
+    static let shared: Self = if ProcessInfo.benchmarkingEnabled {
+        [
+            .iOS(.v15),
+            .macOS(.v12),
+            .tvOS(.v15),
+            .watchOS(.v8),
+            .macCatalyst(.v15),
+            .visionOS(.v1),
+        ]
+    } else {
+        [
+            .iOS(.v15),
+            .macOS(.v13),
+            .tvOS(.v15),
+            .watchOS(.v8),
+            .macCatalyst(.v15),
+            .visionOS(.v1),
+        ]
+    }
 }
 
 extension [SwiftSetting] {
@@ -76,7 +74,7 @@ extension [SwiftSetting] {
         .enableUpcomingFeature("DisableOutwardActorInference"),
         .enableUpcomingFeature("ForwardTrailingClosures"),
         .enableUpcomingFeature("ImportObjcForwardDeclarations"),
-        .enableExperimentalFeature("StrictConcurrency"),
+        .enableUpcomingFeature("StrictConcurrency"),
     ]
 }
 

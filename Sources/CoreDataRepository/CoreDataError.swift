@@ -59,13 +59,13 @@ public enum CoreDataError: Error, Hashable, Sendable {
     public var localizedDescription: String {
         switch self {
         case .failedToGetObjectIdFromUrl:
-            return NSLocalizedString(
+            NSLocalizedString(
                 "No NSManagedObjectID found that correlates to the provided URL.",
                 bundle: .module,
                 comment: "Error for when an ObjectID can't be found for the provided URL."
             )
         case .propertyDoesNotMatchEntity:
-            return NSLocalizedString(
+            NSLocalizedString(
                 "There is a mismatch between a provided NSPropertyDescrption's entity and a NSEntityDescription. "
                     + "When a property description is provided, it must match any related entity descriptions.",
                 bundle: .module,
@@ -73,51 +73,51 @@ public enum CoreDataError: Error, Hashable, Sendable {
                     + "and NSPropertyDescription (or any of their child types)."
             )
         case .fetchedObjectFailedToCastToExpectedType:
-            return NSLocalizedString(
+            NSLocalizedString(
                 "The object corresponding to the provided NSManagedObjectID is an incorrect Entity or "
                     + "NSManagedObject subtype. It failed to cast to the requested type.",
                 bundle: .module,
                 comment: "Error for when an object is found for a given ObjectID but it is not the expected type."
             )
         case .fetchedObjectIsFlaggedAsDeleted:
-            return NSLocalizedString(
+            NSLocalizedString(
                 "The object corresponding to the provided NSManagedObjectID is deleted and cannot be fetched.",
                 bundle: .module,
                 comment: "Error for when an object is fetched but is flagged as deleted and is no longer usable."
             )
         case let .cocoa(error):
-            return error.localizedDescription
+            error.localizedDescription
         case let .unknown(error):
-            return error.localizedDescription
+            error.localizedDescription
         case .noEntityNameFound:
-            return NSLocalizedString(
+            NSLocalizedString(
                 "The managed object entity description does not have a name.",
                 bundle: .module,
                 comment: "Error for when the NSEntityDescription does not have a name."
             )
         case .atLeastOneAttributeDescRequired:
-            return NSLocalizedString(
+            NSLocalizedString(
                 "The managed object entity has no attribute description. An attribute description is required for "
                     + "aggregate operations.",
                 bundle: .module,
                 comment: "Error for when the NSEntityDescription has no NSAttributeDescription but one is required."
             )
         case .noUrlOnItemToMapToObjectId:
-            return NSLocalizedString(
+            NSLocalizedString(
                 "No object ID URL found on the model for an operation against an existing managed object.",
                 bundle: .module,
                 comment: "Error for performing an operation against an existing NSManagedObject but the "
                     + "ManagedIdUrlReferencable instance has no managedIdUrl for looking up the NSManagedOjbectID."
             )
         case .noObjectIdOnItem:
-            return NSLocalizedString(
+            NSLocalizedString(
                 "No object ID found on the model for an operation against an existing managed object.",
                 bundle: .module,
                 comment: "Error for performing an operation against an existing NSManagedObject but the "
                     + "ManagedIdReferencable instance has no managedId."
             )
         case .noMatchFoundWhenReadingItem:
-            return NSLocalizedString(
+            NSLocalizedString(
                 "No match found when attempting to read an instance from CoreData.",
                 bundle: .module,
                 comment: "Error for reading an instance from CoreData but no instance was found."
@@ -133,27 +133,27 @@ extension CoreDataError: CustomNSError {
     public var errorCode: Int {
         switch self {
         case .failedToGetObjectIdFromUrl:
-            return 1
+            1
         case .propertyDoesNotMatchEntity:
-            return 2
+            2
         case .fetchedObjectFailedToCastToExpectedType:
-            return 3
+            3
         case .fetchedObjectIsFlaggedAsDeleted:
-            return 4
+            4
         case .cocoa:
-            return 5
+            5
         case .unknown:
-            return 6
+            6
         case .noEntityNameFound:
-            return 7
+            7
         case .atLeastOneAttributeDescRequired:
-            return 8
+            8
         case .noUrlOnItemToMapToObjectId:
-            return 9
+            9
         case .noObjectIdOnItem:
-            return 10
+            10
         case .noMatchFoundWhenReadingItem:
-            return 11
+            11
         }
     }
 
@@ -163,27 +163,27 @@ extension CoreDataError: CustomNSError {
     public var errorUserInfo: [String: Any] {
         switch self {
         case let .failedToGetObjectIdFromUrl(url):
-            return [Self.urlUserInfoKey: url]
+            [Self.urlUserInfoKey: url]
         case .propertyDoesNotMatchEntity:
-            return [:]
+            [:]
         case .fetchedObjectFailedToCastToExpectedType:
-            return [:]
+            [:]
         case .fetchedObjectIsFlaggedAsDeleted:
-            return [:]
+            [:]
         case let .cocoa(error):
-            return error.userInfo
+            error.userInfo
         case let .unknown(error):
-            return error.userInfo
+            error.userInfo
         case .noEntityNameFound:
-            return [:]
+            [:]
         case .atLeastOneAttributeDescRequired:
-            return [:]
+            [:]
         case .noUrlOnItemToMapToObjectId:
-            return [:]
+            [:]
         case .noObjectIdOnItem:
-            return [:]
+            [:]
         case .noMatchFoundWhenReadingItem:
-            return [:]
+            [:]
         }
     }
 }

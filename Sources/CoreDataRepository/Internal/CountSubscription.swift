@@ -9,7 +9,10 @@ import Foundation
 
 /// Subscription provider that sends updates when a count fetch request changes
 @usableFromInline
-final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject> where Value: Numeric {
+final class CountSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject>,
+    @unchecked Sendable where Value: Numeric,
+    Value: Sendable
+{
     @usableFromInline
     override func fetch() {
         frc.managedObjectContext.perform { [weak self, frc] in

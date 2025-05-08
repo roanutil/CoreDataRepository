@@ -10,7 +10,7 @@ import Foundation
 
 /// Subscription provider that sends updates when a single ``NSManagedObject`` changes
 @usableFromInline
-final class ReadSubscription<Model: ReadableUnmanagedModel> {
+final class ReadSubscription<Model: ReadableUnmanagedModel>: @unchecked Sendable {
     private let objectId: NSManagedObjectID
     private let context: NSManagedObjectContext
     private var cancellables: Set<AnyCancellable>

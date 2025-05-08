@@ -1,0 +1,36 @@
+{
+  "configurations" : [
+    {
+      "id" : "3473C2E6-8765-4CE5-8DCC-FAF7D66E9FD2",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "commandLineArgumentEntries" : [
+      {
+        "argument" : "-com.apple.CoreData.ConcurrencyDebug 1"
+      },
+      {
+        "argument" : "-com.apple.CoreData.SQLDebug 4",
+        "enabled" : false
+      },
+      {
+        "argument" : "-com.apple.CoreData.SQLDebug 4",
+        "enabled" : false
+      }
+    ]
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "CoreDataRepositoryTests",
+        "name" : "CoreDataRepositoryTests"
+      }
+    }
+  ],
+  "version" : 1
+}
