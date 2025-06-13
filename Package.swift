@@ -22,8 +22,7 @@ let package = Package(
     targets: [
         .target(
             name: "CoreDataRepository",
-            resources: [.process("Resources")],
-            swiftSettings: .swiftSix
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "CoreDataRepositoryTests",
@@ -31,15 +30,13 @@ let package = Package(
                 "CoreDataRepository",
                 .product(name: "CustomDump", package: "swift-custom-dump"),
                 "Internal",
-            ],
-            swiftSettings: .swiftSix
+            ]
         ),
         .target(
             name: "Internal",
             dependencies: [
                 "CoreDataRepository",
-            ],
-            swiftSettings: .swiftSix
+            ]
         ),
     ]
 )
@@ -64,18 +61,6 @@ extension [SupportedPlatform] {
             .visionOS(.v1),
         ]
     }
-}
-
-extension [SwiftSetting] {
-    static let swiftSix: Self = [
-        .enableUpcomingFeature("BareSlashRegexLiterals"),
-        .enableUpcomingFeature("ConciseMagicFile"),
-        .enableUpcomingFeature("DeprecateApplicationMain"),
-        .enableUpcomingFeature("DisableOutwardActorInference"),
-        .enableUpcomingFeature("ForwardTrailingClosures"),
-        .enableUpcomingFeature("ImportObjcForwardDeclarations"),
-        .enableUpcomingFeature("StrictConcurrency"),
-    ]
 }
 
 if ProcessInfo.benchmarkingEnabled {
