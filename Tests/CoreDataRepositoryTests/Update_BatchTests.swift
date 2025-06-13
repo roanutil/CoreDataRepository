@@ -8,118 +8,139 @@ import CoreData
 import CoreDataRepository
 import CustomDump
 import Internal
-import XCTest
+import Testing
 
-final class Update_BatchTests: CoreDataXCTestCase {
-    // MARK: Non Atomic
+extension CoreDataRepositoryTests {
+    @Suite
+    struct Update_BatchTests: CoreDataTestSuite {
+        let container: NSPersistentContainer
+        let repositoryContext: NSManagedObjectContext
+        let repository: CoreDataRepository
 
-    func testUpdate_Identifiable_Success() async throws {
-        let modelType = IdentifiableModel_UuidId.self
-        let _values = [
-            modelType.seeded(1),
-            modelType.seeded(2),
-            modelType.seeded(3),
-            modelType.seeded(4),
-            modelType.seeded(5),
-        ]
-        var existingValues = try await repositoryContext().perform(schedule: .immediate) {
-            let manageds = try _values.map { try $0.asManagedModel(in: self.repositoryContext()) }
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-            return try manageds.map { try modelType.init(managed: $0) }
-        }
-        expectNoDifference(existingValues, _values)
+        // MARK: Non Atomic
 
-        for value in existingValues {
-            try await verify(value)
-        }
+        @Test
+        func update_Identifiable_Success() async throws {
+            let modelType = IdentifiableModel_UuidId.self
+            let _values = [
+                modelType.seeded(1),
+                modelType.seeded(2),
+                modelType.seeded(3),
+                modelType.seeded(4),
+                modelType.seeded(5),
+            ]
+            var existingValues = try await repositoryContext.perform(schedule: .immediate) {
+                let manageds = try _values.map { try $0.asManagedModel(in: repositoryContext) }
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+                return try manageds.map { try modelType.init(managed: $0) }
+            }
+            expectNoDifference(existingValues, _values)
 
-        let historyTimeStamp = Date()
-        let transactionAuthor: String = #function
+            for value in existingValues {
+                try await verify(value)
+            }
 
-        existingValues = existingValues.map { value in
-            var value = value
-            value.int += 1
-            return value
-        }
+            let historyTimeStamp = Date()
+            let transactionAuthor: String = #function
 
-        let (successful, failed) = try await repository()
-            .update(existingValues, transactionAuthor: transactionAuthor)
+            existingValues = existingValues.map { value in
+                var value = value
+                value.int += 1
+                return value
+            }
 
-        XCTAssertEqual(successful.count, _values.count)
-        XCTAssertEqual(failed.count, 0)
-        for value in successful {
-            try await verify(value)
-        }
-        try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
-    }
+            let (successful, failed) = await repository
+                .update(existingValues, transactionAuthor: transactionAuthor)
 
-    func testUpdate_Identifiable_Failure() async throws {
-        let modelType = IdentifiableModel_UuidId.self
-        let _values = [
-            modelType.seeded(1),
-            modelType.seeded(2),
-            modelType.seeded(3),
-            modelType.seeded(4),
-            modelType.seeded(5),
-        ]
-        let (successful, failed) = try await repository()
-            .update(_values)
-
-        XCTAssertEqual(successful.count, 0)
-        XCTAssertEqual(failed.count, _values.count)
-    }
-
-    // MARK: Atomic
-
-    func testUpdateAtomically_Identifiable_Success() async throws {
-        let modelType = IdentifiableModel_UuidId.self
-        let _values = [
-            modelType.seeded(1),
-            modelType.seeded(2),
-            modelType.seeded(3),
-            modelType.seeded(4),
-            modelType.seeded(5),
-        ]
-        let existingValues = try await repositoryContext().perform(schedule: .immediate) {
-            let manageds = try _values.map { try $0.asManagedModel(in: self.repositoryContext()) }
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-            return try manageds.map { try modelType.init(managed: $0) }
-        }
-        expectNoDifference(existingValues, _values)
-
-        for value in existingValues {
-            try await verify(value)
+            expectNoDifference(successful.count, _values.count)
+            expectNoDifference(failed.count, 0)
+            for value in successful {
+                try await verify(value)
+            }
+            try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        let updatedValues = try await repository()
-            .updateAtomically(existingValues).get()
+        @Test
+        func update_Identifiable_Failure() async throws {
+            let modelType = IdentifiableModel_UuidId.self
+            let _values = [
+                modelType.seeded(1),
+                modelType.seeded(2),
+                modelType.seeded(3),
+                modelType.seeded(4),
+                modelType.seeded(5),
+            ]
+            let (successful, failed) = await repository
+                .update(_values)
 
-        for value in updatedValues {
-            try await verify(value)
+            expectNoDifference(successful.count, 0)
+            expectNoDifference(failed.count, _values.count)
         }
-    }
 
-    func testUpdateAtomically_Identifiable_Failure() async throws {
-        let modelType = IdentifiableModel_UuidId.self
-        let _values = [
-            modelType.seeded(1),
-            modelType.seeded(2),
-            modelType.seeded(3),
-            modelType.seeded(4),
-            modelType.seeded(5),
-        ]
-        let result = try await repository()
-            .updateAtomically(_values)
+        // MARK: Atomic
 
-        switch result {
-        case .success:
-            XCTFail("Not expecting success")
-        case .failure(.noMatchFoundWhenReadingItem):
-            break
-        case let .failure(error):
-            XCTFail("Unexpected error: \(error)")
+        @Test
+        func updateAtomically_Identifiable_Success() async throws {
+            let modelType = IdentifiableModel_UuidId.self
+            let _values = [
+                modelType.seeded(1),
+                modelType.seeded(2),
+                modelType.seeded(3),
+                modelType.seeded(4),
+                modelType.seeded(5),
+            ]
+            let existingValues = try await repositoryContext.perform(schedule: .immediate) {
+                let manageds = try _values.map { try $0.asManagedModel(in: repositoryContext) }
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+                return try manageds.map { try modelType.init(managed: $0) }
+            }
+            expectNoDifference(existingValues, _values)
+
+            for value in existingValues {
+                try await verify(value)
+            }
+
+            let updatedValues = try await repository
+                .updateAtomically(existingValues).get()
+
+            for value in updatedValues {
+                try await verify(value)
+            }
+        }
+
+        @Test
+        func updateAtomically_Identifiable_Failure() async throws {
+            let modelType = IdentifiableModel_UuidId.self
+            let _values = [
+                modelType.seeded(1),
+                modelType.seeded(2),
+                modelType.seeded(3),
+                modelType.seeded(4),
+                modelType.seeded(5),
+            ]
+            let result = await repository
+                .updateAtomically(_values)
+
+            switch result {
+            case .success:
+                Issue.record("Not expecting success")
+            case .failure(.noMatchFoundWhenReadingItem):
+                break
+            case let .failure(error):
+                Issue.record("Unexpected error: \(error)")
+            }
+        }
+
+        init(
+            container: NSPersistentContainer,
+            repositoryContext: NSManagedObjectContext,
+            repository: CoreDataRepository
+        ) {
+            self.container = container
+            self.repositoryContext = repositoryContext
+            self.repository = repository
         }
     }
 }
