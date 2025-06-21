@@ -12,7 +12,8 @@ extension CoreDataRepository {
     public func read<Model: ReadableUnmanagedModel>(
         _ item: Model
     ) async -> Result<Model, CoreDataError> {
-        await context.performInChild(schedule: .enqueued) { readContext in
+        let context = Transaction.current?.context ?? context
+        return await context.performInChild(schedule: .enqueued) { readContext in
             let managed = try item.readManaged(from: readContext)
             return try Model(managed: managed)
         }
@@ -24,7 +25,8 @@ extension CoreDataRepository {
         _ id: Model.UnmanagedId,
         of _: Model.Type
     ) async -> Result<Model, CoreDataError> where Model: IdentifiedUnmanagedModel {
-        await context.performInChild(schedule: .enqueued) { readContext in
+        let context = Transaction.current?.context ?? context
+        return await context.performInChild(schedule: .enqueued) { readContext in
             let managed = try Model.readManaged(id: id, from: readContext)
             return try Model(managed: managed)
         }
@@ -36,7 +38,8 @@ extension CoreDataRepository {
         _ managedId: NSManagedObjectID,
         of _: Model.Type
     ) async -> Result<Model, CoreDataError> where Model: FetchableUnmanagedModel {
-        await context.performInChild(schedule: .enqueued) { readContext in
+        let context = Transaction.current?.context ?? context
+        return await context.performInChild(schedule: .enqueued) { readContext in
             let object = try readContext.notDeletedObject(for: managedId)
             let managed: Model.ManagedModel = try object.asManagedModel()
             return try Model(managed: managed)
@@ -49,7 +52,8 @@ extension CoreDataRepository {
         _ managedIdUrl: URL,
         of _: Model.Type
     ) async -> Result<Model, CoreDataError> where Model: FetchableUnmanagedModel {
-        await context.performInChild(schedule: .enqueued) { readContext in
+        let context = Transaction.current?.context ?? context
+        return await context.performInChild(schedule: .enqueued) { readContext in
             let id = try readContext.objectId(from: managedIdUrl).get()
             let object = try readContext.notDeletedObject(for: id)
             let repoManaged: Model.ManagedModel = try object.asManagedModel()

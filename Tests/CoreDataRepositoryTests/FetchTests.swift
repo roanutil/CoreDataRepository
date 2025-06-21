@@ -50,9 +50,17 @@ extension CoreDataRepositoryTests {
             objectIds = _objectIds
         }
 
-        @Test
-        func fetchSuccess() async throws {
-            switch await repository.fetch(fetchRequest, as: FetchableModel_UuidId.self) {
+        @Test(arguments: [false, true])
+        func fetchSuccess(inTransaction: Bool) async throws {
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository.fetch(fetchRequest, as: FetchableModel_UuidId.self)
+                }
+            } else {
+                await repository.fetch(fetchRequest, as: FetchableModel_UuidId.self)
+            }
+
+            switch result {
             case let .success(values):
                 expectNoDifference(values.count, 5, "Result items count should match expectation")
                 expectNoDifference(values, expectedValues, "Result items should match expectations")
@@ -61,12 +69,19 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func fetchSubscriptionSuccess() async throws {
+        @Test(arguments: [false, true])
+        func fetchSubscriptionSuccess(inTransaction: Bool) async throws {
             let task = Task {
                 var resultCount = 0
-                let stream = repository
-                    .fetchSubscription(fetchRequest, of: FetchableModel_UuidId.self)
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        repository
+                            .fetchSubscription(fetchRequest, of: FetchableModel_UuidId.self)
+                    }
+                } else {
+                    repository
+                        .fetchSubscription(fetchRequest, of: FetchableModel_UuidId.self)
+                }
                 for await _items in stream {
                     let items = try _items.get()
                     resultCount += 1
@@ -95,14 +110,23 @@ extension CoreDataRepositoryTests {
             expectNoDifference(finalCount, 2)
         }
 
-        @Test
-        func fetchThrowingSubscriptionSuccess() async throws {
+        @Test(arguments: [false, true])
+        func fetchThrowingSubscriptionSuccess(inTransaction: Bool) async throws {
             let task = Task {
                 var resultCount = 0
-                let stream = repository.fetchThrowingSubscription(
-                    fetchRequest,
-                    of: FetchableModel_UuidId.self
-                )
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        repository.fetchThrowingSubscription(
+                            fetchRequest,
+                            of: FetchableModel_UuidId.self
+                        )
+                    }
+                } else {
+                    repository.fetchThrowingSubscription(
+                        fetchRequest,
+                        of: FetchableModel_UuidId.self
+                    )
+                }
                 for try await items in stream {
                     resultCount += 1
                     switch resultCount {

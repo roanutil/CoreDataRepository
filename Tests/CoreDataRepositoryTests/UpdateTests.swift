@@ -17,8 +17,8 @@ extension CoreDataRepositoryTests {
         let repositoryContext: NSManagedObjectContext
         let repository: CoreDataRepository
 
-        @Test
-        func update_Identifiable_Success() async throws {
+        @Test(arguments: [false, true])
+        func update_Identifiable_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
             let _value = modelType.seeded(1)
             var existingValue = try await repositoryContext.perform(schedule: .immediate) {
@@ -37,8 +37,15 @@ extension CoreDataRepositoryTests {
 
             existingValue.bool.toggle()
 
-            let updatedValue = try await repository
-                .update(with: existingValue, transactionAuthor: transactionAuthor).get()
+            let updatedValue = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    try await repository
+                        .update(with: existingValue).get()
+                }
+            } else {
+                try await repository
+                    .update(with: existingValue, transactionAuthor: transactionAuthor).get()
+            }
 
             expectNoDifference(updatedValue, existingValue)
 
@@ -46,12 +53,19 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func update_Identifiable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func update_Identifiable_Failure(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
             let _value = modelType.seeded(1)
-            let result = await repository
-                .update(with: _value)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .update(with: _value)
+                }
+            } else {
+                await repository
+                    .update(with: _value)
+            }
 
             switch result {
             case .success:
@@ -63,8 +77,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func update_ManagedIdReferencable_Success() async throws {
+        @Test(arguments: [false, true])
+        func update_ManagedIdReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _value = modelType.seeded(1)
             var existingValue = try await repositoryContext.perform(schedule: .immediate) {
@@ -82,8 +96,15 @@ extension CoreDataRepositoryTests {
 
             existingValue.bool.toggle()
 
-            let updatedValue = try await repository
-                .update(with: existingValue, transactionAuthor: transactionAuthor).get()
+            let updatedValue = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    try await repository
+                        .update(with: existingValue).get()
+                }
+            } else {
+                try await repository
+                    .update(with: existingValue, transactionAuthor: transactionAuthor).get()
+            }
 
             expectNoDifference(updatedValue, existingValue)
 
@@ -91,12 +112,19 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func update_ManagedIdReferencable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func update_ManagedIdReferencable_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _value = modelType.seeded(1)
-            let result = await repository
-                .update(with: _value)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .update(with: _value)
+                }
+            } else {
+                await repository
+                    .update(with: _value)
+            }
 
             switch result {
             case .success:
@@ -108,8 +136,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func update_ManagedId_Success() async throws {
+        @Test(arguments: [false, true])
+        func update_ManagedId_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _value = modelType.seeded(1)
             var existingValue = try await repositoryContext.perform(schedule: .immediate) {
@@ -128,9 +156,21 @@ extension CoreDataRepositoryTests {
 
             existingValue.bool.toggle()
 
-            let updatedValue = try await repository
-                .update(#require(existingValue.managedId), with: existingValue, transactionAuthor: transactionAuthor)
-                .get()
+            let updatedValue = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    try await repository
+                        .update(#require(existingValue.managedId), with: existingValue)
+                        .get()
+                }
+            } else {
+                try await repository
+                    .update(
+                        #require(existingValue.managedId),
+                        with: existingValue,
+                        transactionAuthor: transactionAuthor
+                    )
+                    .get()
+            }
 
             expectNoDifference(updatedValue, existingValue)
 
@@ -138,8 +178,8 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func update_ManagedId_Failure() async throws {
+        @Test(arguments: [false, true])
+        func update_ManagedId_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _value = modelType.seeded(1)
             var existingValue = try await repositoryContext.perform(schedule: .immediate) {
@@ -160,8 +200,15 @@ extension CoreDataRepositoryTests {
 
             existingValue.bool.toggle()
 
-            let result = try await repository
-                .update(#require(existingValue.managedId), with: existingValue)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .update(#require(existingValue.managedId), with: existingValue)
+                }
+            } else {
+                try await repository
+                    .update(#require(existingValue.managedId), with: existingValue)
+            }
 
             switch result {
             case .success:
@@ -173,8 +220,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func update_ManagedIdUrlReferencable_Success() async throws {
+        @Test(arguments: [false, true])
+        func update_ManagedIdUrlReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _value = modelType.seeded(1)
             var existingValue = try await repositoryContext.perform(schedule: .immediate) {
@@ -192,8 +239,15 @@ extension CoreDataRepositoryTests {
 
             existingValue.bool.toggle()
 
-            let updatedValue = try await repository
-                .update(with: existingValue, transactionAuthor: transactionAuthor).get()
+            let updatedValue = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    try await repository
+                        .update(with: existingValue).get()
+                }
+            } else {
+                try await repository
+                    .update(with: existingValue, transactionAuthor: transactionAuthor).get()
+            }
 
             expectNoDifference(updatedValue, existingValue)
 
@@ -201,12 +255,19 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func update_ManagedIdUrlReferencable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func update_ManagedIdUrlReferencable_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _value = modelType.seeded(1)
-            let result = await repository
-                .update(with: _value)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .update(with: _value)
+                }
+            } else {
+                await repository
+                    .update(with: _value)
+            }
 
             switch result {
             case .success:
@@ -218,8 +279,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func update_ManagedIdUrl_Success() async throws {
+        @Test(arguments: [false, true])
+        func update_ManagedIdUrl_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _value = modelType.seeded(1)
             var existingValue = try await repositoryContext.perform(schedule: .immediate) {
@@ -238,13 +299,24 @@ extension CoreDataRepositoryTests {
 
             existingValue.bool.toggle()
 
-            let updatedValue = try await repository
-                .update(
-                    #require(existingValue.managedIdUrl),
-                    with: existingValue,
-                    transactionAuthor: transactionAuthor
-                )
-                .get()
+            let updatedValue = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    try await repository
+                        .update(
+                            #require(existingValue.managedIdUrl),
+                            with: existingValue
+                        )
+                        .get()
+                }
+            } else {
+                try await repository
+                    .update(
+                        #require(existingValue.managedIdUrl),
+                        with: existingValue,
+                        transactionAuthor: transactionAuthor
+                    )
+                    .get()
+            }
 
             expectNoDifference(updatedValue, existingValue)
 
@@ -252,8 +324,8 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func update_ManagedIdUrl_Failure() async throws {
+        @Test(arguments: [false, true])
+        func update_ManagedIdUrl_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _value = modelType.seeded(1)
             var existingValue = try await repositoryContext.perform(schedule: .immediate) {
@@ -274,8 +346,15 @@ extension CoreDataRepositoryTests {
 
             existingValue.bool.toggle()
 
-            let result = try await repository
-                .update(#require(existingValue.managedIdUrl), with: existingValue)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .update(#require(existingValue.managedIdUrl), with: existingValue)
+                }
+            } else {
+                try await repository
+                    .update(#require(existingValue.managedIdUrl), with: existingValue)
+            }
 
             switch result {
             case .success:

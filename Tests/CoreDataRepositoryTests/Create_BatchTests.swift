@@ -17,8 +17,8 @@ extension CoreDataRepositoryTests {
         let repositoryContext: NSManagedObjectContext
         let repository: CoreDataRepository
 
-        @Test
-        func create_Fetchable_Success() async throws {
+        @Test(arguments: [false, true])
+        func create_Fetchable_Success(inTransaction: Bool) async throws {
             let modelType = FetchableModel_UuidId.self
 
             let fetchRequest = modelType.managedFetchRequest()
@@ -38,8 +38,15 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let (successful, failed) = await repository
-                .create(_values, transactionAuthor: transactionAuthor)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    await repository
+                        .create(_values, transactionAuthor: transactionAuthor)
+                }
+            } else {
+                await repository
+                    .create(_values, transactionAuthor: transactionAuthor)
+            }
 
             expectNoDifference(successful.count, _values.count)
             expectNoDifference(failed.count, 0)
@@ -60,8 +67,8 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func create_Fetchable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func create_Fetchable_Failure(inTransaction: Bool) async throws {
             let modelType = FetchableModel_UuidId.self
 
             let _values = [
@@ -85,30 +92,51 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let (successful, failed) = await repository
-                .create(_values, transactionAuthor: transactionAuthor)
+            if inTransaction {
+                try await withKnownIssue {
+                    _ = try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                        await repository
+                            .create(_values, transactionAuthor: transactionAuthor)
+                    }
+                } matching: { issue in
+                    guard let error = issue.error as? CoreDataError else {
+                        return false
+                    }
+                    switch error {
+                    case let .cocoa(cocoaError):
+                        let nsError = cocoaError as NSError
+                        return nsError.code == 133_021
+                            && nsError.domain == "NSCocoaErrorDomain"
+                    default:
+                        return false
+                    }
+                }
+            } else {
+                let (successful, failed) = await repository
+                    .create(_values, transactionAuthor: transactionAuthor)
 
-            expectNoDifference(successful.count, _values.count - 1)
-            expectNoDifference(failed.count, 1)
+                expectNoDifference(successful.count, _values.count - 1)
+                expectNoDifference(failed.count, 1)
 
-            for value in successful {
-                try await verify(value)
+                for value in successful {
+                    try await verify(value)
+                }
+
+                try await repositoryContext.perform {
+                    let data = try repositoryContext.fetch(fetchRequest)
+                    expectNoDifference(
+                        data.map(\.string).sorted(),
+                        ["1", "2", "3", "4", "5"],
+                        "Inserted titles should match expectation"
+                    )
+                }
+
+                try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
             }
-
-            try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
-                expectNoDifference(
-                    data.map(\.string).sorted(),
-                    ["1", "2", "3", "4", "5"],
-                    "Inserted titles should match expectation"
-                )
-            }
-
-            try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func create_Identifiable_Success() async throws {
+        @Test(arguments: [false, true])
+        func create_Identifiable_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
 
             let fetchRequest = modelType.managedFetchRequest()
@@ -128,8 +156,15 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let (successful, failed) = await repository
-                .create(_values, transactionAuthor: transactionAuthor)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    await repository
+                        .create(_values, transactionAuthor: transactionAuthor)
+                }
+            } else {
+                await repository
+                    .create(_values, transactionAuthor: transactionAuthor)
+            }
 
             expectNoDifference(successful.count, _values.count)
             expectNoDifference(failed.count, 0)
@@ -150,8 +185,8 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func create_Identifiable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func create_Identifiable_Failure(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
 
             let _values = [
@@ -175,30 +210,51 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let (successful, failed) = await repository
-                .create(_values, transactionAuthor: transactionAuthor)
+            if inTransaction {
+                try await withKnownIssue {
+                    _ = try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                        await repository
+                            .create(_values, transactionAuthor: transactionAuthor)
+                    }
+                } matching: { issue in
+                    guard let error = issue.error as? CoreDataError else {
+                        return false
+                    }
+                    switch error {
+                    case let .cocoa(cocoaError):
+                        let nsError = cocoaError as NSError
+                        return nsError.code == 133_021
+                            && nsError.domain == "NSCocoaErrorDomain"
+                    default:
+                        return false
+                    }
+                }
+            } else {
+                let (successful, failed) = await repository
+                    .create(_values, transactionAuthor: transactionAuthor)
 
-            expectNoDifference(successful.count, _values.count - 1)
-            expectNoDifference(failed.count, 1)
+                expectNoDifference(successful.count, _values.count - 1)
+                expectNoDifference(failed.count, 1)
 
-            for value in successful {
-                try await verify(value)
+                for value in successful {
+                    try await verify(value)
+                }
+
+                try await repositoryContext.perform {
+                    let data = try repositoryContext.fetch(fetchRequest)
+                    expectNoDifference(
+                        data.map(\.string).sorted(),
+                        ["1", "2", "3", "4", "5"],
+                        "Inserted titles should match expectation"
+                    )
+                }
+
+                try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
             }
-
-            try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
-                expectNoDifference(
-                    data.map(\.string).sorted(),
-                    ["1", "2", "3", "4", "5"],
-                    "Inserted titles should match expectation"
-                )
-            }
-
-            try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func create_ManagedIdUrlReferencable_Success() async throws {
+        @Test(arguments: [false, true])
+        func create_ManagedIdUrlReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let fetchRequest = modelType.managedFetchRequest()
@@ -218,8 +274,15 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let (successful, failed) = await repository
-                .create(_values, transactionAuthor: transactionAuthor)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    await repository
+                        .create(_values, transactionAuthor: transactionAuthor)
+                }
+            } else {
+                await repository
+                    .create(_values, transactionAuthor: transactionAuthor)
+            }
 
             expectNoDifference(successful.count, _values.count)
             expectNoDifference(failed.count, 0)
@@ -242,8 +305,8 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func create_ManagedIdUrlReferencable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func create_ManagedIdUrlReferencable_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let _values = [
@@ -267,30 +330,51 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let (successful, failed) = await repository
-                .create(_values, transactionAuthor: transactionAuthor)
+            if inTransaction {
+                try await withKnownIssue {
+                    _ = try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                        await repository
+                            .create(_values, transactionAuthor: transactionAuthor)
+                    }
+                } matching: { issue in
+                    guard let error = issue.error as? CoreDataError else {
+                        return false
+                    }
+                    switch error {
+                    case let .cocoa(cocoaError):
+                        let nsError = cocoaError as NSError
+                        return nsError.code == 133_021
+                            && nsError.domain == "NSCocoaErrorDomain"
+                    default:
+                        return false
+                    }
+                }
+            } else {
+                let (successful, failed) = await repository
+                    .create(_values, transactionAuthor: transactionAuthor)
 
-            expectNoDifference(successful.count, _values.count - 1)
-            expectNoDifference(failed.count, 1)
+                expectNoDifference(successful.count, _values.count - 1)
+                expectNoDifference(failed.count, 1)
 
-            for value in successful {
-                try await verify(value)
+                for value in successful {
+                    try await verify(value)
+                }
+
+                try await repositoryContext.perform {
+                    let data = try repositoryContext.fetch(fetchRequest)
+                    expectNoDifference(
+                        data.map(\.string).sorted(),
+                        ["1", "2", "3", "4", "5"],
+                        "Inserted titles should match expectation"
+                    )
+                }
+
+                try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
             }
-
-            try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
-                expectNoDifference(
-                    data.map(\.string).sorted(),
-                    ["1", "2", "3", "4", "5"],
-                    "Inserted titles should match expectation"
-                )
-            }
-
-            try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func create_ManagedIdReferencable_Success() async throws {
+        @Test(arguments: [false, true])
+        func create_ManagedIdReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
             let fetchRequest = modelType.managedFetchRequest()
@@ -310,8 +394,15 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let (successful, failed) = await repository
-                .create(_values, transactionAuthor: transactionAuthor)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    await repository
+                        .create(_values, transactionAuthor: transactionAuthor)
+                }
+            } else {
+                await repository
+                    .create(_values, transactionAuthor: transactionAuthor)
+            }
 
             expectNoDifference(successful.count, _values.count)
             expectNoDifference(failed.count, 0)
@@ -334,8 +425,8 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func create_ManagedIdReferencable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func create_ManagedIdReferencable_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
             let _values = [
@@ -359,30 +450,51 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let (successful, failed) = await repository
-                .create(_values, transactionAuthor: transactionAuthor)
+            if inTransaction {
+                try await withKnownIssue {
+                    _ = try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                        await repository
+                            .create(_values, transactionAuthor: transactionAuthor)
+                    }
+                } matching: { issue in
+                    guard let error = issue.error as? CoreDataError else {
+                        return false
+                    }
+                    switch error {
+                    case let .cocoa(cocoaError):
+                        let nsError = cocoaError as NSError
+                        return nsError.code == 133_021
+                            && nsError.domain == "NSCocoaErrorDomain"
+                    default:
+                        return false
+                    }
+                }
+            } else {
+                let (successful, failed) = await repository
+                    .create(_values, transactionAuthor: transactionAuthor)
 
-            expectNoDifference(successful.count, _values.count - 1)
-            expectNoDifference(failed.count, 1)
+                expectNoDifference(successful.count, _values.count - 1)
+                expectNoDifference(failed.count, 1)
 
-            for value in successful {
-                try await verify(value)
+                for value in successful {
+                    try await verify(value)
+                }
+
+                try await repositoryContext.perform {
+                    let data = try repositoryContext.fetch(fetchRequest)
+                    expectNoDifference(
+                        data.map(\.string).sorted(),
+                        ["1", "2", "3", "4", "5"],
+                        "Inserted titles should match expectation"
+                    )
+                }
+
+                try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
             }
-
-            try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
-                expectNoDifference(
-                    data.map(\.string).sorted(),
-                    ["1", "2", "3", "4", "5"],
-                    "Inserted titles should match expectation"
-                )
-            }
-
-            try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func createAtomically_Fetchable_Success() async throws {
+        @Test(arguments: [false, true])
+        func createAtomically_Fetchable_Success(inTransaction: Bool) async throws {
             let modelType = FetchableModel_UuidId.self
 
             let fetchRequest = modelType.managedFetchRequest()
@@ -402,8 +514,15 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let createdValues = try await repository
-                .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+            let createdValues = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    try await repository
+                        .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+                }
+            } else {
+                try await repository
+                    .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+            }
 
             expectNoDifference(createdValues.count, _values.count)
 
@@ -425,8 +544,8 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func createAtomically_Fetchable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func createAtomically_Fetchable_Failure(inTransaction: Bool) async throws {
             let modelType = FetchableModel_UuidId.self
 
             let _values = [
@@ -449,25 +568,46 @@ extension CoreDataRepositoryTests {
             }
             try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
 
-            let result = await repository
-                .createAtomically(_values)
+            if inTransaction {
+                try await withKnownIssue {
+                    _ = try await repository.withTransaction { _ in
+                        await repository
+                            .createAtomically(_values)
+                    }
+                } matching: { issue in
+                    guard let error = issue.error as? CoreDataError else {
+                        return false
+                    }
+                    switch error {
+                    case let .cocoa(cocoaError):
+                        let nsError = cocoaError as NSError
+                        return nsError.code == 133_021
+                            && nsError.domain == "NSCocoaErrorDomain"
+                    default:
+                        return false
+                    }
+                }
+            } else {
+                let result = await repository
+                    .createAtomically(_values)
 
-            switch result {
-            case .success:
-                Issue.record("Not expecting success")
-            case let .failure(.cocoa(cocoaError)):
-                expectNoDifference(cocoaError.code, .managedObjectConstraintMerge)
-            case let .failure(error):
-                Issue.record("Unexpected error: \(error)")
-            }
+                switch result {
+                case .success:
+                    Issue.record("Not expecting success")
+                case let .failure(.cocoa(cocoaError)):
+                    expectNoDifference(cocoaError.code, .managedObjectConstraintMerge)
+                case let .failure(error):
+                    Issue.record("Unexpected error: \(error)")
+                }
 
-            for value in _values[1 ... 4] {
-                try await verifyDoesNotExist(value)
+                for value in _values[1 ... 4] {
+                    try await verifyDoesNotExist(value)
+                }
             }
         }
 
-        @Test
-        func createAtomically_Identifiable_Success() async throws {
+        @Test(arguments: [false, true])
+        func createAtomically_Identifiable_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
 
             let fetchRequest = modelType.managedFetchRequest()
@@ -487,8 +627,15 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let createdValues = try await repository
-                .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+            let createdValues = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    try await repository
+                        .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+                }
+            } else {
+                try await repository
+                    .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+            }
 
             expectNoDifference(createdValues.count, _values.count)
 
@@ -510,8 +657,8 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func createAtomically_Identifiable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func createAtomically_Identifiable_Failure(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
 
             let _values = [
@@ -534,25 +681,46 @@ extension CoreDataRepositoryTests {
             }
             try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
 
-            let result = await repository
-                .createAtomically(_values)
+            if inTransaction {
+                try await withKnownIssue {
+                    _ = try await repository.withTransaction { _ in
+                        await repository
+                            .createAtomically(_values)
+                    }
+                } matching: { issue in
+                    guard let error = issue.error as? CoreDataError else {
+                        return false
+                    }
+                    switch error {
+                    case let .cocoa(cocoaError):
+                        let nsError = cocoaError as NSError
+                        return nsError.code == 133_021
+                            && nsError.domain == "NSCocoaErrorDomain"
+                    default:
+                        return false
+                    }
+                }
+            } else {
+                let result = await repository
+                    .createAtomically(_values)
 
-            switch result {
-            case .success:
-                Issue.record("Not expecting success")
-            case let .failure(.cocoa(cocoaError)):
-                expectNoDifference(cocoaError.code, .managedObjectConstraintMerge)
-            case let .failure(error):
-                Issue.record("Unexpected error: \(error)")
-            }
+                switch result {
+                case .success:
+                    Issue.record("Not expecting success")
+                case let .failure(.cocoa(cocoaError)):
+                    expectNoDifference(cocoaError.code, .managedObjectConstraintMerge)
+                case let .failure(error):
+                    Issue.record("Unexpected error: \(error)")
+                }
 
-            for value in _values[1 ... 4] {
-                try await verifyDoesNotExist(value)
+                for value in _values[1 ... 4] {
+                    try await verifyDoesNotExist(value)
+                }
             }
         }
 
-        @Test
-        func createAtomically_ManagedIdUrlReferencable_Success() async throws {
+        @Test(arguments: [false, true])
+        func createAtomically_ManagedIdUrlReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let fetchRequest = modelType.managedFetchRequest()
@@ -572,8 +740,15 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let createdValues = try await repository
-                .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+            let createdValues = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    try await repository
+                        .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+                }
+            } else {
+                try await repository
+                    .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+            }
 
             expectNoDifference(createdValues.count, _values.count)
 
@@ -595,8 +770,8 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func createAtomically_ManagedIdUrlReferencable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func createAtomically_ManagedIdUrlReferencable_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let _values = [
@@ -619,25 +794,46 @@ extension CoreDataRepositoryTests {
             }
             try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
 
-            let result = await repository
-                .createAtomically(_values)
+            if inTransaction {
+                try await withKnownIssue {
+                    _ = try await repository.withTransaction { _ in
+                        await repository
+                            .createAtomically(_values)
+                    }
+                } matching: { issue in
+                    guard let error = issue.error as? CoreDataError else {
+                        return false
+                    }
+                    switch error {
+                    case let .cocoa(cocoaError):
+                        let nsError = cocoaError as NSError
+                        return nsError.code == 133_021
+                            && nsError.domain == "NSCocoaErrorDomain"
+                    default:
+                        return false
+                    }
+                }
+            } else {
+                let result = await repository
+                    .createAtomically(_values)
 
-            switch result {
-            case .success:
-                Issue.record("Not expecting success")
-            case let .failure(.cocoa(cocoaError)):
-                expectNoDifference(cocoaError.code, .managedObjectConstraintMerge)
-            case let .failure(error):
-                Issue.record("Unexpected error: \(error)")
-            }
+                switch result {
+                case .success:
+                    Issue.record("Not expecting success")
+                case let .failure(.cocoa(cocoaError)):
+                    expectNoDifference(cocoaError.code, .managedObjectConstraintMerge)
+                case let .failure(error):
+                    Issue.record("Unexpected error: \(error)")
+                }
 
-            for value in _values[1 ... 4] {
-                try await verifyDoesNotExist(value)
+                for value in _values[1 ... 4] {
+                    try await verifyDoesNotExist(value)
+                }
             }
         }
 
-        @Test
-        func createAtomically_ManagedIdReferencable_Success() async throws {
+        @Test(arguments: [false, true])
+        func createAtomically_ManagedIdReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
             let fetchRequest = modelType.managedFetchRequest()
@@ -657,8 +853,15 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let createdValues = try await repository
-                .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+            let createdValues = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    try await repository
+                        .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+                }
+            } else {
+                try await repository
+                    .createAtomically(_values, transactionAuthor: transactionAuthor).get()
+            }
 
             expectNoDifference(createdValues.count, _values.count)
 
@@ -680,8 +883,8 @@ extension CoreDataRepositoryTests {
             try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
         }
 
-        @Test
-        func createAtomically_ManagedIdReferencable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func createAtomically_ManagedIdReferencable_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
             let _values = [
@@ -704,20 +907,41 @@ extension CoreDataRepositoryTests {
             }
             try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
 
-            let result = await repository
-                .createAtomically(_values)
+            if inTransaction {
+                try await withKnownIssue {
+                    _ = try await repository.withTransaction { _ in
+                        await repository
+                            .createAtomically(_values)
+                    }
+                } matching: { issue in
+                    guard let error = issue.error as? CoreDataError else {
+                        return false
+                    }
+                    switch error {
+                    case let .cocoa(cocoaError):
+                        let nsError = cocoaError as NSError
+                        return nsError.code == 133_021
+                            && nsError.domain == "NSCocoaErrorDomain"
+                    default:
+                        return false
+                    }
+                }
+            } else {
+                let result = await repository
+                    .createAtomically(_values)
 
-            switch result {
-            case .success:
-                Issue.record("Not expecting success")
-            case let .failure(.cocoa(cocoaError)):
-                expectNoDifference(cocoaError.code, .managedObjectConstraintMerge)
-            case let .failure(error):
-                Issue.record("Unexpected error: \(error)")
-            }
+                switch result {
+                case .success:
+                    Issue.record("Not expecting success")
+                case let .failure(.cocoa(cocoaError)):
+                    expectNoDifference(cocoaError.code, .managedObjectConstraintMerge)
+                case let .failure(error):
+                    Issue.record("Unexpected error: \(error)")
+                }
 
-            for value in _values[1 ... 4] {
-                try await verifyDoesNotExist(value)
+                for value in _values[1 ... 4] {
+                    try await verifyDoesNotExist(value)
+                }
             }
         }
 

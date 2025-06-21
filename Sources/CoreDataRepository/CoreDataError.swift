@@ -124,6 +124,19 @@ public enum CoreDataError: Error, Hashable, Sendable {
             )
         }
     }
+
+    @usableFromInline
+    static func catching<T>(block: () async throws -> T) async throws(Self) -> T {
+        do {
+            return try await block()
+        } catch let error as CoreDataError {
+            throw error
+        } catch let error as CocoaError {
+            throw .cocoa(error)
+        } catch {
+            throw .unknown(error as NSError)
+        }
+    }
 }
 
 extension CoreDataError: CustomNSError {

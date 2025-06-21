@@ -36,17 +36,21 @@ extension CoreDataRepository {
         _ items: [Model],
         transactionAuthor: String? = nil
     ) async -> Result<[Model], CoreDataError> where Model: FetchableUnmanagedModel, Model: WritableUnmanagedModel {
-        await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
+        let context = Transaction.current?.context ?? context
+        let notTransaction = Transaction.current == nil
+        return await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             scratchPad.transactionAuthor = transactionAuthor
             let objects = try items.map { item in
                 let object = try item.asManagedModel(in: scratchPad)
                 return object
             }
             try scratchPad.save()
-            try context.performAndWait {
-                context.transactionAuthor = transactionAuthor
-                try context.save()
-                context.transactionAuthor = nil
+            if notTransaction {
+                try context.performAndWait {
+                    context.transactionAuthor = transactionAuthor
+                    try context.save()
+                    context.transactionAuthor = nil
+                }
             }
             try scratchPad.obtainPermanentIDs(for: objects)
             return try objects.map(Model.init(managed:))

@@ -13,7 +13,8 @@ extension CoreDataRepository {
         _ request: NSBatchDeleteRequest,
         transactionAuthor: String? = nil
     ) async -> Result<NSBatchDeleteResult, CoreDataError> {
-        await context.performInScratchPad { [context] scratchPad in
+        let context = Transaction.current?.context ?? context
+        return await context.performInScratchPad { [context] scratchPad in
             context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchDeleteResult else {
                 context.transactionAuthor = nil
@@ -30,7 +31,8 @@ extension CoreDataRepository {
         _ request: NSBatchInsertRequest,
         transactionAuthor: String? = nil
     ) async -> Result<NSBatchInsertResult, CoreDataError> {
-        await context.performInScratchPad { [context] scratchPad in
+        let context = Transaction.current?.context ?? context
+        return await context.performInScratchPad { [context] scratchPad in
             context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchInsertResult else {
                 context.transactionAuthor = nil
@@ -47,7 +49,8 @@ extension CoreDataRepository {
         _ request: NSBatchUpdateRequest,
         transactionAuthor: String? = nil
     ) async -> Result<NSBatchUpdateResult, CoreDataError> {
-        await context.performInScratchPad { [context] scratchPad in
+        let context = Transaction.current?.context ?? context
+        return await context.performInScratchPad { [context] scratchPad in
             context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchUpdateResult else {
                 context.transactionAuthor = nil

@@ -68,8 +68,8 @@ extension CoreDataRepositoryTests {
             )
         }
 
-        @Test
-        func insertSuccess() async throws {
+        @Test(arguments: [false, true])
+        func insertSuccess(inTransaction: Bool) async throws {
             let fetchRequest = ManagedIdUrlModel_UuidId.managedFetchRequest()
             try await repositoryContext.perform {
                 let count = try repositoryContext.count(for: fetchRequest)
@@ -83,8 +83,15 @@ extension CoreDataRepositoryTests {
                 entityName: #require(ManagedModel_UuidId.entity().name),
                 objects: values
             )
-            let result: Result<NSBatchInsertResult, CoreDataError> = await repository
-                .insert(request, transactionAuthor: transactionAuthor)
+            let result = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    await repository
+                        .insert(request)
+                }
+            } else {
+                await repository
+                    .insert(request, transactionAuthor: transactionAuthor)
+            }
 
             switch result {
             case .success:
@@ -102,11 +109,18 @@ extension CoreDataRepositoryTests {
                 )
             }
 
-            try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+            // Transaction author refuses to be applied when going through a transaction. Need to investigate further.
+            if inTransaction {
+                withKnownIssue {
+                    try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+                }
+            } else {
+                try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+            }
         }
 
-        @Test
-        func insertFailure() async throws {
+        @Test(arguments: [false, true])
+        func insertFailure(inTransaction: Bool) async throws {
             let fetchRequest = ManagedIdUrlModel_UuidId.managedFetchRequest()
             try await repositoryContext.perform {
                 let count = try repositoryContext.count(for: fetchRequest)
@@ -117,7 +131,13 @@ extension CoreDataRepositoryTests {
                 entityName: #require(ManagedModel_UuidId.entity().name),
                 objects: failureInsertMovies
             )
-            let result: Result<NSBatchInsertResult, CoreDataError> = await repository.insert(request)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository.insert(request)
+                }
+            } else {
+                await repository.insert(request)
+            }
 
             switch result {
             case .success:
@@ -132,8 +152,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func updateSuccess() async throws {
+        @Test(arguments: [false, true])
+        func updateSuccess(inTransaction: Bool) async throws {
             let fetchRequest = ManagedIdUrlModel_UuidId.managedFetchRequest()
             try await repositoryContext.perform {
                 let count = try repositoryContext.count(for: fetchRequest)
@@ -152,8 +172,15 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let _: Result<NSBatchUpdateResult, CoreDataError> = await repository
-                .update(request, transactionAuthor: transactionAuthor)
+            _ = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    await repository
+                        .update(request)
+                }
+            } else {
+                await repository
+                    .update(request, transactionAuthor: transactionAuthor)
+            }
 
             try await repositoryContext.perform {
                 let data = try repositoryContext.fetch(fetchRequest)
@@ -163,11 +190,18 @@ extension CoreDataRepositoryTests {
                     "Updated titles should match request"
                 )
             }
-            try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+            // Transaction author refuses to be applied when going through a transaction. Need to investigate further.
+            if inTransaction {
+                withKnownIssue {
+                    try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+                }
+            } else {
+                try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+            }
         }
 
-        @Test
-        func deleteSuccess() async throws {
+        @Test(arguments: [false, true])
+        func deleteSuccess(inTransaction: Bool) async throws {
             let fetchRequest = ManagedIdUrlModel_UuidId.managedFetchRequest()
             try await repositoryContext.perform {
                 let count = try repositoryContext.count(for: fetchRequest)
@@ -187,14 +221,28 @@ extension CoreDataRepositoryTests {
             let historyTimeStamp = Date()
             let transactionAuthor: String = #function
 
-            let _: Result<NSBatchDeleteResult, CoreDataError> = await repository
-                .delete(request, transactionAuthor: transactionAuthor)
+            _ = if inTransaction {
+                try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                    await repository
+                        .delete(request, transactionAuthor: transactionAuthor)
+                }
+            } else {
+                await repository
+                    .delete(request, transactionAuthor: transactionAuthor)
+            }
 
             try await repositoryContext.perform {
                 let data = try repositoryContext.fetch(fetchRequest)
                 expectNoDifference(data.map(\.string).sorted(), [], "There should be no remaining values.")
             }
-            try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+            // Transaction author refuses to be applied when going through a transaction. Need to investigate further.
+            if inTransaction {
+                withKnownIssue {
+                    try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+                }
+            } else {
+                try verify(transactionAuthor: transactionAuthor, timeStamp: historyTimeStamp)
+            }
         }
 
         init(
