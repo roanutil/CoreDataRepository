@@ -70,7 +70,11 @@ public final class CoreDataRepository: @unchecked Sendable {
                     return result
                 }
                 try scratchPad.performAndWait {
-                    guard scratchPad.hasChanges, !transaction.canceled else {
+                    guard scratchPad.hasChanges else {
+                        return
+                    }
+                    guard !transaction.canceled else {
+                        scratchPad.reset()
                         return
                     }
                     do {
@@ -81,7 +85,11 @@ public final class CoreDataRepository: @unchecked Sendable {
                     }
                 }
                 try context.performAndWait {
-                    guard context.hasChanges, !transaction.canceled else {
+                    guard context.hasChanges else {
+                        return
+                    }
+                    guard !transaction.canceled else {
+                        context.rollback()
                         return
                     }
                     context.transactionAuthor = transactionAuthor
