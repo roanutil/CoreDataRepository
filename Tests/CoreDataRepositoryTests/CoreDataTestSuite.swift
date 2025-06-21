@@ -132,6 +132,21 @@ extension CoreDataTestSuite {
         }
     }
 
+    func verifyDoesNotExist(transactionAuthor: String?, timeStamp: Date) throws {
+        let historyRequest = NSPersistentHistoryChangeRequest.fetchHistory(after: timeStamp)
+        try repositoryContext.performAndWait {
+            let historyResult = try #require(repositoryContext.execute(historyRequest) as? NSPersistentHistoryResult)
+            let history = try #require(historyResult.result as? [NSPersistentHistoryTransaction])
+            if transactionAuthor == nil {
+                #expect(history.count == 0)
+            } else {
+                for historyTransaction in history {
+                    #expect(historyTransaction.author != transactionAuthor)
+                }
+            }
+        }
+    }
+
     func delete(managedId: NSManagedObjectID) throws {
         try repositoryContext.performAndWait {
             let managed = repositoryContext.object(with: managedId)
