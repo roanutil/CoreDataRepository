@@ -8,272 +8,301 @@ import CoreData
 import CoreDataRepository
 import CustomDump
 import Internal
-import XCTest
+import Testing
 
-final class DeleteTests: CoreDataXCTestCase {
-    func testDelete_Identifiable_Success() async throws {
-        let modelType = IdentifiableModel_UuidId.self
-        let transactionAuthor: String = #function
-        let _value = modelType.seeded(1)
-        let existingValue = try await repositoryContext().perform(schedule: .immediate) {
-            let managed = try _value.asManagedModel(in: self.repositoryContext())
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-            return try modelType.init(managed: managed)
-        }
-        expectNoDifference(existingValue, _value)
+extension CoreDataRepositoryTests {
+    @Suite
+    struct DeleteTests: CoreDataTestSuite {
+        let container: NSPersistentContainer
+        let repositoryContext: NSManagedObjectContext
+        let repository: CoreDataRepository
 
-        try await verify(existingValue)
+        @Test
+        func delete_Identifiable_Success() async throws {
+            let modelType = IdentifiableModel_UuidId.self
+            let transactionAuthor: String = #function
+            let _value = modelType.seeded(1)
+            let existingValue = try await repositoryContext.perform(schedule: .immediate) {
+                let managed = try _value.asManagedModel(in: repositoryContext)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+                return try modelType.init(managed: managed)
+            }
+            expectNoDifference(existingValue, _value)
 
-        _ = try await repository()
-            .delete(_value, transactionAuthor: transactionAuthor).get()
-    }
+            try await verify(existingValue)
 
-    func testDelete_Identifiable_Failure() async throws {
-        let modelType = IdentifiableModel_UuidId.self
-        let _value = modelType.seeded(1)
-        let result = try await repository()
-            .delete(_value)
-
-        switch result {
-        case .success:
-            XCTFail("Not expecting success")
-        case .failure(.noMatchFoundWhenReadingItem):
-            return
-        case let .failure(error):
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
-
-    func testDelete_ManagedIdReferencable_Success() async throws {
-        let modelType = ManagedIdModel_UuidId.self
-        let transactionAuthor: String = #function
-        let _value = modelType.seeded(1)
-        let existingValue = try await repositoryContext().perform(schedule: .immediate) {
-            let managed = try _value.asManagedModel(in: self.repositoryContext())
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-            return try modelType.init(managed: managed)
-        }
-        expectNoDifference(existingValue.removingManagedId(), _value)
-
-        try await verify(existingValue)
-
-        _ = try await repository()
-            .delete(existingValue, transactionAuthor: transactionAuthor)
-    }
-
-    func testDelete_ManagedIdReferencable_Failure() async throws {
-        let modelType = ManagedIdModel_UuidId.self
-
-        let _value = try await repositoryContext().perform(schedule: .immediate) {
-            let managed = try modelType.seeded(1).asManagedModel(in: self.repositoryContext())
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-
-            try self.repositoryContext().obtainPermanentIDs(for: [managed])
-            let value = try modelType.init(managed: managed)
-
-            try self.repositoryContext().delete(managed)
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-
-            return value
+            _ = try await repository
+                .delete(_value, transactionAuthor: transactionAuthor).get()
         }
 
-        let result = try await repository()
-            .delete(_value)
+        @Test
+        func delete_Identifiable_Failure() async throws {
+            let modelType = IdentifiableModel_UuidId.self
+            let _value = modelType.seeded(1)
+            let result = await repository
+                .delete(_value)
 
-        switch result {
-        case .success:
-            XCTFail("Not expecting success")
-        case let .failure(.cocoa(cocoaError)):
-            XCTAssertEqual(cocoaError.code, .managedObjectReferentialIntegrity)
-        case let .failure(error):
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
-
-    func testDelete_ManagedIdReferencable_NoManagedId_Failure() async throws {
-        let modelType = ManagedIdModel_UuidId.self
-
-        let _value = modelType.seeded(1)
-
-        let result = try await repository()
-            .delete(_value)
-
-        switch result {
-        case .success:
-            XCTFail("Not expecting success")
-        case .failure(.noObjectIdOnItem):
-            return
-        case let .failure(error):
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
-
-    func testDelete_ManagedId_Success() async throws {
-        let modelType = ManagedIdModel_UuidId.self
-        let transactionAuthor: String = #function
-        let _value = modelType.seeded(1)
-        let existingValue = try await repositoryContext().perform(schedule: .immediate) {
-            let managed = try _value.asManagedModel(in: self.repositoryContext())
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-            return try modelType.init(managed: managed)
-        }
-        expectNoDifference(existingValue.removingManagedId(), _value)
-
-        try await verify(existingValue)
-
-        _ = try await repository()
-            .delete(XCTUnwrap(existingValue.managedId), transactionAuthor: transactionAuthor)
-    }
-
-    func testDelete_ManagedId_Failure() async throws {
-        let modelType = ManagedIdModel_UuidId.self
-
-        let _value = try await repositoryContext().perform(schedule: .immediate) {
-            let managed = try modelType.seeded(1).asManagedModel(in: self.repositoryContext())
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-
-            try self.repositoryContext().obtainPermanentIDs(for: [managed])
-            let value = try modelType.init(managed: managed)
-
-            try self.repositoryContext().delete(managed)
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-
-            return value
+            switch result {
+            case .success:
+                Issue.record("Not expecting success")
+            case .failure(.noMatchFoundWhenReadingItem):
+                return
+            case let .failure(error):
+                Issue.record("Unexpected error: \(error)")
+            }
         }
 
-        let result = try await repository()
-            .delete(XCTUnwrap(_value.managedId))
+        @Test
+        func delete_ManagedIdReferencable_Success() async throws {
+            let modelType = ManagedIdModel_UuidId.self
+            let transactionAuthor: String = #function
+            let _value = modelType.seeded(1)
+            let existingValue = try await repositoryContext.perform(schedule: .immediate) {
+                let managed = try _value.asManagedModel(in: repositoryContext)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+                return try modelType.init(managed: managed)
+            }
+            expectNoDifference(existingValue.removingManagedId(), _value)
 
-        switch result {
-        case .success:
-            XCTFail("Not expecting success")
-        case let .failure(.cocoa(cocoaError)):
-            XCTAssertEqual(cocoaError.code, .managedObjectReferentialIntegrity)
-        case let .failure(error):
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
+            try await verify(existingValue)
 
-    func testDelete_ManagedIdUrlReferencable_Success() async throws {
-        let modelType = ManagedIdUrlModel_UuidId.self
-        let transactionAuthor: String = #function
-        let _value = modelType.seeded(1)
-        let existingValue = try await repositoryContext().perform(schedule: .immediate) {
-            let managed = try _value.asManagedModel(in: self.repositoryContext())
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-            return try modelType.init(managed: managed)
-        }
-        expectNoDifference(existingValue.removingManagedIdUrl(), _value)
-
-        try await verify(existingValue)
-
-        _ = try await repository()
-            .delete(existingValue, transactionAuthor: transactionAuthor)
-    }
-
-    func testDelete_ManagedIdUrlReferencable_Failure() async throws {
-        let modelType = ManagedIdUrlModel_UuidId.self
-
-        let _value = try await repositoryContext().perform(schedule: .immediate) {
-            let managed = try modelType.seeded(1).asManagedModel(in: self.repositoryContext())
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-
-            try self.repositoryContext().obtainPermanentIDs(for: [managed])
-            let value = try modelType.init(managed: managed)
-
-            try self.repositoryContext().delete(managed)
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-
-            return value
+            _ = await repository
+                .delete(existingValue, transactionAuthor: transactionAuthor)
         }
 
-        let result = try await repository()
-            .delete(_value)
+        @Test
+        func delete_ManagedIdReferencable_Failure() async throws {
+            let modelType = ManagedIdModel_UuidId.self
 
-        switch result {
-        case .success:
-            XCTFail("Not expecting success")
-        case let .failure(.cocoa(cocoaError)):
-            XCTAssertEqual(cocoaError.code, .managedObjectReferentialIntegrity)
-        case let .failure(error):
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
+            let _value = try await repositoryContext.perform(schedule: .immediate) {
+                let managed = try modelType.seeded(1).asManagedModel(in: repositoryContext)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
 
-    func testDelete_ManagedIdUrlReferencable_NoManagedIdUrl_Failure() async throws {
-        let modelType = ManagedIdUrlModel_UuidId.self
+                try repositoryContext.obtainPermanentIDs(for: [managed])
+                let value = try modelType.init(managed: managed)
 
-        let _value = modelType.seeded(1)
+                repositoryContext.delete(managed)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
 
-        let result = try await repository()
-            .delete(_value)
+                return value
+            }
 
-        switch result {
-        case .success:
-            XCTFail("Not expecting success")
-        case .failure(.noUrlOnItemToMapToObjectId):
-            return
-        case let .failure(error):
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
+            let result = await repository
+                .delete(_value)
 
-    func testDelete_ManagedIdUrl_Success() async throws {
-        let modelType = ManagedIdUrlModel_UuidId.self
-        let transactionAuthor: String = #function
-        let _value = modelType.seeded(1)
-        let existingValue = try await repositoryContext().perform(schedule: .immediate) {
-            let managed = try _value.asManagedModel(in: self.repositoryContext())
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-            return try modelType.init(managed: managed)
-        }
-        expectNoDifference(existingValue.removingManagedIdUrl(), _value)
-
-        try await verify(existingValue)
-
-        _ = try await repository()
-            .delete(XCTUnwrap(existingValue.managedIdUrl), transactionAuthor: transactionAuthor)
-    }
-
-    func testDelete_ManagedIdUrl_Failure() async throws {
-        let modelType = ManagedIdUrlModel_UuidId.self
-
-        let _value = try await repositoryContext().perform(schedule: .immediate) {
-            let managed = try modelType.seeded(1).asManagedModel(in: self.repositoryContext())
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-
-            try self.repositoryContext().obtainPermanentIDs(for: [managed])
-            let value = try modelType.init(managed: managed)
-
-            try self.repositoryContext().delete(managed)
-            try self.repositoryContext().save()
-            try self.repositoryContext().parent?.save()
-
-            return value
+            switch result {
+            case .success:
+                Issue.record("Not expecting success")
+            case let .failure(.cocoa(cocoaError)):
+                expectNoDifference(cocoaError.code, .managedObjectReferentialIntegrity)
+            case let .failure(error):
+                Issue.record("Unexpected error: \(error)")
+            }
         }
 
-        let result = try await repository()
-            .delete(XCTUnwrap(_value.managedIdUrl))
+        @Test
+        func delete_ManagedIdReferencable_NoManagedId_Failure() async throws {
+            let modelType = ManagedIdModel_UuidId.self
 
-        switch result {
-        case .success:
-            XCTFail("Not expecting success")
-        case let .failure(.cocoa(cocoaError)):
-            XCTAssertEqual(cocoaError.code, .managedObjectReferentialIntegrity)
-        case let .failure(error):
-            XCTFail("Unexpected error: \(error)")
+            let _value = modelType.seeded(1)
+
+            let result = await repository
+                .delete(_value)
+
+            switch result {
+            case .success:
+                Issue.record("Not expecting success")
+            case .failure(.noObjectIdOnItem):
+                return
+            case let .failure(error):
+                Issue.record("Unexpected error: \(error)")
+            }
+        }
+
+        @Test
+        func delete_ManagedId_Success() async throws {
+            let modelType = ManagedIdModel_UuidId.self
+            let transactionAuthor: String = #function
+            let _value = modelType.seeded(1)
+            let existingValue = try await repositoryContext.perform(schedule: .immediate) {
+                let managed = try _value.asManagedModel(in: repositoryContext)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+                return try modelType.init(managed: managed)
+            }
+            expectNoDifference(existingValue.removingManagedId(), _value)
+
+            try await verify(existingValue)
+
+            _ = try await repository
+                .delete(#require(existingValue.managedId), transactionAuthor: transactionAuthor)
+        }
+
+        @Test
+        func delete_ManagedId_Failure() async throws {
+            let modelType = ManagedIdModel_UuidId.self
+
+            let _value = try await repositoryContext.perform(schedule: .immediate) {
+                let managed = try modelType.seeded(1).asManagedModel(in: repositoryContext)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+
+                try repositoryContext.obtainPermanentIDs(for: [managed])
+                let value = try modelType.init(managed: managed)
+
+                repositoryContext.delete(managed)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+
+                return value
+            }
+
+            let result = try await repository
+                .delete(#require(_value.managedId))
+
+            switch result {
+            case .success:
+                Issue.record("Not expecting success")
+            case let .failure(.cocoa(cocoaError)):
+                expectNoDifference(cocoaError.code, .managedObjectReferentialIntegrity)
+            case let .failure(error):
+                Issue.record("Unexpected error: \(error)")
+            }
+        }
+
+        @Test
+        func delete_ManagedIdUrlReferencable_Success() async throws {
+            let modelType = ManagedIdUrlModel_UuidId.self
+            let transactionAuthor: String = #function
+            let _value = modelType.seeded(1)
+            let existingValue = try await repositoryContext.perform(schedule: .immediate) {
+                let managed = try _value.asManagedModel(in: repositoryContext)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+                return try modelType.init(managed: managed)
+            }
+            expectNoDifference(existingValue.removingManagedIdUrl(), _value)
+
+            try await verify(existingValue)
+
+            _ = await repository
+                .delete(existingValue, transactionAuthor: transactionAuthor)
+        }
+
+        @Test
+        func delete_ManagedIdUrlReferencable_Failure() async throws {
+            let modelType = ManagedIdUrlModel_UuidId.self
+
+            let _value = try await repositoryContext.perform(schedule: .immediate) {
+                let managed = try modelType.seeded(1).asManagedModel(in: repositoryContext)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+
+                try repositoryContext.obtainPermanentIDs(for: [managed])
+                let value = try modelType.init(managed: managed)
+
+                repositoryContext.delete(managed)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+
+                return value
+            }
+
+            let result = await repository
+                .delete(_value)
+
+            switch result {
+            case .success:
+                Issue.record("Not expecting success")
+            case let .failure(.cocoa(cocoaError)):
+                expectNoDifference(cocoaError.code, .managedObjectReferentialIntegrity)
+            case let .failure(error):
+                Issue.record("Unexpected error: \(error)")
+            }
+        }
+
+        @Test
+        func delete_ManagedIdUrlReferencable_NoManagedIdUrl_Failure() async throws {
+            let modelType = ManagedIdUrlModel_UuidId.self
+
+            let _value = modelType.seeded(1)
+
+            let result = await repository
+                .delete(_value)
+
+            switch result {
+            case .success:
+                Issue.record("Not expecting success")
+            case .failure(.noUrlOnItemToMapToObjectId):
+                return
+            case let .failure(error):
+                Issue.record("Unexpected error: \(error)")
+            }
+        }
+
+        @Test
+        func delete_ManagedIdUrl_Success() async throws {
+            let modelType = ManagedIdUrlModel_UuidId.self
+            let transactionAuthor: String = #function
+            let _value = modelType.seeded(1)
+            let existingValue = try await repositoryContext.perform(schedule: .immediate) {
+                let managed = try _value.asManagedModel(in: repositoryContext)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+                return try modelType.init(managed: managed)
+            }
+            expectNoDifference(existingValue.removingManagedIdUrl(), _value)
+
+            try await verify(existingValue)
+
+            _ = try await repository
+                .delete(#require(existingValue.managedIdUrl), transactionAuthor: transactionAuthor)
+        }
+
+        @Test
+        func delete_ManagedIdUrl_Failure() async throws {
+            let modelType = ManagedIdUrlModel_UuidId.self
+
+            let _value = try await repositoryContext.perform(schedule: .immediate) {
+                let managed = try modelType.seeded(1).asManagedModel(in: repositoryContext)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+
+                try repositoryContext.obtainPermanentIDs(for: [managed])
+                let value = try modelType.init(managed: managed)
+
+                repositoryContext.delete(managed)
+                try repositoryContext.save()
+                try repositoryContext.parent?.save()
+
+                return value
+            }
+
+            let result = try await repository
+                .delete(#require(_value.managedIdUrl))
+
+            switch result {
+            case .success:
+                Issue.record("Not expecting success")
+            case let .failure(.cocoa(cocoaError)):
+                expectNoDifference(cocoaError.code, .managedObjectReferentialIntegrity)
+            case let .failure(error):
+                Issue.record("Unexpected error: \(error)")
+            }
+        }
+
+        init(
+            container: NSPersistentContainer,
+            repositoryContext: NSManagedObjectContext,
+            repository: CoreDataRepository
+        ) {
+            self.container = container
+            self.repositoryContext = repositoryContext
+            self.repository = repository
         }
     }
 }
