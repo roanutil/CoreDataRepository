@@ -21,6 +21,10 @@ extension CoreDataRepository {
             _ scratchPadContext: NSManagedObjectContext
         ) throws -> T
     ) async -> Result<T, CoreDataError> {
-        await context.performInScratchPad(schedule: schedule) { [context] scratchPad in try block(context, scratchPad) }
+        let context = Transaction.current?.context ?? context
+        return await context.performInScratchPad(schedule: schedule) { [context] scratchPad in try block(
+            context,
+            scratchPad
+        ) }
     }
 }

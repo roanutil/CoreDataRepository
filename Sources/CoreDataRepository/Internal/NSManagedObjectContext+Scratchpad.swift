@@ -45,7 +45,8 @@ extension NSManagedObjectContext {
         return .success(output)
     }
 
-    private func scratchPadContext() -> NSManagedObjectContext {
+    @usableFromInline
+    func scratchPadContext() -> NSManagedObjectContext {
         let scratchPad = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
         scratchPad.automaticallyMergesChangesFromParent = false
         scratchPad.parent = self

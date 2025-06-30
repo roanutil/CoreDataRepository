@@ -14,7 +14,8 @@ extension CoreDataRepository {
         _ request: NSFetchRequest<Model.ManagedModel>,
         as _: Model.Type
     ) async -> Result<[Model], CoreDataError> {
-        await context.performInChild { fetchContext in
+        let context = Transaction.current?.context ?? context
+        return await context.performInChild { fetchContext in
             try fetchContext.fetch(request).map(Model.init(managed:))
         }
     }
@@ -63,7 +64,8 @@ extension CoreDataRepository {
         request: NSFetchRequest<Managed>,
         operation: @escaping (_ results: [Managed]) throws -> Output
     ) async -> Result<Output, CoreDataError> where Managed: NSManagedObject {
-        await context.performInChild { fetchContext in
+        let context = Transaction.current?.context ?? context
+        return await context.performInChild { fetchContext in
             try operation(fetchContext.fetch(request))
         }
     }

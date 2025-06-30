@@ -33,7 +33,7 @@ extension CoreDataRepository {
         default:
             await Self.send(
                 function: function,
-                context: context,
+                context: Transaction.current?.context ?? context,
                 predicate: predicate,
                 entityDesc: entityDesc,
                 attributeDesc: attributeDesc,
@@ -55,7 +55,7 @@ extension CoreDataRepository {
     ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
         await Self.send(
             function: .average,
-            context: context,
+            context: Transaction.current?.context ?? context,
             predicate: predicate,
             entityDesc: entityDesc,
             attributeDesc: attributeDesc,
@@ -124,7 +124,7 @@ extension CoreDataRepository {
         entityDesc: NSEntityDescription,
         as _: Value.Type
     ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
-        await context.performInScratchPad { scratchPad in
+        await context.performInChild { scratchPad in
             do {
                 let request = try NSFetchRequest<NSDictionary>
                     .countRequest(predicate: predicate, entityDesc: entityDesc)
@@ -193,7 +193,7 @@ extension CoreDataRepository {
     ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
         await Self.send(
             function: .max,
-            context: context,
+            context: Transaction.current?.context ?? context,
             predicate: predicate,
             entityDesc: entityDesc,
             attributeDesc: attributeDesc,
@@ -268,7 +268,7 @@ extension CoreDataRepository {
     ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
         await Self.send(
             function: .min,
-            context: context,
+            context: Transaction.current?.context ?? context,
             predicate: predicate,
             entityDesc: entityDesc,
             attributeDesc: attributeDesc,
@@ -343,7 +343,7 @@ extension CoreDataRepository {
     ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
         await Self.send(
             function: .sum,
-            context: context,
+            context: Transaction.current?.context ?? context,
             predicate: predicate,
             entityDesc: entityDesc,
             attributeDesc: attributeDesc,
@@ -428,7 +428,7 @@ extension CoreDataRepository {
         guard entityDesc == attributeDesc.entity else {
             return .failure(.propertyDoesNotMatchEntity)
         }
-        return await context.performInScratchPad { scratchPad in
+        return await context.performInChild { scratchPad in
             let request = try NSFetchRequest<NSDictionary>.request(
                 function: function,
                 predicate: predicate,

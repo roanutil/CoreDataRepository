@@ -19,8 +19,8 @@ extension CoreDataRepositoryTests {
 
         // MARK: Non Atomic
 
-        @Test
-        func read_Identifiable_Success() async throws {
+        @Test(arguments: [false, true])
+        func read_Identifiable_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -41,15 +41,22 @@ extension CoreDataRepositoryTests {
                 try await verify(value)
             }
 
-            let (successful, failed) = await repository
-                .read(existingValues)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .read(existingValues)
+                }
+            } else {
+                await repository
+                    .read(existingValues)
+            }
 
             expectNoDifference(successful.count, _values.count)
             expectNoDifference(failed.count, 0)
         }
 
-        @Test
-        func read_Identifiable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func read_Identifiable_Failure(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -58,15 +65,22 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(4),
                 modelType.seeded(5),
             ]
-            let (successful, failed) = await repository
-                .read(_values)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .read(_values)
+                }
+            } else {
+                await repository
+                    .read(_values)
+            }
 
             expectNoDifference(successful.count, 0)
             expectNoDifference(failed.count, _values.count)
         }
 
-        @Test
-        func read_ManagedIdReferencable_Success() async throws {
+        @Test(arguments: [false, true])
+        func read_ManagedIdReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -87,15 +101,22 @@ extension CoreDataRepositoryTests {
                 try await verify(value)
             }
 
-            let (successful, failed) = await repository
-                .read(existingValues)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .read(existingValues)
+                }
+            } else {
+                await repository
+                    .read(existingValues)
+            }
 
             expectNoDifference(successful.count, _values.count)
             expectNoDifference(failed.count, 0)
         }
 
-        @Test
-        func read_ManagedIdReferencable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func read_ManagedIdReferencable_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
             let _values = try await repositoryContext.perform(schedule: .immediate) {
@@ -119,15 +140,22 @@ extension CoreDataRepositoryTests {
                 return values
             }
 
-            let (successful, failed) = await repository
-                .read(_values)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .read(_values)
+                }
+            } else {
+                await repository
+                    .read(_values)
+            }
 
             expectNoDifference(successful.count, _values.count - 1)
             expectNoDifference(failed.count, 1)
         }
 
-        @Test
-        func read_ManagedIdReferencable_NoManagedId_Failure() async throws {
+        @Test(arguments: [false, true])
+        func read_ManagedIdReferencable_NoManagedId_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
             let _values = [
@@ -138,15 +166,22 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let (successful, failed) = await repository
-                .read(_values)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .read(_values)
+                }
+            } else {
+                await repository
+                    .read(_values)
+            }
 
             expectNoDifference(successful.count, 0)
             expectNoDifference(failed.count, _values.count)
         }
 
-        @Test
-        func read_ManagedId_Success() async throws {
+        @Test(arguments: [false, true])
+        func read_ManagedId_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -167,15 +202,22 @@ extension CoreDataRepositoryTests {
                 try await verify(value)
             }
 
-            let (successful, failed) = await repository
-                .read(existingValues.compactMap(\.managedId), as: modelType)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .read(existingValues.compactMap(\.managedId), as: modelType)
+                }
+            } else {
+                await repository
+                    .read(existingValues.compactMap(\.managedId), as: modelType)
+            }
 
             expectNoDifference(successful.count, _values.count)
             expectNoDifference(failed.count, 0)
         }
 
-        @Test
-        func read_ManagedId_Failure() async throws {
+        @Test(arguments: [false, true])
+        func read_ManagedId_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
             let _values = try await repositoryContext.perform(schedule: .immediate) {
@@ -204,15 +246,22 @@ extension CoreDataRepositoryTests {
             }
             try await verifyDoesNotExist(_values[0])
 
-            let (successful, failed) = try await repository
-                .read(_values.map { try #require($0.managedId) }, as: modelType)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .read(_values.map { try #require($0.managedId) }, as: modelType)
+                }
+            } else {
+                try await repository
+                    .read(_values.map { try #require($0.managedId) }, as: modelType)
+            }
 
             expectNoDifference(successful.count, _values.count - 1)
             expectNoDifference(failed.count, 1)
         }
 
-        @Test
-        func read_ManagedIdUrlReferencable_Success() async throws {
+        @Test(arguments: [false, true])
+        func read_ManagedIdUrlReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -233,15 +282,22 @@ extension CoreDataRepositoryTests {
                 try await verify(value)
             }
 
-            let (successful, failed) = await repository
-                .read(existingValues)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .read(existingValues)
+                }
+            } else {
+                await repository
+                    .read(existingValues)
+            }
 
             expectNoDifference(successful.count, _values.count)
             expectNoDifference(failed.count, 0)
         }
 
-        @Test
-        func read_ManagedIdUrlReferencable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func read_ManagedIdUrlReferencable_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let _values = try await repositoryContext.perform(schedule: .immediate) {
@@ -265,15 +321,22 @@ extension CoreDataRepositoryTests {
                 return values
             }
 
-            let (successful, failed) = await repository
-                .read(_values)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .read(_values)
+                }
+            } else {
+                await repository
+                    .read(_values)
+            }
 
             expectNoDifference(successful.count, _values.count - 1)
             expectNoDifference(failed.count, 1)
         }
 
-        @Test
-        func read_ManagedIdUrlReferencable_NoManagedIdUrl_Failure() async throws {
+        @Test(arguments: [false, true])
+        func read_ManagedIdUrlReferencable_NoManagedIdUrl_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let _values = [
@@ -284,15 +347,22 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let (successful, failed) = await repository
-                .read(_values)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .read(_values)
+                }
+            } else {
+                await repository
+                    .read(_values)
+            }
 
             expectNoDifference(successful.count, 0)
             expectNoDifference(failed.count, _values.count)
         }
 
-        @Test
-        func read_ManagedIdUrl_Success() async throws {
+        @Test(arguments: [false, true])
+        func read_ManagedIdUrl_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -313,15 +383,22 @@ extension CoreDataRepositoryTests {
                 try await verify(value)
             }
 
-            let (successful, failed) = await repository
-                .read(existingValues.compactMap(\.managedIdUrl), as: modelType)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .read(existingValues.compactMap(\.managedIdUrl), as: modelType)
+                }
+            } else {
+                await repository
+                    .read(existingValues.compactMap(\.managedIdUrl), as: modelType)
+            }
 
             expectNoDifference(successful.count, _values.count)
             expectNoDifference(failed.count, 0)
         }
 
-        @Test
-        func read_ManagedIdUrl_Failure() async throws {
+        @Test(arguments: [false, true])
+        func read_ManagedIdUrl_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let _values = try await repositoryContext.perform(schedule: .immediate) {
@@ -345,8 +422,15 @@ extension CoreDataRepositoryTests {
                 return values
             }
 
-            let (successful, failed) = try await repository
-                .read(_values.map { try #require($0.managedIdUrl) }, as: modelType)
+            let (successful, failed) = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .read(_values.map { try #require($0.managedIdUrl) }, as: modelType)
+                }
+            } else {
+                try await repository
+                    .read(_values.map { try #require($0.managedIdUrl) }, as: modelType)
+            }
 
             expectNoDifference(successful.count, _values.count - 1)
             expectNoDifference(failed.count, 1)
@@ -354,8 +438,8 @@ extension CoreDataRepositoryTests {
 
         // MARK: Atomic
 
-        @Test
-        func readAtomically_Identifiable_Success() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_Identifiable_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -376,14 +460,21 @@ extension CoreDataRepositoryTests {
                 try await verify(value)
             }
 
-            let values = try await repository
-                .readAtomically(existingValues).get()
+            let values = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .readAtomically(existingValues).get()
+                }
+            } else {
+                try await repository
+                    .readAtomically(existingValues).get()
+            }
 
             expectNoDifference(values, existingValues)
         }
 
-        @Test
-        func readAtomically_Identifiable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_Identifiable_Failure(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -392,8 +483,15 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(4),
                 modelType.seeded(5),
             ]
-            let result = await repository
-                .readAtomically(_values)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .readAtomically(_values)
+                }
+            } else {
+                await repository
+                    .readAtomically(_values)
+            }
 
             switch result {
             case .success:
@@ -405,8 +503,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func readAtomically_ManagedIdReferencable_Success() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_ManagedIdReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -427,14 +525,21 @@ extension CoreDataRepositoryTests {
                 try await verify(value)
             }
 
-            let values = try await repository
-                .readAtomically(existingValues).get()
+            let values = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .readAtomically(existingValues).get()
+                }
+            } else {
+                try await repository
+                    .readAtomically(existingValues).get()
+            }
 
             expectNoDifference(values, existingValues)
         }
 
-        @Test
-        func readAtomically_ManagedIdReferencable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_ManagedIdReferencable_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
             let _values = try await repositoryContext.perform(schedule: .immediate) {
@@ -458,8 +563,15 @@ extension CoreDataRepositoryTests {
                 return values
             }
 
-            let result = await repository
-                .readAtomically(_values)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .readAtomically(_values)
+                }
+            } else {
+                await repository
+                    .readAtomically(_values)
+            }
 
             switch result {
             case .success:
@@ -471,8 +583,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func readAtomically_ManagedIdReferencable_NoManagedId_Failure() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_ManagedIdReferencable_NoManagedId_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
             let _values = [
@@ -483,8 +595,15 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let result = await repository
-                .readAtomically(_values)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .readAtomically(_values)
+                }
+            } else {
+                await repository
+                    .readAtomically(_values)
+            }
 
             switch result {
             case .success:
@@ -496,8 +615,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func readAtomically_ManagedId_Success() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_ManagedId_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -518,14 +637,21 @@ extension CoreDataRepositoryTests {
                 try await verify(value)
             }
 
-            let values = try await repository
-                .readAtomically(existingValues.compactMap(\.managedId), as: modelType).get()
+            let values = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .readAtomically(existingValues.compactMap(\.managedId), as: modelType).get()
+                }
+            } else {
+                try await repository
+                    .readAtomically(existingValues.compactMap(\.managedId), as: modelType).get()
+            }
 
             expectNoDifference(values, existingValues)
         }
 
-        @Test
-        func readAtomically_ManagedId_Failure() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_ManagedId_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
             let _values = try await repositoryContext.perform(schedule: .immediate) {
@@ -554,8 +680,15 @@ extension CoreDataRepositoryTests {
             }
             try await verifyDoesNotExist(_values[0])
 
-            let result = try await repository
-                .readAtomically(_values.map { try #require($0.managedId) }, as: modelType)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .readAtomically(_values.map { try #require($0.managedId) }, as: modelType)
+                }
+            } else {
+                try await repository
+                    .readAtomically(_values.map { try #require($0.managedId) }, as: modelType)
+            }
 
             switch result {
             case .success:
@@ -567,8 +700,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func readAtomically_ManagedIdUrlReferencable_Success() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_ManagedIdUrlReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -589,14 +722,21 @@ extension CoreDataRepositoryTests {
                 try await verify(value)
             }
 
-            let values = try await repository
-                .readAtomically(existingValues).get()
+            let values = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .readAtomically(existingValues).get()
+                }
+            } else {
+                try await repository
+                    .readAtomically(existingValues).get()
+            }
 
             expectNoDifference(values, existingValues)
         }
 
-        @Test
-        func readAtomically_ManagedIdUrlReferencable_Failure() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_ManagedIdUrlReferencable_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let _values = try await repositoryContext.perform(schedule: .immediate) {
@@ -620,8 +760,15 @@ extension CoreDataRepositoryTests {
                 return values
             }
 
-            let result = await repository
-                .readAtomically(_values)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .readAtomically(_values)
+                }
+            } else {
+                await repository
+                    .readAtomically(_values)
+            }
 
             switch result {
             case .success:
@@ -633,8 +780,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func readAtomically_ManagedIdUrlReferencable_NoManagedIdUrl_Failure() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_ManagedIdUrlReferencable_NoManagedIdUrl_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let _values = [
@@ -645,8 +792,15 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let result = await repository
-                .readAtomically(_values)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    await repository
+                        .readAtomically(_values)
+                }
+            } else {
+                await repository
+                    .readAtomically(_values)
+            }
 
             switch result {
             case .success:
@@ -658,8 +812,8 @@ extension CoreDataRepositoryTests {
             }
         }
 
-        @Test
-        func readAtomically_ManagedIdUrl_Success() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_ManagedIdUrl_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _values = [
                 modelType.seeded(1),
@@ -680,14 +834,21 @@ extension CoreDataRepositoryTests {
                 try await verify(value)
             }
 
-            let values = try await repository
-                .readAtomically(existingValues.compactMap(\.managedIdUrl), as: modelType).get()
+            let values = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .readAtomically(existingValues.compactMap(\.managedIdUrl), as: modelType).get()
+                }
+            } else {
+                try await repository
+                    .readAtomically(existingValues.compactMap(\.managedIdUrl), as: modelType).get()
+            }
 
             expectNoDifference(values, existingValues)
         }
 
-        @Test
-        func readAtomically_ManagedIdUrl_Failure() async throws {
+        @Test(arguments: [false, true])
+        func readAtomically_ManagedIdUrl_Failure(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let _values = try await repositoryContext.perform(schedule: .immediate) {
@@ -711,8 +872,15 @@ extension CoreDataRepositoryTests {
                 return values
             }
 
-            let result = try await repository
-                .readAtomically(_values.map { try #require($0.managedIdUrl) }, as: modelType)
+            let result = if inTransaction {
+                try await repository.withTransaction { _ in
+                    try await repository
+                        .readAtomically(_values.map { try #require($0.managedIdUrl) }, as: modelType)
+                }
+            } else {
+                try await repository
+                    .readAtomically(_values.map { try #require($0.managedIdUrl) }, as: modelType)
+            }
 
             switch result {
             case .success:

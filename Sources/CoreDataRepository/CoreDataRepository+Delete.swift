@@ -13,17 +13,21 @@ extension CoreDataRepository {
         _ url: URL,
         transactionAuthor: String? = nil
     ) async -> Result<Void, CoreDataError> {
-        await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
+        let context = Transaction.current?.context ?? context
+        let notTransaction = Transaction.current == nil
+        return await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             scratchPad.transactionAuthor = transactionAuthor
             let id = try scratchPad.objectId(from: url).get()
             let object = try scratchPad.notDeletedObject(for: id)
             object.prepareForDeletion()
             scratchPad.delete(object)
             try scratchPad.save()
-            try context.performAndWait {
-                context.transactionAuthor = transactionAuthor
-                try context.save()
-                context.transactionAuthor = nil
+            if notTransaction {
+                try context.performAndWait {
+                    context.transactionAuthor = transactionAuthor
+                    try context.save()
+                    context.transactionAuthor = nil
+                }
             }
             return ()
         }
@@ -35,16 +39,20 @@ extension CoreDataRepository {
         _ managedId: NSManagedObjectID,
         transactionAuthor: String? = nil
     ) async -> Result<Void, CoreDataError> {
-        await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
+        let context = Transaction.current?.context ?? context
+        let notTransaction = Transaction.current == nil
+        return await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             scratchPad.transactionAuthor = transactionAuthor
             let object = try scratchPad.notDeletedObject(for: managedId)
             object.prepareForDeletion()
             scratchPad.delete(object)
             try scratchPad.save()
-            try context.performAndWait {
-                context.transactionAuthor = transactionAuthor
-                try context.save()
-                context.transactionAuthor = nil
+            if notTransaction {
+                try context.performAndWait {
+                    context.transactionAuthor = transactionAuthor
+                    try context.save()
+                    context.transactionAuthor = nil
+                }
             }
             return ()
         }
@@ -56,7 +64,9 @@ extension CoreDataRepository {
         _ item: some ReadableUnmanagedModel,
         transactionAuthor: String? = nil
     ) async -> Result<Void, CoreDataError> {
-        await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
+        let context = Transaction.current?.context ?? context
+        let notTransaction = Transaction.current == nil
+        return await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             scratchPad.transactionAuthor = transactionAuthor
             let object = try item.readManaged(from: scratchPad)
             guard !object.isDeleted else {
@@ -65,10 +75,12 @@ extension CoreDataRepository {
             object.prepareForDeletion()
             scratchPad.delete(object)
             try scratchPad.save()
-            try context.performAndWait {
-                context.transactionAuthor = transactionAuthor
-                try context.save()
-                context.transactionAuthor = nil
+            if notTransaction {
+                try context.performAndWait {
+                    context.transactionAuthor = transactionAuthor
+                    try context.save()
+                    context.transactionAuthor = nil
+                }
             }
             return ()
         }
