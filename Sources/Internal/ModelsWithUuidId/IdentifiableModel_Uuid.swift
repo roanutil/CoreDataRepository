@@ -103,6 +103,7 @@ extension IdentifiableModel_UuidId: IdentifiedUnmanagedModel {
     package var unmanagedId: UUID {
         id
     }
+
     package nonisolated(unsafe) static let managedIdExpression = NSExpression(forKeyPath: \ManagedModel_UuidId.id)
 }
 

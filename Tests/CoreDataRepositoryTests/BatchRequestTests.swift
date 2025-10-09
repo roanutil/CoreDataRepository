@@ -159,7 +159,7 @@ extension CoreDataRepositoryTests {
                 let count = try repositoryContext.count(for: fetchRequest)
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
-                let _ = try values
+                _ = try values
                     .map(mapDictToManagedModel(_:))
                 try repositoryContext.save()
             }
@@ -207,7 +207,7 @@ extension CoreDataRepositoryTests {
                 let count = try repositoryContext.count(for: fetchRequest)
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
-                let _ = try values
+                _ = try values
                     .map(mapDictToManagedModel(_:))
                 try repositoryContext.save()
             }
