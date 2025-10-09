@@ -8,14 +8,14 @@ import CoreData
 
 public protocol IdentifiedUnmanagedModel: ReadableUnmanagedModel {
     associatedtype UnmanagedId: Equatable
-    static var unmanagedIdAccessor: (Self) -> UnmanagedId { get }
+    var unmanagedId: UnmanagedId { get }
     static var managedIdExpression: NSExpression { get }
 }
 
 extension IdentifiedUnmanagedModel {
     @inlinable
     public func readManaged(from context: NSManagedObjectContext) throws -> ManagedModel {
-        try Self.readManaged(id: Self.unmanagedIdAccessor(self), from: context)
+        try Self.readManaged(id: unmanagedId, from: context)
     }
 
     @inlinable
