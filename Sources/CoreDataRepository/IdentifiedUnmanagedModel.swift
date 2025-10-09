@@ -9,7 +9,8 @@ import CoreData
 public protocol IdentifiedUnmanagedModel: ReadableUnmanagedModel {
     associatedtype UnmanagedId: Equatable
     static var unmanagedIdAccessor: (Self) -> UnmanagedId { get }
-    static var managedIdExpression: NSExpression { get }
+    /// `NSExpression` for the `unmanagedId` property on `ManagedModel`
+    static var unmanagedIdExpression: NSExpression { get }
 }
 
 extension IdentifiedUnmanagedModel {
@@ -22,7 +23,7 @@ extension IdentifiedUnmanagedModel {
     public static func readManaged(id: UnmanagedId, from context: NSManagedObjectContext) throws -> ManagedModel {
         let request = Self.managedFetchRequest()
         request.predicate = NSComparisonPredicate(
-            leftExpression: Self.managedIdExpression,
+            leftExpression: Self.unmanagedIdExpression,
             rightExpression: NSExpression(forConstantValue: id),
             modifier: .direct,
             type: .equalTo
