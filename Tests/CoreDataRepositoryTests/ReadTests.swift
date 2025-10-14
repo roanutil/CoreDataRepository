@@ -153,7 +153,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -198,7 +199,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -243,7 +245,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -288,7 +291,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -399,7 +403,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -444,7 +449,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -580,7 +586,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -626,7 +633,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -738,7 +746,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -784,7 +793,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -921,7 +931,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -967,7 +978,8 @@ extension CoreDataRepositoryTests {
 
             existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
                 let managed = try #require(repositoryContext
-                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel
+                )
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
