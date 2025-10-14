@@ -21,9 +21,8 @@ extension CoreDataRepositoryTests {
         func create_Fetchable_Success(inTransaction: Bool) async throws {
             let modelType = FetchableModel_UuidId.self
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
             }
 
@@ -56,7 +55,7 @@ extension CoreDataRepositoryTests {
             }
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                 expectNoDifference(
                     data.map(\.string).sorted(),
                     ["1", "2", "3", "4", "5"],
@@ -79,9 +78,8 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
                 _ = try _values[0].asManagedModel(in: repositoryContext)
@@ -123,7 +121,7 @@ extension CoreDataRepositoryTests {
                 }
 
                 try await repositoryContext.perform {
-                    let data = try repositoryContext.fetch(fetchRequest)
+                    let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                     expectNoDifference(
                         data.map(\.string).sorted(),
                         ["1", "2", "3", "4", "5"],
@@ -139,9 +137,8 @@ extension CoreDataRepositoryTests {
         func create_Identifiable_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
             }
 
@@ -174,7 +171,7 @@ extension CoreDataRepositoryTests {
             }
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                 expectNoDifference(
                     data.map(\.string).sorted(),
                     ["1", "2", "3", "4", "5"],
@@ -197,9 +194,8 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
                 _ = try _values[0].asManagedModel(in: repositoryContext)
@@ -241,7 +237,7 @@ extension CoreDataRepositoryTests {
                 }
 
                 try await repositoryContext.perform {
-                    let data = try repositoryContext.fetch(fetchRequest)
+                    let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                     expectNoDifference(
                         data.map(\.string).sorted(),
                         ["1", "2", "3", "4", "5"],
@@ -257,9 +253,8 @@ extension CoreDataRepositoryTests {
         func create_ManagedIdUrlReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
             }
 
@@ -294,7 +289,7 @@ extension CoreDataRepositoryTests {
             expectNoDifference(successful.map { $0.removingManagedIdUrl() }.sorted(), _values)
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                 expectNoDifference(
                     data.map(\.string).sorted(),
                     ["1", "2", "3", "4", "5"],
@@ -317,9 +312,8 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
                 _ = try _values[0].asManagedModel(in: repositoryContext)
@@ -361,7 +355,7 @@ extension CoreDataRepositoryTests {
                 }
 
                 try await repositoryContext.perform {
-                    let data = try repositoryContext.fetch(fetchRequest)
+                    let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                     expectNoDifference(
                         data.map(\.string).sorted(),
                         ["1", "2", "3", "4", "5"],
@@ -377,9 +371,8 @@ extension CoreDataRepositoryTests {
         func create_ManagedIdReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
             }
 
@@ -414,7 +407,7 @@ extension CoreDataRepositoryTests {
             expectNoDifference(successful.map { $0.removingManagedId() }.sorted(), _values)
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                 expectNoDifference(
                     data.map(\.string).sorted(),
                     ["1", "2", "3", "4", "5"],
@@ -437,9 +430,8 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
                 _ = try _values[0].asManagedModel(in: repositoryContext)
@@ -481,7 +473,7 @@ extension CoreDataRepositoryTests {
                 }
 
                 try await repositoryContext.perform {
-                    let data = try repositoryContext.fetch(fetchRequest)
+                    let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                     expectNoDifference(
                         data.map(\.string).sorted(),
                         ["1", "2", "3", "4", "5"],
@@ -497,9 +489,8 @@ extension CoreDataRepositoryTests {
         func createAtomically_Fetchable_Success(inTransaction: Bool) async throws {
             let modelType = FetchableModel_UuidId.self
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
             }
 
@@ -533,7 +524,7 @@ extension CoreDataRepositoryTests {
             expectNoDifference(createdValues, _values)
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                 expectNoDifference(
                     data.map(\.string).sorted(),
                     ["1", "2", "3", "4", "5"],
@@ -556,9 +547,8 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let fetchRequest = modelType.managedFetchRequest()
             let existingValue = try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
                 let value = try _values[0].asManagedModel(in: repositoryContext)
@@ -566,7 +556,8 @@ extension CoreDataRepositoryTests {
                 try repositoryContext.parent?.save()
                 return value
             }
-            try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
+            let unmanaged = try modelType.init(managed: existingValue)
+            try await verify(unmanaged)
 
             if inTransaction {
                 try await withKnownIssue {
@@ -610,9 +601,8 @@ extension CoreDataRepositoryTests {
         func createAtomically_Identifiable_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
             }
 
@@ -646,7 +636,7 @@ extension CoreDataRepositoryTests {
             expectNoDifference(createdValues, _values)
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                 expectNoDifference(
                     data.map(\.string).sorted(),
                     ["1", "2", "3", "4", "5"],
@@ -669,9 +659,8 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let fetchRequest = modelType.managedFetchRequest()
             let existingValue = try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
                 let value = try _values[0].asManagedModel(in: repositoryContext)
@@ -679,7 +668,8 @@ extension CoreDataRepositoryTests {
                 try repositoryContext.parent?.save()
                 return value
             }
-            try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
+            let unmanaged = try modelType.init(managed: existingValue)
+            try await verify(unmanaged)
 
             if inTransaction {
                 try await withKnownIssue {
@@ -723,9 +713,8 @@ extension CoreDataRepositoryTests {
         func createAtomically_ManagedIdUrlReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
             }
 
@@ -759,7 +748,7 @@ extension CoreDataRepositoryTests {
             expectNoDifference(createdValues.map { $0.removingManagedIdUrl() }, _values)
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                 expectNoDifference(
                     data.map(\.string).sorted(),
                     ["1", "2", "3", "4", "5"],
@@ -782,9 +771,8 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let fetchRequest = modelType.managedFetchRequest()
             let existingValue = try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
                 let value = try _values[0].asManagedModel(in: repositoryContext)
@@ -792,7 +780,8 @@ extension CoreDataRepositoryTests {
                 try repositoryContext.parent?.save()
                 return value
             }
-            try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
+            let unmanaged = try modelType.init(managed: existingValue)
+            try await verify(unmanaged)
 
             if inTransaction {
                 try await withKnownIssue {
@@ -836,9 +825,8 @@ extension CoreDataRepositoryTests {
         func createAtomically_ManagedIdReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
 
-            let fetchRequest = modelType.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
             }
 
@@ -872,7 +860,7 @@ extension CoreDataRepositoryTests {
             expectNoDifference(createdValues.map { $0.removingManagedId() }, _values)
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(modelType.managedFetchRequest())
                 expectNoDifference(
                     data.map(\.string).sorted(),
                     ["1", "2", "3", "4", "5"],
@@ -895,9 +883,8 @@ extension CoreDataRepositoryTests {
                 modelType.seeded(5),
             ]
 
-            let fetchRequest = modelType.managedFetchRequest()
             let existingValue = try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: modelType.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
                 let value = try _values[0].asManagedModel(in: repositoryContext)
@@ -905,7 +892,8 @@ extension CoreDataRepositoryTests {
                 try repositoryContext.parent?.save()
                 return value
             }
-            try await verify(mapInContext(existingValue, transform: modelType.init(managed:)))
+            let unmanaged = try modelType.init(managed: existingValue)
+            try await verify(unmanaged)
 
             if inTransaction {
                 try await withKnownIssue {

@@ -125,12 +125,13 @@ extension CoreDataRepositoryTests {
         func readSubscription_Identifiable_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue, _value)
 
             try await verify(existingValue)
@@ -150,7 +151,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -167,12 +170,13 @@ extension CoreDataRepositoryTests {
         func readThrowingSubscription_Identifiable_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue, _value)
 
             try await verify(existingValue)
@@ -192,7 +196,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -209,12 +215,13 @@ extension CoreDataRepositoryTests {
         func readSubscription_Identifiable_ById_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue, _value)
 
             try await verify(existingValue)
@@ -234,7 +241,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -251,12 +260,13 @@ extension CoreDataRepositoryTests {
         func readThrowingSubscription_Identifiable_ById_Success(inTransaction: Bool) async throws {
             let modelType = IdentifiableModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue, _value)
 
             try await verify(existingValue)
@@ -276,7 +286,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -359,12 +371,13 @@ extension CoreDataRepositoryTests {
         func readSubscription_ManagedId_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue.removingManagedId(), _value)
 
             try await verify(existingValue)
@@ -384,7 +397,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -401,12 +416,13 @@ extension CoreDataRepositoryTests {
         func readThrowingSubscription_ManagedId_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue.removingManagedId(), _value)
 
             try await verify(existingValue)
@@ -426,7 +442,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -534,12 +552,13 @@ extension CoreDataRepositoryTests {
         func readSubscription_ManagedIdReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue.removingManagedId(), _value)
 
             try await verify(existingValue)
@@ -559,7 +578,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -576,12 +597,13 @@ extension CoreDataRepositoryTests {
         func readThrowingSubscription_ManagedIdReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue.removingManagedId(), _value)
 
             try await verify(existingValue)
@@ -602,7 +624,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -685,12 +709,13 @@ extension CoreDataRepositoryTests {
         func readSubscription_ManagedIdUrl_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue.removingManagedIdUrl(), _value)
 
             try await verify(existingValue)
@@ -711,7 +736,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -728,12 +755,13 @@ extension CoreDataRepositoryTests {
         func readThrowingSubscription_ManagedIdUrl_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue.removingManagedIdUrl(), _value)
 
             try await verify(existingValue)
@@ -754,7 +782,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -862,12 +892,13 @@ extension CoreDataRepositoryTests {
         func readSubscription_ManagedIdUrlReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue.removingManagedIdUrl(), _value)
 
             try await verify(existingValue)
@@ -888,7 +919,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
@@ -905,12 +938,13 @@ extension CoreDataRepositoryTests {
         func readThrowingSubscription_ManagedIdUrlReferencable_Success(inTransaction: Bool) async throws {
             let modelType = ManagedIdUrlModel_UuidId.self
             let _value = modelType.seeded(1)
-            var (existingValue, managed) = try await repositoryContext.perform(schedule: .immediate) {
+            var (existingValue, _managedId) = try await repositoryContext.perform(schedule: .immediate) {
                 let managed = try _value.asManagedModel(in: repositoryContext)
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
-                return try (modelType.init(managed: managed), managed)
+                return try (modelType.init(managed: managed), managed.objectID)
             }
+            let managedId = _managedId
             expectNoDifference(existingValue.removingManagedIdUrl(), _value)
 
             try await verify(existingValue)
@@ -931,7 +965,9 @@ extension CoreDataRepositoryTests {
 
             expectNoDifference(latestValue, existingValue)
 
-            existingValue = try await repositoryContext.perform(schedule: .immediate) {
+            existingValue = try await repositoryContext.perform(schedule: .immediate) { [repositoryContext] in
+                let managed = try #require(repositoryContext
+                    .existingObject(with: managedId) as? ManagedIdUrlModel_UuidId.ManagedModel)
                 managed.int += 1
                 try repositoryContext.save()
                 try repositoryContext.parent?.save()
