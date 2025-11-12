@@ -95,7 +95,7 @@ extension CoreDataRepository {
     /// This operation is non-atomic. Each instance may succeed or fail individually.
     @inlinable
     public func readAtomically<Model: IdentifiedUnmanagedModel>(
-        _ ids: some Sequence<Model.UnmanagedId>,
+        _ ids: some Sequence<Model.UnmanagedId> & Sendable,
         as _: Model.Type
     ) async -> Result<[Model], CoreDataError> {
         let context = Transaction.current?.context ?? context
@@ -115,7 +115,7 @@ extension CoreDataRepository {
     /// This operation is non-atomic. Each instance may succeed or fail individually.
     @inlinable
     public func readAtomically<Model: ReadableUnmanagedModel>(
-        _ items: some Sequence<Model>
+        _ items: some Sequence<Model> & Sendable
     ) async -> Result<[Model], CoreDataError> {
         let context = Transaction.current?.context ?? context
         return await context.performInChild(schedule: .enqueued) { readContext in
@@ -134,7 +134,7 @@ extension CoreDataRepository {
     /// This operation is non-atomic. Each instance may succeed or fail individually.
     @inlinable
     public func readAtomically<Model: FetchableUnmanagedModel>(
-        _ managedIds: some Sequence<NSManagedObjectID>,
+        _ managedIds: some Sequence<NSManagedObjectID> & Sendable,
         as _: Model.Type
     ) async -> Result<[Model], CoreDataError> {
         let context = Transaction.current?.context ?? context
@@ -154,7 +154,7 @@ extension CoreDataRepository {
     /// This operation is non-atomic. Each instance may succeed or fail individually.
     @inlinable
     public func readAtomically<Model: FetchableUnmanagedModel>(
-        _ managedIdUrls: some Sequence<URL>,
+        _ managedIdUrls: some Sequence<URL> & Sendable,
         as _: Model.Type
     ) async -> Result<[Model], CoreDataError> {
         let context = Transaction.current?.context ?? context

@@ -12,26 +12,26 @@ import Testing
 
 extension CoreDataRepositoryTests {
     @Suite
-    struct BatchRequestTests: CoreDataTestSuite {
+    struct BatchRequestTests: CoreDataTestSuite, Sendable {
         let container: NSPersistentContainer
         let repositoryContext: NSManagedObjectContext
         let repository: CoreDataRepository
 
-        let values: [[String: Any]] = [
+        nonisolated(unsafe) let values: [[String: Any]] = [
             ManagedIdUrlModel_UuidId.seeded(1).asDict,
             ManagedIdUrlModel_UuidId.seeded(2).asDict,
             ManagedIdUrlModel_UuidId.seeded(3).asDict,
             ManagedIdUrlModel_UuidId.seeded(4).asDict,
             ManagedIdUrlModel_UuidId.seeded(5).asDict,
         ]
-        let failureInsertMovies: [[String: Any]] = [
+        nonisolated(unsafe) let failureInsertMovies: [[String: Any]] = [
             ["id": "A", "title": 1, "releaseDate": "A"],
             ["id": "B", "title": 2, "releaseDate": "B"],
             ["id": "C", "title": 3, "releaseDate": "C"],
             ["id": "D", "title": 4, "releaseDate": "D"],
             ["id": "E", "title": 5, "releaseDate": "E"],
         ]
-        let failureCreateMovies: [[String: Any]] = [
+        nonisolated(unsafe) let failureCreateMovies: [[String: Any]] = [
             ["id": UUID(uniform: "A"), "title": "A", "releaseDate": Date()],
             ["id": UUID(uniform: "A"), "title": "B", "releaseDate": Date()],
             ["id": UUID(uniform: "A"), "title": "C", "releaseDate": Date()],
@@ -70,9 +70,8 @@ extension CoreDataRepositoryTests {
 
         @Test(arguments: [false, true])
         func insertSuccess(inTransaction: Bool) async throws {
-            let fetchRequest = ManagedIdUrlModel_UuidId.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: ManagedIdUrlModel_UuidId.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
             }
 
@@ -101,7 +100,7 @@ extension CoreDataRepositoryTests {
             }
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(ManagedIdUrlModel_UuidId.managedFetchRequest())
                 expectNoDifference(
                     data.map(\.string).sorted(),
                     ["1", "2", "3", "4", "5"],
@@ -121,9 +120,8 @@ extension CoreDataRepositoryTests {
 
         @Test(arguments: [false, true])
         func insertFailure(inTransaction: Bool) async throws {
-            let fetchRequest = ManagedIdUrlModel_UuidId.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: ManagedIdUrlModel_UuidId.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
             }
 
@@ -147,16 +145,15 @@ extension CoreDataRepositoryTests {
             }
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(ManagedIdUrlModel_UuidId.managedFetchRequest())
                 expectNoDifference(data.map(\.string).sorted(), [], "There should be no inserted values.")
             }
         }
 
         @Test(arguments: [false, true])
         func updateSuccess(inTransaction: Bool) async throws {
-            let fetchRequest = ManagedIdUrlModel_UuidId.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: ManagedIdUrlModel_UuidId.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
                 _ = try values
@@ -183,7 +180,7 @@ extension CoreDataRepositoryTests {
             }
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(ManagedIdUrlModel_UuidId.managedFetchRequest())
                 expectNoDifference(
                     data.map(\.string).sorted(),
                     ["Updated!", "Updated!", "Updated!", "Updated!", "Updated!"],
@@ -202,9 +199,8 @@ extension CoreDataRepositoryTests {
 
         @Test(arguments: [false, true])
         func deleteSuccess(inTransaction: Bool) async throws {
-            let fetchRequest = ManagedIdUrlModel_UuidId.managedFetchRequest()
             try await repositoryContext.perform {
-                let count = try repositoryContext.count(for: fetchRequest)
+                let count = try repositoryContext.count(for: ManagedIdUrlModel_UuidId.managedFetchRequest())
                 expectNoDifference(count, 0, "Count of objects in CoreData should be zero at the start of each test.")
 
                 _ = try values
@@ -232,7 +228,7 @@ extension CoreDataRepositoryTests {
             }
 
             try await repositoryContext.perform {
-                let data = try repositoryContext.fetch(fetchRequest)
+                let data = try repositoryContext.fetch(ManagedIdUrlModel_UuidId.managedFetchRequest())
                 expectNoDifference(data.map(\.string).sorted(), [], "There should be no remaining values.")
             }
             // Transaction author refuses to be applied when going through a transaction. Need to investigate further.

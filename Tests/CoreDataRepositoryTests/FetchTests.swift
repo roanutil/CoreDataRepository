@@ -17,11 +17,11 @@ extension CoreDataRepositoryTests {
         let repositoryContext: NSManagedObjectContext
         let repository: CoreDataRepository
 
-        let fetchRequest: NSFetchRequest<ManagedModel_UuidId> = {
+        static func fetchRequest() -> NSFetchRequest<ManagedModel_UuidId> {
             let request = FetchableModel_UuidId.managedFetchRequest()
             request.sortDescriptors = [NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true)]
             return request
-        }()
+        }
 
         let values = [
             FetchableModel_UuidId.seeded(1),
@@ -34,15 +34,15 @@ extension CoreDataRepositoryTests {
         var objectIds = [NSManagedObjectID]()
 
         mutating func extraSetup() async throws {
-            let (_expectedValues, _objectIds) = try repositoryContext.performAndWait {
+            let (_expectedValues, _objectIds) = try repositoryContext.performAndWait { [repositoryContext, values] in
                 let managedMovies = try values
-                    .map {
+                    .map { [repositoryContext] in
                         try ManagedIdUrlModel_UuidId(fetchable: $0)
                             .asManagedModel(in: repositoryContext)
                     }
                 try repositoryContext.save()
                 return try (
-                    repositoryContext.fetch(fetchRequest).map(FetchableModel_UuidId.init(managed:)),
+                    repositoryContext.fetch(Self.fetchRequest()).map(FetchableModel_UuidId.init(managed:)),
                     managedMovies.map(\.objectID)
                 )
             }
@@ -54,10 +54,10 @@ extension CoreDataRepositoryTests {
         func fetchSuccess(inTransaction: Bool) async throws {
             let result = if inTransaction {
                 try await repository.withTransaction { _ in
-                    await repository.fetch(fetchRequest, as: FetchableModel_UuidId.self)
+                    await repository.fetch(Self.fetchRequest(), as: FetchableModel_UuidId.self)
                 }
             } else {
-                await repository.fetch(fetchRequest, as: FetchableModel_UuidId.self)
+                await repository.fetch(Self.fetchRequest(), as: FetchableModel_UuidId.self)
             }
 
             switch result {
@@ -76,11 +76,11 @@ extension CoreDataRepositoryTests {
                 let stream = if inTransaction {
                     try await repository.withTransaction { _ in
                         repository
-                            .fetchSubscription(fetchRequest, of: FetchableModel_UuidId.self)
+                            .fetchSubscription(Self.fetchRequest(), of: FetchableModel_UuidId.self)
                     }
                 } else {
                     repository
-                        .fetchSubscription(fetchRequest, of: FetchableModel_UuidId.self)
+                        .fetchSubscription(Self.fetchRequest(), of: FetchableModel_UuidId.self)
                 }
                 for await _items in stream {
                     let items = try _items.get()
@@ -117,13 +117,13 @@ extension CoreDataRepositoryTests {
                 let stream = if inTransaction {
                     try await repository.withTransaction { _ in
                         repository.fetchThrowingSubscription(
-                            fetchRequest,
+                            Self.fetchRequest(),
                             of: FetchableModel_UuidId.self
                         )
                     }
                 } else {
                     repository.fetchThrowingSubscription(
-                        fetchRequest,
+                        Self.fetchRequest(),
                         of: FetchableModel_UuidId.self
                     )
                 }

@@ -4,7 +4,7 @@
 // This source code is licensed under the MIT License (MIT) found in the
 // LICENSE file in the root directory of this source tree.
 
-import CoreData
+@preconcurrency import CoreData
 import Foundation
 
 /// Subscription provider that sends updates when a fetch request changes

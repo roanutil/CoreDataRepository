@@ -45,14 +45,8 @@ extension CoreDataTestSuite {
         // empty by default
     }
 
-    func mapInContext<I, O>(_ input: I, transform: (I) throws -> O) throws -> O {
-        try repositoryContext.performAndWait {
-            try transform(input)
-        }
-    }
-
     func verify<T>(_ item: T) async throws where T: FetchableUnmanagedModel, T: Equatable {
-        repositoryContext.performAndWait {
+        repositoryContext.performAndWait { [repositoryContext] in
             var managed: T.ManagedModel?
             do {
                 managed = try repositoryContext.fetch(T.managedFetchRequest()).first { try T(managed: $0) == item }
@@ -71,7 +65,7 @@ extension CoreDataTestSuite {
     }
 
     func verify<T>(_ item: T) async throws where T: ReadableUnmanagedModel, T: Equatable {
-        try repositoryContext.performAndWait {
+        try repositoryContext.performAndWait { [repositoryContext] in
             var _managed: T.ManagedModel?
             do {
                 _managed = try item.readManaged(from: repositoryContext)
@@ -91,8 +85,8 @@ extension CoreDataTestSuite {
     }
 
     func verify(transactionAuthor: String?, timeStamp: Date) throws {
-        let historyRequest = NSPersistentHistoryChangeRequest.fetchHistory(after: timeStamp)
-        try repositoryContext.performAndWait {
+        try repositoryContext.performAndWait { [repositoryContext] in
+            let historyRequest = NSPersistentHistoryChangeRequest.fetchHistory(after: timeStamp)
             let historyResult = try #require(repositoryContext.execute(historyRequest) as? NSPersistentHistoryResult)
             let history = try #require(historyResult.result as? [NSPersistentHistoryTransaction])
             #expect(history.count > 0)
@@ -103,7 +97,7 @@ extension CoreDataTestSuite {
     }
 
     func verifyDoesNotExist<T>(_ item: T) async throws where T: FetchableUnmanagedModel, T: Equatable {
-        repositoryContext.performAndWait {
+        repositoryContext.performAndWait { [repositoryContext] in
             var _managed: T.ManagedModel?
             do {
                 _managed = try repositoryContext.fetch(T.managedFetchRequest()).first { try T(managed: $0) == item }
@@ -118,7 +112,7 @@ extension CoreDataTestSuite {
     }
 
     func verifyDoesNotExist<T>(_ item: T) async throws where T: ReadableUnmanagedModel, T: Equatable {
-        repositoryContext.performAndWait {
+        repositoryContext.performAndWait { [repositoryContext] in
             var _managed: T.ManagedModel?
             do {
                 _managed = try item.readManaged(from: repositoryContext)
@@ -133,8 +127,8 @@ extension CoreDataTestSuite {
     }
 
     func verifyDoesNotExist(transactionAuthor: String?, timeStamp: Date) throws {
-        let historyRequest = NSPersistentHistoryChangeRequest.fetchHistory(after: timeStamp)
-        try repositoryContext.performAndWait {
+        try repositoryContext.performAndWait { [repositoryContext] in
+            let historyRequest = NSPersistentHistoryChangeRequest.fetchHistory(after: timeStamp)
             let historyResult = try #require(repositoryContext.execute(historyRequest) as? NSPersistentHistoryResult)
             let history = try #require(historyResult.result as? [NSPersistentHistoryTransaction])
             if transactionAuthor == nil {
@@ -148,7 +142,7 @@ extension CoreDataTestSuite {
     }
 
     func delete(managedId: NSManagedObjectID) throws {
-        try repositoryContext.performAndWait {
+        try repositoryContext.performAndWait { [repositoryContext] in
             let managed = repositoryContext.object(with: managedId)
             repositoryContext.delete(managed)
             try repositoryContext.save()

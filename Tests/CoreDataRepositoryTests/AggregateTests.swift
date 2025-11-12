@@ -12,12 +12,12 @@ import Testing
 
 extension CoreDataRepositoryTests {
     @Suite
-    struct AggregateTests: CoreDataTestSuite, @unchecked Sendable {
+    struct AggregateTests: CoreDataTestSuite, Sendable {
         let container: NSPersistentContainer
         let repositoryContext: NSManagedObjectContext
         let repository: CoreDataRepository
 
-        let fetchRequest: NSFetchRequest<ManagedModel_UuidId> = {
+        nonisolated(unsafe) let fetchRequest: NSFetchRequest<ManagedModel_UuidId> = {
             let request = UnmanagedModel_UuidId.managedFetchRequest()
             request.sortDescriptors = [NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true)]
             return request
@@ -34,7 +34,11 @@ extension CoreDataRepositoryTests {
         var objectIds = [NSManagedObjectID]()
 
         mutating func extraSetup() async throws {
-            let (_expectedValues, _objectIds) = try repositoryContext.performAndWait {
+            let (_expectedValues, _objectIds) = try repositoryContext.performAndWait { [
+                self,
+                repositoryContext,
+                values
+            ] in
                 let managedMovies = try values
                     .map {
                         try ManagedIdUrlModel_UuidId(fetchable: $0)
