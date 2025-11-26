@@ -1,12 +1,11 @@
 # CoreDataRepository
 
 [![CI](https://github.com/roanutil/CoreDataRepository/actions/workflows/ci.yml/badge.svg)](https://github.com/roanutil/CoreDataRepository/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/roanutil/CoreDataRepository/branch/main/graph/badge.svg?token=WRO4CXYWRG)](https://codecov.io/gh/roanutil/CoreDataRepository) 
+[![codecov](https://codecov.io/gh/roanutil/CoreDataRepository/branch/main/graph/badge.svg?token=WRO4CXYWRG)](https://codecov.io/gh/roanutil/CoreDataRepository)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Froanutil%2FCoreDataRepository%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/roanutil/CoreDataRepository)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Froanutil%2FCoreDataRepository%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/roanutil/CoreDataRepository)
 
 ## :mega: Checkout the [discussion](https://github.com/roanutil/CoreDataRepository/discussions/15) for SwiftData
-## :mega: Major changes are in progress for [v3.0](https://github.com/roanutil/CoreDataRepository/tree/3.0-preview)
 
 CoreDataRepository is a library for using CoreData on a background queue. It features endpoints for CRUD, batch, fetch, and aggregate operations. Also, it offers a stream like subscription for fetch and read.
 
@@ -40,86 +39,68 @@ To give some weight to this idea, here's a quote from the Q&A portion of [this](
 
 ### Model Bridging
 
-There are two protocols that handle bridging between the value type and managed models.
+There are various protocols for defining how a value type should
+bridge to the corresponding `NSManagedObject` subclass. Each
+protocol is intended for a general pattern of use.
 
-#### RepositoryManagedModel
+A single value type can conform to multiple protocols to combine their supported functionality. A single `NSManagedObject` subclass can be bridged to by multiple value types.
 
-```swift
-@objc(RepoMovie)
-public final class RepoMovie: NSManagedObject {
-    @NSManaged var id: UUID?
-    @NSManaged var title: String?
-    @NSManaged var releaseDate: Date?
-    @NSManaged var boxOffice: NSDecimalNumber?
-}
-
-extension RepoMovie: RepositoryManagedModel {
-    public func create(from unmanaged: Movie) {
-        update(from: unmanaged)
-    }
-
-    public typealias Unmanaged = Movie
-    public var asUnmanaged: Movie {
-        Movie(
-            id: id ?? UUID(),
-            title: title ?? "",
-            releaseDate: releaseDate ?? Date(),
-            boxOffice: (boxOffice ?? 0) as Decimal,
-            url: objectID.uriRepresentation()
-        )
-    }
-
-    public func update(from unmanaged: Movie) {
-        id = unmanaged.id
-        title = unmanaged.title
-        releaseDate = unmanaged.releaseDate
-        boxOffice = NSDecimalNumber(decimal: unmanaged.boxOffice)
-    }
-
-    static func fetchRequest() -> NSFetchRequest<RepoMovie> {
-        let request = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-        return request
-    }
-}
-```
+- `FetchableUnmanagedModel` for types that will be queried through 'fetch' endpoints.
+- `ReadableUnmanagedModel` for types that can be accessed individually. Inherits from `FetchableUnmanagedModel`.
+  - `IdentifiedUnmanagedModel` for `ReadableUnmanagedModel` types that have a unique, hashable ID value.
+  - `ManagedIdReferencable` for `ReadableUnmanagedModel` types that store their `NSManagedObjectID`.
+  - `ManagedIdUrlReferencable` for `ReadableUnmanagedModel` types that store their `NSManagedObjectID` in `URL` form.
+- `WritableUnmanagedModel` for that types that need to write to the store via create, update, and delete operations.
+- `UnmanagedModel` for types that conform to both `ReadableUnmanagedModel` and `WritableUnmanagedModel`.
 
 #### UnmanagedModel
 
 ```swift
-public struct Movie: Hashable {
+@objc(ManagedMovie)
+public final class ManagedMovie: NSManagedObject {
+    @NSManaged var id: UUID?
+    @NSManaged var title: String?
+    @NSManaged var releaseDate: Date?
+    @NSManaged var boxOffice: Decimal?
+}
+
+public struct Movie: Equatable, ManagedIdUrlReferencable, Sendable {
     public let id: UUID
     public var title: String = ""
     public var releaseDate: Date
     public var boxOffice: Decimal = 0
-    public var url: URL?
+    public var managedIdUrl: URL?
 }
 
-extension Movie: UnmanagedModel {
-    public var managedRepoUrl: URL? {
-        get {
-            url
-        }
-        set(newValue) {
-            url = newValue
-        }
-    }
-
-    public func asRepoManaged(in context: NSManagedObjectContext) -> RepoMovie {
-        let object = RepoMovie(context: context)
-        object.id = id
-        object.title = title
-        object.releaseDate = releaseDate
-        object.boxOffice = boxOffice as NSDecimalNumber
-        return object
+extension Movie: FetchableUnmanagedModel {
+    public init(managed: ManagedMovie) {
+        self.id = managed.id
+        self.title = managed.title
+        self.releaseDate = managed.releaseDate
+        self.boxOffice = managed.boxOffice
+        self.managedIdUrl = managed.objectID.uriRepresentation()
     }
 }
+
+extension Movie: ReadableUnmanagedModel {}
+
+extension Movie: WritableUnmanagedModel {
+    public func updating(managed: ManagedMovie) throws {
+        managed.id = id
+        managed.title = title
+        managed.releaseDate = releaseDate
+        managed.boxOffice = boxOffice
+    }
+}
+
+extension Movie: UnmanagedModel {}
 ```
 
 ### CRUD
 
 ```swift
 var movie = Movie(id: UUID(), title: "The Madagascar Penguins in a Christmas Caper", releaseDate: Date(), boxOffice: 100)
-let result: Result<Movie, CoreDataRepositoryError> = await repository.create(movie)
+let result: Result<Movie, CoreDataError> = await repository.create(movie)
 if case let .success(movie) = result {
     os_log("Created movie with title - \(movie.title)")
 }
@@ -128,10 +109,10 @@ if case let .success(movie) = result {
 ### Fetch
 
 ```swift
-let fetchRequest = NSFetchRequest<RepoMovie>(entityName: "RepoMovie")
-fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \RepoMovie.title, ascending: true)]
+let fetchRequest = Movie.managedFetchRequest
+fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \ManagedMovie.title, ascending: true)]
 fetchRequest.predicate = NSPredicate(value: true)
-let result: Result<[Movie], CoreDataRepositoryError> = await repository.fetch(fetchRequest)
+let result: Result<[Movie], CoreDataError> = await repository.fetch(fetchRequest)
 if case let .success(movies) = result {
     os_log("Fetched \(movies.count) movies")
 }
@@ -139,33 +120,22 @@ if case let .success(movies) = result {
 
 ### Fetch Subscription
 
-Similar to a regular fe:
+Similar to a regular fetch:
 
 ```swift
-let result: AnyPublisher<[Movie], CoreDataRepositoryError> = repository.fetchSubscription(fetchRequest)
-let cancellable = result.subscribe(on: userInitSerialQueue)
-            .receive(on: mainQueue)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    os_log("Fetched a bunch of movies")
-                default:
-                    fatalError("Failed to fetch all the movies!")
-                }
-        }, receiveValue: { value in
-            os_log("Fetched \(value.items.count) movies")
-        })
-...
-cancellable.cancel()
+let stream: AsyncThrowingStream<[Movie], any Error> = repository.fetchThrowingSubscription(fetchRequest)
+for try await movies in stream {
+    os_log("Fetched \(movies.count) movies")
+}
 ```
 
 ### Aggregate
 
 ```swift
-let result: Result<[[String: Decimal]], CoreDataRepositoryError> = await repository.sum(
+let result: Result<[[String: Decimal]], CoreDataError> = await repository.sum(
     predicate: NSPredicate(value: true),
-    entityDesc: RepoMovie.entity(),
-    attributeDesc: RepoMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
+    entityDesc: ManagedMovie.entity(),
+    attributeDesc: ManagedMovie.entity().attributesByName.values.first(where: { $0.name == "boxOffice" })!
 )
 if case let .success(values) = result {
     os_log("The sum of all movies' boxOffice is \(values.first!.values.first!)")
@@ -182,15 +152,15 @@ let movies: [[String: Any]] = [
     ["id": UUID(), "title": "D", "releaseDate": Date()],
     ["id": UUID(), "title": "E", "releaseDate": Date()]
 ]
-let request = NSBatchInsertRequest(entityName: RepoMovie.entity().name!, objects: movies)
-let result: Result<NSBatchInsertResult, CoreDataRepositoryError> = await repository.insert(request)
+let request = NSBatchInsertRequest(entityName: ManagedMovie.entity().name!, objects: movies)
+let result: Result<NSBatchInsertResult, CoreDataError> = await repository.insert(request)
 
 ```
 
 #### OR
 
 ```swift
-let movies: [[String: Any]] = [
+let movies: [Movie] = [
     Movie(id: UUID(), title: "A", releaseDate: Date()),
     Movie(id: UUID(), title: "B", releaseDate: Date()),
     Movie(id: UUID(), title: "C", releaseDate: Date()),
@@ -202,15 +172,58 @@ os_log("Created these movies: \(result.success)")
 os_log("Failed to create these movies: \(result.failed)")
 ```
 
-## TODO
+### Transactions
 
-- Add a subscription feature for aggregate functions
-- Migrate subscription endpoints to AsyncSequence instead of Publisher
-- Simplify model protocols (require only one protocol for the value type)
-- Allow older platform support by working around the newer variants of `NSManagedObjectContext.perform` and `NSManagedObjectContext.performAndWait`
+Use `withTransaction` to group multiple operations together atomically:
+
+```swift
+let newMovies = [
+    Movie(id: UUID(), title: "Movie A", releaseDate: Date(), boxOffice: 1000),
+    Movie(id: UUID(), title: "Movie B", releaseDate: Date(), boxOffice: 2000)
+]
+
+// All operations within the transaction will succeed or fail together
+let result = try await repository.withTransaction(transactionAuthor: "BulkMovieImport") { transaction in
+    var createdMovies: [Movie] = []
+
+    for movie in newMovies {
+        let createResult = try await repository.create(movie).get()
+        createdMovies.append(createResult)
+    }
+
+    // Update existing movie
+    let fetchRequest = Movie.managedFetchRequest
+    fetchRequest.predicate = NSPredicate(format: "title == %@", "Old Movie")
+    if let existingMovie = try await repository.fetch(fetchRequest).get().first {
+        var updatedMovie = existingMovie
+        updatedMovie.boxOffice = 5000
+        _ = try await repository.update(updatedMovie).get()
+    }
+
+    return createdMovies
+}
+
+os_log("Transaction completed with \(result.count) new movies")
+```
+
+**Important:** When using batch operations within transactions, don't specify `transactionAuthor` for individual operations as it's handled at the transaction level:
+
+```swift
+// ✅ Correct - transactionAuthor only on withTransaction
+try await repository.withTransaction(transactionAuthor: "BatchUpdate") { _ in
+    let request = NSBatchUpdateRequest(entityName: "ManagedMovie")
+    request.propertiesToUpdate = ["boxOffice": 0]
+    return await repository.update(request) // No transactionAuthor here
+}
+
+// ❌ Incorrect - don't specify transactionAuthor on both
+try await repository.withTransaction(transactionAuthor: "BatchUpdate") { _ in
+    let request = NSBatchUpdateRequest(entityName: "ManagedMovie")
+    request.propertiesToUpdate = ["boxOffice": 0]
+    return await repository.update(request, transactionAuthor: "BatchUpdate") // Ignored
+}
+```
 
 ## Contributing
 
 I welcome any feedback or contributions. It's probably best to create an issue where any possible changes can be discussed before doing the work and creating a PR.
-
-The above [TODO](#todo) section is a good place to start if you would like to contribute but don't already have a change in mind.

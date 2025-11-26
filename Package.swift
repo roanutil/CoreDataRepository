@@ -1,17 +1,12 @@
-// swift-tools-version:5.5
-// The swift-tools-version declares the minimum version of Swift required to build this package.
+// swift-tools-version:6.0
 
+import Foundation
 import PackageDescription
 
 let package = Package(
     name: "CoreDataRepository",
     defaultLocalization: "en",
-    platforms: [
-        .iOS(.v15),
-        .macOS(.v12),
-        .tvOS(.v15),
-        .watchOS(.v8),
-    ],
+    platforms: .shared,
     products: [
         .library(
             name: "CoreDataRepository",
@@ -19,20 +14,81 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/CombineCommunity/CombineExt.git", .upToNextMajor(from: "1.5.1")),
-        .package(url: "https://github.com/pointfreeco/swift-custom-dump.git", .upToNextMajor(from: "0.4.0")),
+        .package(
+            url: "https://github.com/pointfreeco/swift-custom-dump.git",
+            from: "1.0.0"
+        ),
     ],
     targets: [
         .target(
             name: "CoreDataRepository",
-            dependencies: ["CombineExt"]
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "CoreDataRepositoryTests",
             dependencies: [
                 "CoreDataRepository",
                 .product(name: "CustomDump", package: "swift-custom-dump"),
+                "Internal",
+            ]
+        ),
+        .target(
+            name: "Internal",
+            dependencies: [
+                "CoreDataRepository",
             ]
         ),
     ]
 )
+
+extension [SupportedPlatform] {
+    static let shared: Self = if ProcessInfo.benchmarkingEnabled {
+        [
+            .iOS(.v15),
+            .macOS(.v12),
+            .tvOS(.v15),
+            .watchOS(.v8),
+            .macCatalyst(.v15),
+            .visionOS(.v1),
+        ]
+    } else {
+        [
+            .iOS(.v15),
+            .macOS(.v13),
+            .tvOS(.v15),
+            .watchOS(.v8),
+            .macCatalyst(.v15),
+            .visionOS(.v1),
+        ]
+    }
+}
+
+if ProcessInfo.benchmarkingEnabled {
+    package.dependencies += [
+        .package(
+            url: "https://github.com/ordo-one/package-benchmark.git",
+            from: "1.23.5"
+        ),
+    ]
+
+    // Benchmark of coredata-repository-benchmarks
+    package.targets += [
+        .executableTarget(
+            name: "coredata-repository-benchmarks",
+            dependencies: [
+                .product(name: "Benchmark", package: "package-benchmark"),
+                "CoreDataRepository",
+                "Internal",
+            ],
+            path: "Benchmarks/coredata-repository-benchmarks",
+            plugins: [
+                .plugin(name: "BenchmarkPlugin", package: "package-benchmark"),
+            ]
+        ),
+    ]
+}
+
+extension ProcessInfo {
+    static let benchmarkingEnabled: Bool = ["YES", "TRUE"]
+        .contains((ProcessInfo.processInfo.environment["BENCHMARKS"])?.uppercased())
+}

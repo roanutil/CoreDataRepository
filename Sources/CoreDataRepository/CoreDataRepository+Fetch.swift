@@ -1,103 +1,72 @@
 // CoreDataRepository+Fetch.swift
 // CoreDataRepository
 //
-//
-// MIT License
-//
-// Copyright © 2023 Andrew Roan
+// This source code is licensed under the MIT License (MIT) found in the
+// LICENSE file in the root directory of this source tree.
 
-import Combine
-import CombineExt
-import CoreData
+@preconcurrency import CoreData
+import Foundation
 
 extension CoreDataRepository {
-    // MARK: Functions/Endpoints
-
-    /// Fetch a single array of value types corresponding to a NSManagedObject sub class.
-    /// - Parameters
-    ///     - _ request: NSFetchRequest<Model.RepoManaged>
-    /// - Returns
-    ///     - Result<[Model], CoreDataRepositoryError>
-    ///
-    public func fetch<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>) async
-        -> Result<[Model], CoreDataRepositoryError>
-    {
-        await context.performInChild { fetchContext in
-            try fetchContext.fetch(request).map(\.asUnmanaged)
+    /// Fetch items from the store with a ``NSFetchRequest``.
+    @inlinable
+    public func fetch<Model: FetchableUnmanagedModel>(
+        _ request: NSFetchRequest<Model.ManagedModel>,
+        as _: Model.Type
+    ) async -> Result<[Model], CoreDataError> {
+        let context = Transaction.current?.context ?? context
+        return await context.performInChild { fetchContext in
+            try fetchContext.fetch(request).map(Model.init(managed:))
         }
     }
 
-    /// Fetch an array of value types corresponding to a NSManagedObject sub class and receive
-    /// updates for changes in the context.
-    /// - Parameters
-    ///     - _request: NSFetchRequest<Model.RepoManaged>
-    /// - Returns
-    ///     - AnyPublisher<[Model], CoreDataRepositoryError>
-    public func fetchSubscription<Model: UnmanagedModel>(_ request: NSFetchRequest<Model.RepoManaged>)
-        -> AnyPublisher<[Model], CoreDataRepositoryError>
-    {
-        let fetchContext = context.childContext()
-        let fetchPublisher: AnyPublisher<[Model], CoreDataRepositoryError> = _fetch(request, fetchContext: fetchContext)
-        var subjectCancellable: AnyCancellable?
-        var fetchCancellable: AnyCancellable?
-        return AnyPublisher.create { [weak self] subscriber in
-            let subject = PassthroughSubject<[Model], CoreDataRepositoryError>()
-            subjectCancellable = subject.sink(receiveCompletion: subscriber.send, receiveValue: subscriber.send)
-            let id = UUID()
-            var subscription: SubscriptionProvider?
-            fetchCancellable = fetchPublisher.sink(
-                receiveCompletion: { completion in
-                    if case .failure = completion {
-                        subject.send(completion: completion)
-                    }
-                },
-                receiveValue: { value in
-                    let subscriptionProvider = FetchSubscription(
-                        id: id,
-                        request: request,
-                        context: fetchContext,
-                        success: { $0.map(\.asUnmanaged) },
-                        subject: subject
-                    )
-                    subscription = subscriptionProvider
-                    subscriptionProvider.start()
-                    if let _self = self,
-                       let _subjectCancellable = subjectCancellable,
-                       let _fetchCancellable = fetchCancellable
-                    {
-                        _self.subscriptions.append(subscriptionProvider)
-                        _self.cancellables.insert(_subjectCancellable)
-                        _self.cancellables.insert(_fetchCancellable)
-                    } else {
-                        subjectCancellable?.cancel()
-                        fetchCancellable?.cancel()
-                        subscription?.cancel()
-                    }
-                    subject.send(value)
-                }
+    /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
+    @inlinable
+    public func fetchSubscription<Model: FetchableUnmanagedModel>(
+        _ request: NSFetchRequest<Model.ManagedModel>,
+        of _: Model.Type
+    ) -> AsyncStream<Result<[Model], CoreDataError>> {
+        AsyncStream { continuation in
+            let subscription = FetchSubscription(
+                request: request,
+                context: context.childContext(),
+                continuation: continuation
             )
-            return AnyCancellable {
-                subscription?.cancel()
-                self?.subscriptions.removeAll(where: { $0.id == id as AnyHashable })
+            continuation.onTermination = { _ in
+                subscription.cancel()
             }
+            subscription.manualFetch()
         }
     }
 
-    private func _fetch<Model: UnmanagedModel>(
-        _ request: NSFetchRequest<Model.RepoManaged>,
-        fetchContext: NSManagedObjectContext
-    )
-        -> AnyPublisher<[Model], CoreDataRepositoryError>
-    {
-        Future { promise in
-            fetchContext.perform {
-                do {
-                    let items = try fetchContext.fetch(request).map(\.asUnmanaged)
-                    promise(.success(items))
-                } catch {
-                    promise(.failure(.coreData(error as NSError)))
-                }
+    /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
+    @inlinable
+    public func fetchThrowingSubscription<Model: FetchableUnmanagedModel>(
+        _ request: NSFetchRequest<Model.ManagedModel>,
+        of _: Model.Type
+    ) -> AsyncThrowingStream<[Model], Error> {
+        AsyncThrowingStream { continuation in
+            let subscription = FetchThrowingSubscription(
+                request: request,
+                context: context.childContext(),
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
             }
-        }.eraseToAnyPublisher()
+            subscription.manualFetch()
+        }
+    }
+
+    /// Fetch items from the store with a ``NSFetchRequest`` and transform the results.
+    @inlinable
+    public func fetch<Managed, Output>(
+        request: NSFetchRequest<Managed>,
+        operation: @escaping (_ results: [Managed]) throws -> Output
+    ) async -> Result<Output, CoreDataError> where Managed: NSManagedObject {
+        let context = Transaction.current?.context ?? context
+        return await context.performInChild { fetchContext in
+            try operation(fetchContext.fetch(request))
+        }
     }
 }
