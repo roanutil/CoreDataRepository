@@ -40,6 +40,7 @@ final class AggregateSubscription<Value: Numeric & Sendable>: Subscription<Value
     }
 
     @usableFromInline
+    // swiftlint:disable:next function_body_length
     convenience init(
         function: CoreDataRepository.AggregateFunction,
         context: NSManagedObjectContext,

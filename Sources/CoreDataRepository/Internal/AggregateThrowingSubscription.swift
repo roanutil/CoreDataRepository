@@ -44,6 +44,7 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
     }
 
     @usableFromInline
+    // swiftlint:disable:next function_body_length
     convenience init(
         function: CoreDataRepository.AggregateFunction,
         context: NSManagedObjectContext,
