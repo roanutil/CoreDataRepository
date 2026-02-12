@@ -21,15 +21,15 @@ public enum CoreDataError: Error, Hashable, Sendable {
     /// against the correct property.
     /// If the `NSAttributeDescription` is not for the correct or expected `NSEntityDescription`, this error is
     /// returned.
-    case propertyDoesNotMatchEntity
+    case propertyDoesNotMatchEntity(description: String?)
 
     /// CoreData may return a value of a related type to what is actually needed. If casting the value CoreData returns
     /// to the required type fails, this error is returned.
-    case fetchedObjectFailedToCastToExpectedType
+    case fetchedObjectFailedToCastToExpectedType(description: String?)
 
     /// It's possible for a persisted object to be flagged as deleted but still be fetched. If that happens, this error
     /// is returned.
-    case fetchedObjectIsFlaggedAsDeleted
+    case fetchedObjectIsFlaggedAsDeleted(description: String)
 
     /// If CoreData throws a `CocoaError`, it is embedded here.
     case cocoa(CocoaError)
@@ -48,13 +48,13 @@ public enum CoreDataError: Error, Hashable, Sendable {
     /// If a ``ManagedIdUrlReferencable`` value is used in a transaction where it is expected to already be persisted
     /// but has no `URL`
     /// representing the ``NSManagedObjectID``, this error is returned.
-    case noUrlOnItemToMapToObjectId
+    case noUrlOnItemToMapToObjectId(description: String)
 
     /// If a ``ManagedIdReferencable`` value is used in a transaction where it is expected to already be persisted but
     /// has no `NSManagedObjectID`, this error is returned.
-    case noObjectIdOnItem
+    case noObjectIdOnItem(description: String)
 
-    case noMatchFoundWhenReadingItem
+    case noMatchFoundWhenReadingItem(description: String)
 
     public var localizedDescription: String {
         switch self {

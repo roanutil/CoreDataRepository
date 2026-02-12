@@ -12,7 +12,7 @@ extension NSManagedObject {
     @inlinable
     public func asManagedModel<T: NSManagedObject>() throws -> T {
         guard let repoManaged = self as? T else {
-            throw CoreDataError.fetchedObjectFailedToCastToExpectedType
+            throw CoreDataError.fetchedObjectFailedToCastToExpectedType(description: "\(Self.self) -> \(T.self)")
         }
         return repoManaged
     }

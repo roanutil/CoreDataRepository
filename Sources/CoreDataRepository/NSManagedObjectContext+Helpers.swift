@@ -22,7 +22,7 @@ extension NSManagedObjectContext {
     public func notDeletedObject(for id: NSManagedObjectID) throws -> NSManagedObject {
         let object: NSManagedObject = try existingObject(with: id)
         guard !object.isDeleted else {
-            throw CoreDataError.fetchedObjectIsFlaggedAsDeleted
+            throw CoreDataError.fetchedObjectIsFlaggedAsDeleted(description: id.description)
         }
         return object
     }

@@ -36,7 +36,7 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
             }
 
             guard let value: Value = result.asAggregateValue() else {
-                self?.fail(.fetchedObjectFailedToCastToExpectedType)
+                self?.fail(.fetchedObjectFailedToCastToExpectedType(description: nil))
                 return
             }
             self?.send(value)
@@ -97,7 +97,20 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
                 context: context,
                 continuation: continuation
             )
-            fail(.propertyDoesNotMatchEntity)
+            guard let entityName = entityDesc.name ?? entityDesc.managedObjectClassName else {
+                fail(.propertyDoesNotMatchEntity(description: nil))
+                return
+            }
+            guard let attributeEntityName = attributeDesc.entity.name ?? attributeDesc.entity.managedObjectClassName
+            else {
+                fail(.propertyDoesNotMatchEntity(description: entityName))
+                return
+            }
+            fail(
+                .propertyDoesNotMatchEntity(
+                    description: "\(entityName) != \(attributeDesc.name).\(attributeEntityName)"
+                )
+            )
             return
         }
         self.init(request: request, context: context, continuation: continuation)

@@ -70,7 +70,7 @@ extension CoreDataRepository {
             scratchPad.transactionAuthor = transactionAuthor
             let object = try item.readManaged(from: scratchPad)
             guard !object.isDeleted else {
-                throw CoreDataError.fetchedObjectIsFlaggedAsDeleted
+                throw CoreDataError.fetchedObjectIsFlaggedAsDeleted(description: item.errorDescription)
             }
             object.prepareForDeletion()
             scratchPad.delete(object)

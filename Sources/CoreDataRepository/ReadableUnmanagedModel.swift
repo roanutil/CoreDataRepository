@@ -80,7 +80,7 @@ extension ReadableUnmanagedModel where Self: ManagedIdReferencable {
     @inlinable
     public func readManaged(from context: NSManagedObjectContext) throws -> ManagedModel {
         guard let managedId else {
-            throw CoreDataError.noObjectIdOnItem
+            throw CoreDataError.noObjectIdOnItem(description: "\(Self.self)")
         }
         return try context.notDeletedObject(for: managedId).asManagedModel()
     }
@@ -90,7 +90,7 @@ extension ReadableUnmanagedModel where Self: ManagedIdUrlReferencable {
     @inlinable
     public func readManaged(from context: NSManagedObjectContext) throws -> ManagedModel {
         guard let managedIdUrl else {
-            throw CoreDataError.noUrlOnItemToMapToObjectId
+            throw CoreDataError.noUrlOnItemToMapToObjectId(description: "\(Self.self)")
         }
         let managedId = try context.objectId(from: managedIdUrl).get()
         return try context.notDeletedObject(for: managedId).asManagedModel()
