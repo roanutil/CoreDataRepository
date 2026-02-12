@@ -56,32 +56,38 @@ public enum CoreDataError: Error, Hashable, Sendable {
 
     case noMatchFoundWhenReadingItem(description: String)
 
+    private static var noErrorDescription: String {
+        String(
+            localized: "no description",
+            bundle: .module,
+            comment: "Placeholder for when an error description is nil."
+        )
+    }
+
+    // swiftlint:disable line_length
     public var localizedDescription: String {
         switch self {
         case .failedToGetObjectIdFromUrl:
-            NSLocalizedString(
-                "No NSManagedObjectID found that correlates to the provided URL.",
+            String(
+                localized: "No NSManagedObjectID found that correlates to the provided URL.",
                 bundle: .module,
                 comment: "Error for when an ObjectID can't be found for the provided URL."
             )
-        case .propertyDoesNotMatchEntity:
-            NSLocalizedString(
-                "There is a mismatch between a provided NSPropertyDescrption's entity and a NSEntityDescription. "
-                    + "When a property description is provided, it must match any related entity descriptions.",
+        case let .propertyDoesNotMatchEntity(description: description):
+            String(
+                localized: "There is a mismatch between a provided NSPropertyDescrption's entity and a NSEntityDescription. When a property description is provided, it must match any related entity descriptions: \(description ?? Self.noErrorDescription)",
                 bundle: .module,
-                comment: "Error for when the developer does not provide a valid pair of NSAttributeDescription "
-                    + "and NSPropertyDescription (or any of their child types)."
+                comment: "Error for when the developer does not provide a valid pair of NSAttributeDescription and NSPropertyDescription (or any of their child types)."
             )
-        case .fetchedObjectFailedToCastToExpectedType:
-            NSLocalizedString(
-                "The object corresponding to the provided NSManagedObjectID is an incorrect Entity or "
-                    + "NSManagedObject subtype. It failed to cast to the requested type.",
+        case let .fetchedObjectFailedToCastToExpectedType(description: description):
+            String(
+                localized: "The object corresponding to the provided NSManagedObjectID is an incorrect Entity or NSManagedObject subtype. It failed to cast to the requested type: \(description ?? Self.noErrorDescription)",
                 bundle: .module,
                 comment: "Error for when an object is found for a given ObjectID but it is not the expected type."
             )
-        case .fetchedObjectIsFlaggedAsDeleted:
-            NSLocalizedString(
-                "The object corresponding to the provided NSManagedObjectID is deleted and cannot be fetched.",
+        case let .fetchedObjectIsFlaggedAsDeleted(description: description):
+            String(
+                localized: "The object corresponding to the provided NSManagedObjectID is deleted and cannot be fetched: \(description)",
                 bundle: .module,
                 comment: "Error for when an object is fetched but is flagged as deleted and is no longer usable."
             )
@@ -90,40 +96,39 @@ public enum CoreDataError: Error, Hashable, Sendable {
         case let .unknown(error):
             error.localizedDescription
         case .noEntityNameFound:
-            NSLocalizedString(
-                "The managed object entity description does not have a name.",
+            String(
+                localized: "The managed object entity description does not have a name.",
                 bundle: .module,
                 comment: "Error for when the NSEntityDescription does not have a name."
             )
         case .atLeastOneAttributeDescRequired:
-            NSLocalizedString(
-                "The managed object entity has no attribute description. An attribute description is required for "
-                    + "aggregate operations.",
+            String(
+                localized: "The managed object entity has no attribute description. An attribute description is required for aggregate operations.",
                 bundle: .module,
                 comment: "Error for when the NSEntityDescription has no NSAttributeDescription but one is required."
             )
-        case .noUrlOnItemToMapToObjectId:
-            NSLocalizedString(
-                "No object ID URL found on the model for an operation against an existing managed object.",
+        case let .noUrlOnItemToMapToObjectId(description: description):
+            String(
+                localized: "No object ID URL found on the model for an operation against an existing managed object: \(description)",
                 bundle: .module,
-                comment: "Error for performing an operation against an existing NSManagedObject but the "
-                    + "ManagedIdUrlReferencable instance has no managedIdUrl for looking up the NSManagedOjbectID."
+                comment: "Error for performing an operation against an existing NSManagedObject but the ManagedIdUrlReferencable instance has no managedIdUrl for looking up the NSManagedOjbectID."
             )
-        case .noObjectIdOnItem:
-            NSLocalizedString(
-                "No object ID found on the model for an operation against an existing managed object.",
+        case let .noObjectIdOnItem(description: description):
+            String(
+                localized: "No object ID found on the model for an operation against an existing managed object: \(description)",
                 bundle: .module,
-                comment: "Error for performing an operation against an existing NSManagedObject but the "
-                    + "ManagedIdReferencable instance has no managedId."
+                comment: "Error for performing an operation against an existing NSManagedObject but the ManagedIdReferencable instance has no managedId."
             )
-        case .noMatchFoundWhenReadingItem:
-            NSLocalizedString(
-                "No match found when attempting to read an instance from CoreData.",
+        case let .noMatchFoundWhenReadingItem(description: description):
+            String(
+                localized: "No match found when attempting to read an instance from CoreData: \(description)",
                 bundle: .module,
                 comment: "Error for reading an instance from CoreData but no instance was found."
             )
         }
     }
+
+    // swiftlint:enable line_length
 
     @usableFromInline
     static func catching<T>(block: () async throws -> T) async throws(Self) -> T {
