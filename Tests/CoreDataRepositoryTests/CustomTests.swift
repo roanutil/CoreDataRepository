@@ -72,7 +72,7 @@ extension CoreDataRepositoryTests {
             let result: Result<(FetchableModel_UuidId, FetchableModel_UuidId), CoreDataError> = if inTransaction {
                 await {
                     do {
-                        let result = try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
+                        return try await repository.withTransaction(transactionAuthor: transactionAuthor) { _ in
                             await repository.custom { context, scratchPad in
                                 let object1 = modelType.ManagedModel(context: scratchPad)
                                 try _value1.updating(managed: object1)
@@ -87,7 +87,6 @@ extension CoreDataRepositoryTests {
                                 return try (modelType.init(managed: object1), modelType.init(managed: object2))
                             }
                         }
-                        return result
                     } catch {
                         return .failure(error as! CoreDataError)
                     }

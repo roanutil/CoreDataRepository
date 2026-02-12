@@ -41,8 +41,7 @@ extension CoreDataRepository {
         return await context.performInScratchPad(schedule: .enqueued) { [context] scratchPad in
             scratchPad.transactionAuthor = transactionAuthor
             let objects = try items.map { item in
-                let object = try item.asManagedModel(in: scratchPad)
-                return object
+                try item.asManagedModel(in: scratchPad)
             }
             try scratchPad.save()
             if notTransaction {

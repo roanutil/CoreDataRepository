@@ -19,14 +19,14 @@ extension CoreDataRepository {
     }
 
     @inlinable
-    public func aggregate<Value>(
+    public func aggregate<Value: Numeric & Sendable>(
         function: AggregateFunction,
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as valueType: Value.Type
-    ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
+    ) async -> Result<Value, CoreDataError> {
         switch function {
         case .count:
             await count(predicate: predicate, entityDesc: entityDesc, as: valueType)
@@ -46,13 +46,13 @@ extension CoreDataRepository {
 
     /// Get the average of a managed object's numeric property for all instances that satisfy the predicate.
     @inlinable
-    public func average<Value>(
+    public func average<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
+    ) async -> Result<Value, CoreDataError> {
         await Self.send(
             function: .average,
             context: Transaction.current?.context ?? context,
@@ -65,13 +65,13 @@ extension CoreDataRepository {
 
     /// Subscribe to the average of a managed object's numeric property for all instances that satisfy the predicate.
     @inlinable
-    public func averageSubscription<Value>(
+    public func averageSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncStream<Result<Value, CoreDataError>> where Value: Numeric, Value: Sendable {
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
             let subscription = AggregateSubscription(
                 function: .average,
@@ -91,13 +91,13 @@ extension CoreDataRepository {
 
     /// Subscribe to the average of a managed object's numeric property for all instances that satisfy the predicate.
     @inlinable
-    public func averageThrowingSubscription<Value>(
+    public func averageThrowingSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncThrowingStream<Value, Error> where Value: Numeric, Value: Sendable {
+    ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
             let subscription = AggregateThrowingSubscription(
                 function: .average,
@@ -119,11 +119,11 @@ extension CoreDataRepository {
 
     /// Get the count or quantity of managed object instances that satisfy the predicate.
     @inlinable
-    public func count<Value>(
+    public func count<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         as _: Value.Type
-    ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
+    ) async -> Result<Value, CoreDataError> {
         await context.performInChild { scratchPad in
             do {
                 let request = try NSFetchRequest<NSDictionary>
@@ -140,11 +140,11 @@ extension CoreDataRepository {
 
     /// Subscribe to the count or quantity of managed object instances that satisfy the predicate.
     @inlinable
-    public func countSubscription<Value>(
+    public func countSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         as _: Value.Type
-    ) -> AsyncStream<Result<Value, CoreDataError>> where Value: Numeric, Value: Sendable {
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
             let subscription = CountSubscription(
                 context: context.childContext(),
@@ -161,11 +161,11 @@ extension CoreDataRepository {
 
     /// Subscribe to the count or quantity of managed object instances that satisfy the predicate.
     @inlinable
-    public func countThrowingSubscription<Value>(
+    public func countThrowingSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         as _: Value.Type
-    ) -> AsyncThrowingStream<Value, Error> where Value: Numeric, Value: Sendable {
+    ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
             let subscription = CountThrowingSubscription(
                 context: context.childContext(),
@@ -184,13 +184,13 @@ extension CoreDataRepository {
 
     /// Get the max or maximum of a managed object's numeric property for all instances that satisfy the predicate.
     @inlinable
-    public func max<Value>(
+    public func max<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
+    ) async -> Result<Value, CoreDataError> {
         await Self.send(
             function: .max,
             context: Transaction.current?.context ?? context,
@@ -204,13 +204,13 @@ extension CoreDataRepository {
     /// Subscribe to the max or maximum of a managed object's numeric property for all instances that satisfy the
     /// predicate.
     @inlinable
-    public func maxSubscription<Value>(
+    public func maxSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncStream<Result<Value, CoreDataError>> where Value: Numeric, Value: Sendable {
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
             let subscription = AggregateSubscription(
                 function: .max,
@@ -231,13 +231,13 @@ extension CoreDataRepository {
     /// Subscribe to the max or maximum of a managed object's numeric property for all instances that satisfy the
     /// predicate.
     @inlinable
-    public func maxThrowingSubscription<Value>(
+    public func maxThrowingSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncThrowingStream<Value, Error> where Value: Numeric, Value: Sendable {
+    ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
             let subscription = AggregateThrowingSubscription(
                 function: .max,
@@ -259,13 +259,13 @@ extension CoreDataRepository {
 
     /// Get the min or minimum of a managed object's numeric property for all instances that satisfy the predicate.
     @inlinable
-    public func min<Value>(
+    public func min<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
+    ) async -> Result<Value, CoreDataError> {
         await Self.send(
             function: .min,
             context: Transaction.current?.context ?? context,
@@ -279,13 +279,13 @@ extension CoreDataRepository {
     /// Subscribe to the min or minimum of a managed object's numeric property for all instances that satisfy the
     /// predicate.
     @inlinable
-    public func minSubscription<Value>(
+    public func minSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncStream<Result<Value, CoreDataError>> where Value: Numeric, Value: Sendable {
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
             let subscription = AggregateSubscription(
                 function: .min,
@@ -306,13 +306,13 @@ extension CoreDataRepository {
     /// Subscribe to the min or minimum of a managed object's numeric property for all instances that satisfy the
     /// predicate.
     @inlinable
-    public func minThrowingSubscription<Value>(
+    public func minThrowingSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncThrowingStream<Value, Error> where Value: Numeric, Value: Sendable {
+    ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
             let subscription = AggregateThrowingSubscription(
                 function: .min,
@@ -334,13 +334,13 @@ extension CoreDataRepository {
 
     /// Get the sum of a managed object's numeric property for all instances that satisfy the predicate.
     @inlinable
-    public func sum<Value>(
+    public func sum<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
+    ) async -> Result<Value, CoreDataError> {
         await Self.send(
             function: .sum,
             context: Transaction.current?.context ?? context,
@@ -353,13 +353,13 @@ extension CoreDataRepository {
 
     /// Subscribe to the sum of a managed object's numeric property for all instances that satisfy the predicate.
     @inlinable
-    public func sumSubscription<Value>(
+    public func sumSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncStream<Result<Value, CoreDataError>> where Value: Numeric, Value: Sendable {
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
             let subscription = AggregateSubscription(
                 function: .sum,
@@ -379,13 +379,13 @@ extension CoreDataRepository {
 
     /// Subscribe to the sum of a managed object's numeric property for all instances that satisfy the predicate.
     @inlinable
-    public func sumThrowingSubscription<Value>(
+    public func sumThrowingSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         as _: Value.Type
-    ) -> AsyncThrowingStream<Value, Error> where Value: Numeric, Value: Sendable {
+    ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
             let subscription = AggregateThrowingSubscription(
                 function: .sum,
@@ -405,10 +405,10 @@ extension CoreDataRepository {
 
     // MARK: Internals
 
-    private static func aggregate<Value>(
+    private static func aggregate<Value: Numeric & Sendable>(
         context: NSManagedObjectContext,
         request: NSFetchRequest<NSDictionary>
-    ) throws -> Value where Value: Numeric, Value: Sendable {
+    ) throws -> Value {
         let result = try context.fetch(request)
         guard let value: Value = result.asAggregateValue() else {
             throw CoreDataError.fetchedObjectFailedToCastToExpectedType
@@ -417,14 +417,14 @@ extension CoreDataRepository {
     }
 
     @usableFromInline
-    static func send<Value>(
+    static func send<Value: Numeric & Sendable>(
         function: AggregateFunction,
         context: NSManagedObjectContext,
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) async -> Result<Value, CoreDataError> where Value: Numeric, Value: Sendable {
+    ) async -> Result<Value, CoreDataError> {
         guard entityDesc == attributeDesc.entity else {
             return .failure(.propertyDoesNotMatchEntity)
         }
@@ -437,8 +437,7 @@ extension CoreDataRepository {
                 groupBy: groupBy
             )
             do {
-                let value: Value = try Self.aggregate(context: scratchPad, request: request)
-                return value
+                return try Self.aggregate(context: scratchPad, request: request)
             } catch let error as CocoaError {
                 throw CoreDataError.cocoa(error)
             } catch {

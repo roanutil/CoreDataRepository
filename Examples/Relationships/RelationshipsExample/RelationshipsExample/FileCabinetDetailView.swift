@@ -21,7 +21,7 @@ struct FileCabinetDetailView: View {
         )
     }
 
-    @ViewBuilder @MainActor
+    @MainActor
     private func sidebar() -> some View {
         VStack {
             Text(viewModel.state.fileCabinet.id.uuidString)
@@ -44,12 +44,12 @@ struct FileCabinetDetailView: View {
         }
     }
 
-    @ViewBuilder @MainActor
+    @MainActor
     private func content() -> some View {
         EmptyView()
     }
 
-    @ViewBuilder @MainActor
+    @MainActor
     private func detail() -> some View {
         EmptyView()
     }

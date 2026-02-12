@@ -55,11 +55,11 @@ public final class CoreDataRepository: @unchecked Sendable {
     /// - Returns: The result of the block execution.
     /// - Throws: ``CoreDataError`` if the transaction fails.
     @inlinable
-    public func withTransaction<T, E>(
+    public func withTransaction<T, E: Error>(
         continuing existingTransaction: Transaction? = nil,
         transactionAuthor: String? = nil,
         _ block: (Transaction) async throws(E) -> T
-    ) async throws(CoreDataError) -> T where E: Error {
+    ) async throws(CoreDataError) -> T {
         let transaction = existingTransaction ?? Transaction(context: context.scratchPadContext())
         let scratchPad = transaction.context
         return try await CoreDataError.catching {

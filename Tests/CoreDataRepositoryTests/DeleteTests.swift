@@ -37,7 +37,7 @@ extension CoreDataRepositoryTests {
         }
 
         @Test
-        func delete_Identifiable_Failure() async throws {
+        func delete_Identifiable_Failure() async {
             let modelType = IdentifiableModel_UuidId.self
             let _value = modelType.seeded(1)
             let result = await repository
@@ -105,7 +105,7 @@ extension CoreDataRepositoryTests {
         }
 
         @Test
-        func delete_ManagedIdReferencable_NoManagedId_Failure() async throws {
+        func delete_ManagedIdReferencable_NoManagedId_Failure() async {
             let modelType = ManagedIdModel_UuidId.self
 
             let _value = modelType.seeded(1)
@@ -226,7 +226,7 @@ extension CoreDataRepositoryTests {
         }
 
         @Test
-        func delete_ManagedIdUrlReferencable_NoManagedIdUrl_Failure() async throws {
+        func delete_ManagedIdUrlReferencable_NoManagedIdUrl_Failure() async {
             let modelType = ManagedIdUrlModel_UuidId.self
 
             let _value = modelType.seeded(1)

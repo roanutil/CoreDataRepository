@@ -45,7 +45,7 @@ extension CoreDataTestSuite {
         // empty by default
     }
 
-    func verify<T>(_ item: T) async throws where T: FetchableUnmanagedModel, T: Equatable {
+    func verify<T: FetchableUnmanagedModel & Equatable>(_ item: T) async throws {
         repositoryContext.performAndWait { [repositoryContext] in
             var managed: T.ManagedModel?
             do {
@@ -64,7 +64,7 @@ extension CoreDataTestSuite {
         }
     }
 
-    func verify<T>(_ item: T) async throws where T: ReadableUnmanagedModel, T: Equatable {
+    func verify<T: ReadableUnmanagedModel & Equatable>(_ item: T) async throws {
         try repositoryContext.performAndWait { [repositoryContext] in
             var _managed: T.ManagedModel?
             do {
@@ -96,7 +96,7 @@ extension CoreDataTestSuite {
         }
     }
 
-    func verifyDoesNotExist<T>(_ item: T) async throws where T: FetchableUnmanagedModel, T: Equatable {
+    func verifyDoesNotExist<T: FetchableUnmanagedModel & Equatable>(_ item: T) async throws {
         repositoryContext.performAndWait { [repositoryContext] in
             var _managed: T.ManagedModel?
             do {
@@ -111,7 +111,7 @@ extension CoreDataTestSuite {
         }
     }
 
-    func verifyDoesNotExist<T>(_ item: T) async throws where T: ReadableUnmanagedModel, T: Equatable {
+    func verifyDoesNotExist<T: ReadableUnmanagedModel & Equatable>(_ item: T) async throws {
         repositoryContext.performAndWait { [repositoryContext] in
             var _managed: T.ManagedModel?
             do {
