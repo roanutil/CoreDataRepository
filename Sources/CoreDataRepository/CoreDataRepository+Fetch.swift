@@ -60,10 +60,10 @@ extension CoreDataRepository {
 
     /// Fetch items from the store with a ``NSFetchRequest`` and transform the results.
     @inlinable
-    public func fetch<Managed, Output>(
+    public func fetch<Managed: NSManagedObject, Output>(
         request: NSFetchRequest<Managed>,
         operation: @escaping (_ results: [Managed]) throws -> Output
-    ) async -> Result<Output, CoreDataError> where Managed: NSManagedObject {
+    ) async -> Result<Output, CoreDataError> {
         let context = Transaction.current?.context ?? context
         return await context.performInChild { fetchContext in
             try operation(fetchContext.fetch(request))

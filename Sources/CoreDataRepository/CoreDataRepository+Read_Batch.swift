@@ -32,9 +32,9 @@ extension CoreDataRepository {
     ///
     /// This operation is non-atomic. Each instance may succeed or fail individually.
     @inlinable
-    public func read<Model>(
+    public func read<Model: ReadableUnmanagedModel>(
         _ items: some Sequence<Model>
-    ) async -> (success: [Model], failed: [CoreDataBatchError<Model>]) where Model: ReadableUnmanagedModel {
+    ) async -> (success: [Model], failed: [CoreDataBatchError<Model>]) {
         var successes = [Model]()
         var failures = [CoreDataBatchError<Model>]()
         for item in items {

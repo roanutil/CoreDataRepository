@@ -32,7 +32,7 @@ extension CoreDataRepositoryTests {
         }
 
         @Test
-        func verify_Fetchable_Failure() async throws {
+        func verify_Fetchable_Failure() async {
             let modelType = FetchableModel_UuidId.self
             let _value = modelType.seeded(1)
 
@@ -57,7 +57,7 @@ extension CoreDataRepositoryTests {
         }
 
         @Test
-        func verify_Readable_Failure() async throws {
+        func verify_Readable_Failure() async {
             let modelType = IdentifiableModel_UuidId.self
             let _value = modelType.seeded(1)
 
@@ -135,7 +135,7 @@ extension CoreDataRepositoryTests {
         }
 
         @Test
-        func verifyHistory_Failure_NoHistory() async throws {
+        func verifyHistory_Failure_NoHistory() {
             let author: String = #function
             let date = Date.now
 

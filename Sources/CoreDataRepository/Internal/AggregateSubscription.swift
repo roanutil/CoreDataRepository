@@ -9,9 +9,8 @@ import Foundation
 
 /// Subscription provider that sends updates when an aggregate fetch request changes
 @usableFromInline
-final class AggregateSubscription<Value>: Subscription<Value, NSDictionary, NSManagedObject>,
-    @unchecked Sendable where Value: Numeric,
-    Value: Sendable
+final class AggregateSubscription<Value: Numeric & Sendable>: Subscription<Value, NSDictionary, NSManagedObject>,
+    @unchecked Sendable
 {
     @usableFromInline
     override func fetch() {

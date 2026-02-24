@@ -21,10 +21,10 @@ extension CoreDataRepository {
 
     /// Read an instance from the store.
     @inlinable
-    public func read<Model>(
+    public func read<Model: IdentifiedUnmanagedModel>(
         _ id: Model.UnmanagedId,
         of _: Model.Type
-    ) async -> Result<Model, CoreDataError> where Model: IdentifiedUnmanagedModel {
+    ) async -> Result<Model, CoreDataError> {
         let context = Transaction.current?.context ?? context
         return await context.performInChild(schedule: .enqueued) { readContext in
             let managed = try Model.readManaged(id: id, from: readContext)
@@ -34,10 +34,10 @@ extension CoreDataRepository {
 
     /// Read an instance from the store.
     @inlinable
-    public func read<Model>(
+    public func read<Model: FetchableUnmanagedModel>(
         _ managedId: NSManagedObjectID,
         of _: Model.Type
-    ) async -> Result<Model, CoreDataError> where Model: FetchableUnmanagedModel {
+    ) async -> Result<Model, CoreDataError> {
         let context = Transaction.current?.context ?? context
         return await context.performInChild(schedule: .enqueued) { readContext in
             let object = try readContext.notDeletedObject(for: managedId)
@@ -48,10 +48,10 @@ extension CoreDataRepository {
 
     /// Read an instance from the store.
     @inlinable
-    public func read<Model>(
+    public func read<Model: FetchableUnmanagedModel>(
         _ managedIdUrl: URL,
         of _: Model.Type
-    ) async -> Result<Model, CoreDataError> where Model: FetchableUnmanagedModel {
+    ) async -> Result<Model, CoreDataError> {
         let context = Transaction.current?.context ?? context
         return await context.performInChild(schedule: .enqueued) { readContext in
             let id = try readContext.objectId(from: managedIdUrl).get()

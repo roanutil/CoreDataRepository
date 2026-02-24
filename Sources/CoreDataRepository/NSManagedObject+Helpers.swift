@@ -10,7 +10,7 @@ import Foundation
 extension NSManagedObject {
     /// Helper function to handle casting ``NSManagedObject`` to a sub-class.
     @inlinable
-    public func asManagedModel<T>() throws -> T where T: NSManagedObject {
+    public func asManagedModel<T: NSManagedObject>() throws -> T {
         guard let repoManaged = self as? T else {
             throw CoreDataError.fetchedObjectFailedToCastToExpectedType
         }

@@ -21,7 +21,7 @@ struct FileCabinetsView: View {
         )
     }
 
-    @ViewBuilder @MainActor
+    @MainActor
     private func sidebar() -> some View {
         VStack {
             Button(
@@ -55,7 +55,7 @@ struct FileCabinetsView: View {
         }
     }
 
-    @ViewBuilder @MainActor
+    @MainActor
     private func detail() -> some View {
         EmptyView()
     }

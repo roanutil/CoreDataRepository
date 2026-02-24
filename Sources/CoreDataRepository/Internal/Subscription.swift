@@ -10,10 +10,10 @@ import Foundation
 /// Base class for other subscriptions.
 @usableFromInline
 class Subscription<
-    Output,
+    Output: Sendable,
     RequestResult: NSFetchRequestResult,
     ControllerResult: NSFetchRequestResult
->: BaseSubscription<Output, RequestResult, ControllerResult>, @unchecked Sendable where Output: Sendable {
+>: BaseSubscription<Output, RequestResult, ControllerResult>, @unchecked Sendable {
     let continuation: AsyncStream<Result<Output, CoreDataError>>.Continuation
 
     @usableFromInline
