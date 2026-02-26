@@ -1,0 +1,7 @@
+[tools]
+swiftformat = "latest"
+swiftlint = "latest"
+
+[tool_alias]
+swiftformat = 'asdf:https://github.com/MFB-Technologies-Inc/asdf-swiftformat'
+swiftlint = 'asdf:https://github.com/MFB-Technologies-Inc/asdf-swiftlint'
