@@ -44,7 +44,6 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
     }
 
     @usableFromInline
-    // swiftlint:disable:next function_body_length
     convenience init(
         function: CoreDataRepository.AggregateFunction,
         context: NSManagedObjectContext,
@@ -136,7 +135,20 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
                 context: context,
                 continuation: continuation
             )
-            fail(.propertyDoesNotMatchEntity)
+            guard let entityName = entityDesc.name ?? entityDesc.managedObjectClassName else {
+                fail(.propertyDoesNotMatchEntity(description: nil))
+                return
+            }
+            guard let attributeEntityName = attributeDesc.entity.name ?? attributeDesc.entity.managedObjectClassName
+            else {
+                fail(.propertyDoesNotMatchEntity(description: entityName))
+                return
+            }
+            fail(
+                .propertyDoesNotMatchEntity(
+                    description: "\(entityName) != \(attributeDesc.name).\(attributeEntityName)"
+                )
+            )
             return
         }
         self.init(
