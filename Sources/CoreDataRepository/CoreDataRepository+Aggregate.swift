@@ -411,7 +411,7 @@ extension CoreDataRepository {
     ) throws -> Value {
         let result = try context.fetch(request)
         guard let value: Value = result.asAggregateValue() else {
-            throw CoreDataError.fetchedObjectFailedToCastToExpectedType
+            throw CoreDataError.fetchedObjectFailedToCastToExpectedType(description: nil)
         }
         return value
     }
@@ -426,7 +426,18 @@ extension CoreDataRepository {
         groupBy: NSAttributeDescription? = nil
     ) async -> Result<Value, CoreDataError> {
         guard entityDesc == attributeDesc.entity else {
-            return .failure(.propertyDoesNotMatchEntity)
+            guard let entityName = entityDesc.name ?? entityDesc.managedObjectClassName else {
+                return .failure(.propertyDoesNotMatchEntity(description: nil))
+            }
+            guard let attributeEntityName = attributeDesc.entity.name ?? attributeDesc.entity.managedObjectClassName
+            else {
+                return .failure(.propertyDoesNotMatchEntity(description: entityName))
+            }
+            return .failure(
+                .propertyDoesNotMatchEntity(
+                    description: "\(entityName) != \(attributeDesc.name).\(attributeEntityName)"
+                )
+            )
         }
         return await context.performInChild { scratchPad in
             let request = try NSFetchRequest<NSDictionary>.request(

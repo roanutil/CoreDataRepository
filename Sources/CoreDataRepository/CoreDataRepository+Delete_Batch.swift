@@ -138,7 +138,8 @@ extension CoreDataRepository {
             for item in items {
                 let object = try item.readManaged(from: scratchPad)
                 guard !object.isDeleted else {
-                    throw CoreDataError.fetchedObjectIsFlaggedAsDeleted
+                    throw CoreDataError
+                        .fetchedObjectIsFlaggedAsDeleted(description: item.errorDescription)
                 }
                 object.prepareForDeletion()
                 scratchPad.delete(object)

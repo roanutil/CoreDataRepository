@@ -18,7 +18,7 @@ extension CoreDataRepository {
             context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchDeleteResult else {
                 context.transactionAuthor = nil
-                throw CoreDataError.fetchedObjectFailedToCastToExpectedType
+                throw CoreDataError.fetchedObjectFailedToCastToExpectedType(description: request.description)
             }
             context.transactionAuthor = nil
             return result
@@ -36,7 +36,7 @@ extension CoreDataRepository {
             context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchInsertResult else {
                 context.transactionAuthor = nil
-                throw CoreDataError.fetchedObjectFailedToCastToExpectedType
+                throw CoreDataError.fetchedObjectFailedToCastToExpectedType(description: request.description)
             }
             context.transactionAuthor = nil
             return result
@@ -54,7 +54,7 @@ extension CoreDataRepository {
             context.transactionAuthor = transactionAuthor
             guard let result = try scratchPad.execute(request) as? NSBatchUpdateResult else {
                 context.transactionAuthor = nil
-                throw CoreDataError.fetchedObjectFailedToCastToExpectedType
+                throw CoreDataError.fetchedObjectFailedToCastToExpectedType(description: request.description)
             }
             context.transactionAuthor = nil
             return result

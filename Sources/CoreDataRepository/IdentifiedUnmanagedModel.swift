@@ -10,6 +10,8 @@ public protocol IdentifiedUnmanagedModel: ReadableUnmanagedModel {
     associatedtype UnmanagedId: Equatable
     var unmanagedId: UnmanagedId { get }
     static var unmanagedIdExpression: NSExpression { get }
+    /// Enables including ``UnmanagedId`` in ``errorDescription``
+    static func errorDescription(for unmanagedId: UnmanagedId) -> String
 }
 
 extension IdentifiedUnmanagedModel {
@@ -29,10 +31,12 @@ extension IdentifiedUnmanagedModel {
         )
         let fetchResult = try context.fetch(request)
         guard let managed = fetchResult.first, fetchResult.count == 1 else {
-            throw CoreDataError.noMatchFoundWhenReadingItem
+            throw CoreDataError
+                .noMatchFoundWhenReadingItem(description: "\(Self.self) -- id: \(errorDescription(for: id))")
         }
         guard !managed.isDeleted else {
-            throw CoreDataError.fetchedObjectIsFlaggedAsDeleted
+            throw CoreDataError
+                .fetchedObjectIsFlaggedAsDeleted(description: "\(Self.self) -- id: \(errorDescription(for: id))")
         }
         return managed
     }

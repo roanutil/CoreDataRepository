@@ -103,7 +103,8 @@ extension CoreDataRepository {
             try ids.map { id in
                 let managed = try Model.readManaged(id: id, from: readContext)
                 guard !managed.isDeleted else {
-                    throw CoreDataError.fetchedObjectIsFlaggedAsDeleted
+                    throw CoreDataError
+                        .fetchedObjectIsFlaggedAsDeleted(description: Model.errorDescription(for: id))
                 }
                 return try Model(managed: managed)
             }
@@ -122,7 +123,8 @@ extension CoreDataRepository {
             try items.map { item in
                 let managed = try item.readManaged(from: readContext)
                 guard !managed.isDeleted else {
-                    throw CoreDataError.fetchedObjectIsFlaggedAsDeleted
+                    throw CoreDataError
+                        .fetchedObjectIsFlaggedAsDeleted(description: item.errorDescription)
                 }
                 return try Model(managed: managed)
             }
@@ -142,7 +144,7 @@ extension CoreDataRepository {
             try managedIds.map { managedId in
                 let _managed = try readContext.notDeletedObject(for: managedId)
                 guard let managed = _managed as? Model.ManagedModel else {
-                    throw CoreDataError.fetchedObjectFailedToCastToExpectedType
+                    throw CoreDataError.fetchedObjectFailedToCastToExpectedType(description: "\(Model.self)")
                 }
                 return try Model(managed: managed)
             }
@@ -163,7 +165,7 @@ extension CoreDataRepository {
                 let managedId = try readContext.objectId(from: managedIdUrl).get()
                 let _managed = try readContext.notDeletedObject(for: managedId)
                 guard let managed = _managed as? Model.ManagedModel else {
-                    throw CoreDataError.fetchedObjectFailedToCastToExpectedType
+                    throw CoreDataError.fetchedObjectFailedToCastToExpectedType(description: "\(Model.self)")
                 }
                 return try Model(managed: managed)
             }

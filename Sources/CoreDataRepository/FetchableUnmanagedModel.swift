@@ -67,6 +67,9 @@ public protocol FetchableUnmanagedModel: Sendable {
 
     /// ``NSFetchRequest`` for ``ManagedModel`` with a strongly typed ``NSFetchRequest.ResultType``
     static func managedFetchRequest() -> NSFetchRequest<ManagedModel>
+
+    /// A description of the context from where an error is thrown
+    var errorDescription: String { get }
 }
 
 extension FetchableUnmanagedModel {
@@ -76,5 +79,10 @@ extension FetchableUnmanagedModel {
             entityName: ManagedModel.entity().name ?? ManagedModel.entity()
                 .managedObjectClassName
         )
+    }
+
+    @inlinable
+    public var errorDescription: String {
+        "\(Self.self)"
     }
 }

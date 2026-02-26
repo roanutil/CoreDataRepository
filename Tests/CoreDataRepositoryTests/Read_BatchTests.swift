@@ -496,7 +496,11 @@ extension CoreDataRepositoryTests {
             switch result {
             case .success:
                 Issue.record("Not expecting success")
-            case .failure(.noMatchFoundWhenReadingItem):
+            case .failure(
+                .noMatchFoundWhenReadingItem(
+                    description: "\(modelType) -- id: \(modelType.seeded(1).unmanagedId.uuidString)"
+                )
+            ):
                 break
             case let .failure(error):
                 Issue.record("Unexpected error: \(error)")
@@ -608,7 +612,7 @@ extension CoreDataRepositoryTests {
             switch result {
             case .success:
                 Issue.record("Not expecting success")
-            case .failure(.noObjectIdOnItem):
+            case .failure(.noObjectIdOnItem(description: "\(modelType)")):
                 break
             case let .failure(error):
                 Issue.record("Unexpected error: \(error)")
@@ -805,7 +809,7 @@ extension CoreDataRepositoryTests {
             switch result {
             case .success:
                 Issue.record("Not expecting success")
-            case .failure(.noUrlOnItemToMapToObjectId):
+            case .failure(.noUrlOnItemToMapToObjectId(description: "\(modelType)")):
                 break
             case let .failure(error):
                 Issue.record("Unexpected error: \(error)")
