@@ -40,6 +40,31 @@ extension CoreDataRepository {
     }
 
     /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func fetchSubscription<Model: FetchableUnmanagedModel>(
+        request: NSFetchRequest<Model.ManagedModel>,
+        changeTrackingRequest: NSFetchRequest<Model.ManagedModel>,
+        of _: Model.Type
+    ) -> AsyncStream<Result<[Model], CoreDataError>> {
+        AsyncStream { continuation in
+            let subscription = FetchSubscription(
+                fetchRequest: request,
+                fetchResultControllerRequest: changeTrackingRequest,
+                context: context.childContext(),
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
     @inlinable
     public func fetchThrowingSubscription<Model: FetchableUnmanagedModel>(
         _ request: NSFetchRequest<Model.ManagedModel>,
@@ -48,6 +73,31 @@ extension CoreDataRepository {
         AsyncThrowingStream { continuation in
             let subscription = FetchThrowingSubscription(
                 request: request,
+                context: context.childContext(),
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Fetch items from the store with a ``NSFetchRequest`` and receive updates as the store changes.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func fetchThrowingSubscription<Model: FetchableUnmanagedModel>(
+        request: NSFetchRequest<Model.ManagedModel>,
+        changeTrackingRequest: NSFetchRequest<Model.ManagedModel>,
+        of _: Model.Type
+    ) -> AsyncThrowingStream<[Model], Error> {
+        AsyncThrowingStream { continuation in
+            let subscription = FetchThrowingSubscription(
+                fetchRequest: request,
+                fetchResultControllerRequest: changeTrackingRequest,
                 context: context.childContext(),
                 continuation: continuation
             )

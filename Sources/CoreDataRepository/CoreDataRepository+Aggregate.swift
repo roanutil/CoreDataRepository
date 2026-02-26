@@ -90,6 +90,38 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to the average of a managed object's numeric property for all instances that satisfy the predicate.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func averageSubscription<Value: Numeric & Sendable>(
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
+        AsyncStream { continuation in
+            let subscription = AggregateSubscription(
+                function: .average,
+                context: context.childContext(),
+                predicate: predicate,
+                changeTrackingRequest: changeTrackingRequest,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Subscribe to the average of a managed object's numeric property for all instances that satisfy the predicate.
     @inlinable
     public func averageThrowingSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
@@ -103,6 +135,38 @@ extension CoreDataRepository {
                 function: .average,
                 context: context.childContext(),
                 predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Subscribe to the average of a managed object's numeric property for all instances that satisfy the predicate.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func averageThrowingSubscription<Value: Numeric & Sendable>(
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncThrowingStream<Value, Error> {
+        AsyncThrowingStream { continuation in
+            let subscription = AggregateThrowingSubscription(
+                function: .average,
+                context: context.childContext(),
+                predicate: predicate,
+                changeTrackingRequest: changeTrackingRequest,
                 entityDesc: entityDesc,
                 attributeDesc: attributeDesc,
                 groupBy: groupBy,
@@ -160,6 +224,33 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to the count or quantity of managed object instances that satisfy the predicate.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func countSubscription<Value: Numeric & Sendable>(
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        as _: Value.Type
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
+        AsyncStream { continuation in
+            let subscription = CountSubscription(
+                context: context.childContext(),
+                predicate: predicate,
+                changeTrackingRequest: changeTrackingRequest,
+                entityDesc: entityDesc,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Subscribe to the count or quantity of managed object instances that satisfy the predicate.
     @inlinable
     public func countThrowingSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
@@ -170,6 +261,33 @@ extension CoreDataRepository {
             let subscription = CountThrowingSubscription(
                 context: context.childContext(),
                 predicate: predicate,
+                entityDesc: entityDesc,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Subscribe to the count or quantity of managed object instances that satisfy the predicate.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func countThrowingSubscription<Value: Numeric & Sendable>(
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        as _: Value.Type
+    ) -> AsyncThrowingStream<Value, Error> {
+        AsyncThrowingStream { continuation in
+            let subscription = CountThrowingSubscription(
+                context: context.childContext(),
+                predicate: predicate,
+                changeTrackingRequest: changeTrackingRequest,
                 entityDesc: entityDesc,
                 continuation: continuation
             )
@@ -230,6 +348,39 @@ extension CoreDataRepository {
 
     /// Subscribe to the max or maximum of a managed object's numeric property for all instances that satisfy the
     /// predicate.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func maxSubscription<Value: Numeric & Sendable>(
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
+        AsyncStream { continuation in
+            let subscription = AggregateSubscription(
+                function: .max,
+                context: context.childContext(),
+                predicate: predicate,
+                changeTrackingRequest: changeTrackingRequest,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Subscribe to the max or maximum of a managed object's numeric property for all instances that satisfy the
+    /// predicate.
     @inlinable
     public func maxThrowingSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
@@ -243,6 +394,39 @@ extension CoreDataRepository {
                 function: .max,
                 context: context.childContext(),
                 predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Subscribe to the max or maximum of a managed object's numeric property for all instances that satisfy the
+    /// predicate.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func maxThrowingSubscription<Value: Numeric & Sendable>(
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncThrowingStream<Value, Error> {
+        AsyncThrowingStream { continuation in
+            let subscription = AggregateThrowingSubscription(
+                function: .max,
+                context: context.childContext(),
+                predicate: predicate,
+                changeTrackingRequest: changeTrackingRequest,
                 entityDesc: entityDesc,
                 attributeDesc: attributeDesc,
                 groupBy: groupBy,
@@ -305,6 +489,39 @@ extension CoreDataRepository {
 
     /// Subscribe to the min or minimum of a managed object's numeric property for all instances that satisfy the
     /// predicate.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func minSubscription<Value: Numeric & Sendable>(
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
+        AsyncStream { continuation in
+            let subscription = AggregateSubscription(
+                function: .min,
+                context: context.childContext(),
+                predicate: predicate,
+                changeTrackingRequest: changeTrackingRequest,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Subscribe to the min or minimum of a managed object's numeric property for all instances that satisfy the
+    /// predicate.
     @inlinable
     public func minThrowingSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
@@ -318,6 +535,39 @@ extension CoreDataRepository {
                 function: .min,
                 context: context.childContext(),
                 predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Subscribe to the min or minimum of a managed object's numeric property for all instances that satisfy the
+    /// predicate.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func minThrowingSubscription<Value: Numeric & Sendable>(
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncThrowingStream<Value, Error> {
+        AsyncThrowingStream { continuation in
+            let subscription = AggregateThrowingSubscription(
+                function: .min,
+                context: context.childContext(),
+                predicate: predicate,
+                changeTrackingRequest: changeTrackingRequest,
                 entityDesc: entityDesc,
                 attributeDesc: attributeDesc,
                 groupBy: groupBy,
@@ -378,6 +628,38 @@ extension CoreDataRepository {
     }
 
     /// Subscribe to the sum of a managed object's numeric property for all instances that satisfy the predicate.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func sumSubscription<Value: Numeric & Sendable>(
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncStream<Result<Value, CoreDataError>> {
+        AsyncStream { continuation in
+            let subscription = AggregateSubscription(
+                function: .sum,
+                context: context.childContext(),
+                predicate: predicate,
+                changeTrackingRequest: changeTrackingRequest,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Subscribe to the sum of a managed object's numeric property for all instances that satisfy the predicate.
     @inlinable
     public func sumThrowingSubscription<Value: Numeric & Sendable>(
         predicate: NSPredicate,
@@ -391,6 +673,38 @@ extension CoreDataRepository {
                 function: .sum,
                 context: context.childContext(),
                 predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy,
+                continuation: continuation
+            )
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+            subscription.manualFetch()
+        }
+    }
+
+    /// Subscribe to the sum of a managed object's numeric property for all instances that satisfy the predicate.
+    ///
+    /// This endpoint allows separate fetch requests for fetching and change tracking. There are times where CoreData
+    /// will not recognize changes with a specific predicate. The fix, is to use a simplified predicate for change
+    /// tracking and the full predicate for fetching.
+    @inlinable
+    public func sumThrowingSubscription<Value: Numeric & Sendable>(
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        as _: Value.Type
+    ) -> AsyncThrowingStream<Value, Error> {
+        AsyncThrowingStream { continuation in
+            let subscription = AggregateThrowingSubscription(
+                function: .sum,
+                context: context.childContext(),
+                predicate: predicate,
+                changeTrackingRequest: changeTrackingRequest,
                 entityDesc: entityDesc,
                 attributeDesc: attributeDesc,
                 groupBy: groupBy,
