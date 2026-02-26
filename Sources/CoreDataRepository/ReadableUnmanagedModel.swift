@@ -66,7 +66,7 @@ import Foundation
 ///         )
 ///         let fetchResult = try context.fetch(request)
 ///         guard let managed = fetchResult.first, fetchResult.count == 1 else {
-///             throw CoreDataError.noMatchFoundWhenReadingItem
+///             throw CoreDataError.noMatchFoundWhenReadingItem(description: errorDescription)
 ///         }
 ///         return managed
 ///     }
