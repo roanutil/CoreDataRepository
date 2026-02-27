@@ -45,3 +45,9 @@ extension IdentifiedUnmanagedModel {
         return managed
     }
 }
+
+extension IdentifiedUnmanagedModel where UnmanagedId: CustomStringConvertible {
+    public static func errorDescription(for unmanagedId: UnmanagedId) -> String {
+        unmanagedId.description
+    }
+}
