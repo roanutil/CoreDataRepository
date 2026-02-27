@@ -111,6 +111,62 @@ extension CoreDataRepositoryTests {
         }
 
         @Test(arguments: [false, true])
+        func fetchSubscriptionSuccessWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = Self.fetchRequest()
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 3),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        repository
+                            .fetchSubscription(
+                                request: Self.fetchRequest(),
+                                changeTrackingRequest: changeTrackingRequest,
+                                of: FetchableModel_UuidId.self
+                            )
+                    }
+                } else {
+                    repository
+                        .fetchSubscription(
+                            request: Self.fetchRequest(),
+                            changeTrackingRequest: changeTrackingRequest,
+                            of: FetchableModel_UuidId.self
+                        )
+                }
+                for await _items in stream {
+                    let items = try _items.get()
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(items.count, 5, "Result items count should match expectation")
+                        expectNoDifference(items, expectedValues, "Result items should match expectations")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(items.count, 4, "Result items count should match expectation")
+                        expectNoDifference(
+                            items,
+                            Array(expectedValues[0 ... 3]),
+                            "Result items should match expectations"
+                        )
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
         func fetchThrowingSubscriptionSuccess(inTransaction: Bool) async throws {
             let task = Task {
                 var resultCount = 0
@@ -124,6 +180,59 @@ extension CoreDataRepositoryTests {
                 } else {
                     repository.fetchThrowingSubscription(
                         Self.fetchRequest(),
+                        of: FetchableModel_UuidId.self
+                    )
+                }
+                for try await items in stream {
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(items.count, 5, "Result items count should match expectation")
+                        expectNoDifference(items, expectedValues, "Result items should match expectations")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(items.count, 4, "Result items count should match expectation")
+                        expectNoDifference(
+                            items,
+                            Array(expectedValues[0 ... 3]),
+                            "Result items should match expectations"
+                        )
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
+        func fetchThrowingSubscriptionSuccessWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = Self.fetchRequest()
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 3),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        repository.fetchThrowingSubscription(
+                            request: Self.fetchRequest(),
+                            changeTrackingRequest: changeTrackingRequest,
+                            of: FetchableModel_UuidId.self
+                        )
+                    }
+                } else {
+                    repository.fetchThrowingSubscription(
+                        request: Self.fetchRequest(),
+                        changeTrackingRequest: changeTrackingRequest,
                         of: FetchableModel_UuidId.self
                     )
                 }

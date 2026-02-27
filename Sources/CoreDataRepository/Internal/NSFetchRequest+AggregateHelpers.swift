@@ -16,7 +16,7 @@ extension NSFetchRequest<NSDictionary> {
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil
-    ) throws -> NSFetchRequest<NSDictionary> {
+    ) throws(CoreDataError) -> NSFetchRequest<NSDictionary> {
         guard let entityName = entityDesc.name else {
             throw CoreDataError.noEntityNameFound
         }
@@ -42,7 +42,7 @@ extension NSFetchRequest<NSDictionary> {
     static func countRequest(
         predicate: NSPredicate,
         entityDesc: NSEntityDescription
-    ) throws -> NSFetchRequest<NSDictionary> {
+    ) throws(CoreDataError) -> NSFetchRequest<NSDictionary> {
         guard let attributeDesc = entityDesc.attributesByName.values.first else {
             throw CoreDataError.atLeastOneAttributeDescRequired
         }

@@ -14,12 +14,12 @@ final class CountSubscription<Value: Numeric & Sendable>: Subscription<Value, NS
 {
     @usableFromInline
     override func fetch() {
-        frc.managedObjectContext.perform { [weak self, frc] in
+        frc.managedObjectContext.perform { [weak self, frc, request] in
             if (frc.fetchedObjects ?? []).isEmpty {
                 self?.start()
             }
             do {
-                let count = try frc.managedObjectContext.count(for: frc.fetchRequest)
+                let count = try frc.managedObjectContext.count(for: request)
                 self?.send(Value(exactly: count) ?? Value.zero)
             } catch let error as CocoaError {
                 self?.fail(.cocoa(error))
@@ -38,28 +38,10 @@ final class CountSubscription<Value: Numeric & Sendable>: Subscription<Value, NS
     ) {
         let request: NSFetchRequest<NSDictionary>
         do {
-            request = try NSFetchRequest<NSDictionary>.countRequest(
+            request = try NSFetchRequest.countRequest(
                 predicate: predicate,
                 entityDesc: entityDesc
             )
-        } catch let error as CoreDataError {
-            self.init(
-                fetchRequest: NSFetchRequest(),
-                fetchResultControllerRequest: NSFetchRequest(),
-                context: context,
-                continuation: continuation
-            )
-            self.fail(error)
-            return
-        } catch let error as CocoaError {
-            self.init(
-                fetchRequest: NSFetchRequest(),
-                fetchResultControllerRequest: NSFetchRequest(),
-                context: context,
-                continuation: continuation
-            )
-            self.fail(.cocoa(error))
-            return
         } catch {
             self.init(
                 fetchRequest: NSFetchRequest(),
@@ -67,9 +49,38 @@ final class CountSubscription<Value: Numeric & Sendable>: Subscription<Value, NS
                 context: context,
                 continuation: continuation
             )
-            fail(.unknown(error as NSError))
+            fail(error)
             return
         }
         self.init(request: request, context: context, continuation: continuation)
+    }
+
+    @usableFromInline
+    convenience init(
+        context: NSManagedObjectContext,
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        continuation: AsyncStream<Result<Value, CoreDataError>>.Continuation
+    ) {
+        let request: NSFetchRequest<NSDictionary>
+        do {
+            request = try NSFetchRequest.countRequest(predicate: predicate, entityDesc: entityDesc)
+        } catch {
+            self.init(
+                fetchRequest: NSFetchRequest(),
+                fetchResultControllerRequest: NSFetchRequest(),
+                context: context,
+                continuation: continuation
+            )
+            fail(error)
+            return
+        }
+        self.init(
+            fetchRequest: request,
+            fetchResultControllerRequest: changeTrackingRequest,
+            context: context,
+            continuation: continuation
+        )
     }
 }

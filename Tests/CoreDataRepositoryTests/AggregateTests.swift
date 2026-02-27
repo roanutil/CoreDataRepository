@@ -160,6 +160,63 @@ extension CoreDataRepositoryTests {
         }
 
         @Test(arguments: [false, true])
+        func countSubscriptionWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = try #require(UnmanagedModel_UuidId
+                .managedFetchRequest() as? NSFetchRequest<NSManagedObject>)
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 30),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            changeTrackingRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true),
+            ]
+            let fetchPredicate = NSPredicate(value: true)
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        repository
+                            .countSubscription(
+                                predicate: fetchPredicate,
+                                changeTrackingRequest: changeTrackingRequest,
+                                entityDesc: ManagedModel_UuidId.entity(),
+                                as: Int.self
+                            )
+                    }
+                } else {
+                    repository
+                        .countSubscription(
+                            predicate: fetchPredicate,
+                            changeTrackingRequest: changeTrackingRequest,
+                            entityDesc: ManagedModel_UuidId.entity(),
+                            as: Int.self
+                        )
+                }
+                for await _count in stream {
+                    let count = try _count.get()
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(count, 5, "Result value (count) should equal number of values.")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(count, 4, "Count should match expected value after deleting one value.")
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
         func countThrowingSubscription(inTransaction: Bool) async throws {
             let task = Task {
                 var resultCount = 0
@@ -176,6 +233,61 @@ extension CoreDataRepositoryTests {
                     repository
                         .countThrowingSubscription(
                             predicate: NSPredicate(value: true),
+                            entityDesc: ManagedModel_UuidId.entity(),
+                            as: Int.self
+                        )
+                }
+                for try await count in stream {
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(count, 5, "Result value (count) should equal number of values.")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(count, 4, "Count should match expected value after deleting one value.")
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
+        func countThrowingSubscriptionWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = try #require(UnmanagedModel_UuidId
+                .managedFetchRequest() as? NSFetchRequest<NSManagedObject>)
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 30),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            changeTrackingRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true),
+            ]
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        repository
+                            .countThrowingSubscription(
+                                predicate: NSPredicate(value: true),
+                                changeTrackingRequest: changeTrackingRequest,
+                                entityDesc: ManagedModel_UuidId.entity(),
+                                as: Int.self
+                            )
+                    }
+                } else {
+                    repository
+                        .countThrowingSubscription(
+                            predicate: NSPredicate(value: true),
+                            changeTrackingRequest: changeTrackingRequest,
                             entityDesc: ManagedModel_UuidId.entity(),
                             as: Int.self
                         )
@@ -323,6 +435,72 @@ extension CoreDataRepositoryTests {
         }
 
         @Test(arguments: [false, true])
+        func sumSubscriptionWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = try #require(UnmanagedModel_UuidId
+                .managedFetchRequest() as? NSFetchRequest<NSManagedObject>)
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 30),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            changeTrackingRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true),
+            ]
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        try repository.sumSubscription(
+                            predicate: NSPredicate(value: true),
+                            changeTrackingRequest: changeTrackingRequest,
+                            entityDesc: ManagedModel_UuidId.entity(),
+                            attributeDesc: #require(
+                                ManagedModel_UuidId.entity().attributesByName.values
+                                    .first(where: { $0.name == "decimal" })
+                            ),
+                            as: Decimal.self
+                        )
+                    }
+                } else {
+                    try repository.sumSubscription(
+                        predicate: NSPredicate(value: true),
+                        changeTrackingRequest: changeTrackingRequest,
+                        entityDesc: ManagedModel_UuidId.entity(),
+                        attributeDesc: #require(
+                            ManagedModel_UuidId.entity().attributesByName.values
+                                .first(where: { $0.name == "decimal" })
+                        ),
+                        as: Decimal.self
+                    )
+                }
+                for await _sum in stream {
+                    let sum = try _sum.get()
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(sum, 150, "Result value (sum) should equal number of values.")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(
+                            sum,
+                            100,
+                            "Result value (sum) should match expected value after deleting one value."
+                        )
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
         func sumThrowingSubscription(inTransaction: Bool) async throws {
             let task = Task {
                 var resultCount = 0
@@ -341,6 +519,71 @@ extension CoreDataRepositoryTests {
                 } else {
                     try repository.sumThrowingSubscription(
                         predicate: NSPredicate(value: true),
+                        entityDesc: ManagedModel_UuidId.entity(),
+                        attributeDesc: #require(
+                            ManagedModel_UuidId.entity().attributesByName.values
+                                .first(where: { $0.name == "decimal" })
+                        ),
+                        as: Decimal.self
+                    )
+                }
+                for try await sum in stream {
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(sum, 150, "Result value (sum) should equal number of values.")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(
+                            sum,
+                            100,
+                            "Result value (sum) should match expected value after deleting one value."
+                        )
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
+        func sumThrowingSubscriptionWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = try #require(UnmanagedModel_UuidId
+                .managedFetchRequest() as? NSFetchRequest<NSManagedObject>)
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 30),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            changeTrackingRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true),
+            ]
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        try repository.sumThrowingSubscription(
+                            predicate: NSPredicate(value: true),
+                            changeTrackingRequest: changeTrackingRequest,
+                            entityDesc: ManagedModel_UuidId.entity(),
+                            attributeDesc: #require(
+                                ManagedModel_UuidId.entity().attributesByName.values
+                                    .first(where: { $0.name == "decimal" })
+                            ),
+                            as: Decimal.self
+                        )
+                    }
+                } else {
+                    try repository.sumThrowingSubscription(
+                        predicate: NSPredicate(value: true),
+                        changeTrackingRequest: changeTrackingRequest,
                         entityDesc: ManagedModel_UuidId.entity(),
                         attributeDesc: #require(
                             ManagedModel_UuidId.entity().attributesByName.values
@@ -504,6 +747,72 @@ extension CoreDataRepositoryTests {
         }
 
         @Test(arguments: [false, true])
+        func averageSubscriptionWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = try #require(UnmanagedModel_UuidId
+                .managedFetchRequest() as? NSFetchRequest<NSManagedObject>)
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 30),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            changeTrackingRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true),
+            ]
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        try repository.averageSubscription(
+                            predicate: NSPredicate(value: true),
+                            changeTrackingRequest: changeTrackingRequest,
+                            entityDesc: ManagedModel_UuidId.entity(),
+                            attributeDesc: #require(
+                                ManagedModel_UuidId.entity().attributesByName.values
+                                    .first(where: { $0.name == "decimal" })
+                            ),
+                            as: Decimal.self
+                        )
+                    }
+                } else {
+                    try repository.averageSubscription(
+                        predicate: NSPredicate(value: true),
+                        changeTrackingRequest: changeTrackingRequest,
+                        entityDesc: ManagedModel_UuidId.entity(),
+                        attributeDesc: #require(
+                            ManagedModel_UuidId.entity().attributesByName.values
+                                .first(where: { $0.name == "decimal" })
+                        ),
+                        as: Decimal.self
+                    )
+                }
+                for await _average in stream {
+                    let average = try _average.get()
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(average, 30, "Result value (average) should equal number of values.")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(
+                            average,
+                            25,
+                            "Result value (average) should match expected value after deleting one value."
+                        )
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
         func averageThrowingSubscription(inTransaction: Bool) async throws {
             let task = Task {
                 var resultCount = 0
@@ -522,6 +831,71 @@ extension CoreDataRepositoryTests {
                 } else {
                     try repository.averageThrowingSubscription(
                         predicate: NSPredicate(value: true),
+                        entityDesc: ManagedModel_UuidId.entity(),
+                        attributeDesc: #require(
+                            ManagedModel_UuidId.entity().attributesByName.values
+                                .first(where: { $0.name == "decimal" })
+                        ),
+                        as: Decimal.self
+                    )
+                }
+                for try await average in stream {
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(average, 30, "Result value (average) should equal number of values.")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(
+                            average,
+                            25,
+                            "Result value (average) should match expected value after deleting one value."
+                        )
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
+        func averageThrowingSubscriptionWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = try #require(UnmanagedModel_UuidId
+                .managedFetchRequest() as? NSFetchRequest<NSManagedObject>)
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 30),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            changeTrackingRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true),
+            ]
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        try repository.averageThrowingSubscription(
+                            predicate: NSPredicate(value: true),
+                            changeTrackingRequest: changeTrackingRequest,
+                            entityDesc: ManagedModel_UuidId.entity(),
+                            attributeDesc: #require(
+                                ManagedModel_UuidId.entity().attributesByName.values
+                                    .first(where: { $0.name == "decimal" })
+                            ),
+                            as: Decimal.self
+                        )
+                    }
+                } else {
+                    try repository.averageThrowingSubscription(
+                        predicate: NSPredicate(value: true),
+                        changeTrackingRequest: changeTrackingRequest,
                         entityDesc: ManagedModel_UuidId.entity(),
                         attributeDesc: #require(
                             ManagedModel_UuidId.entity().attributesByName.values
@@ -685,6 +1059,72 @@ extension CoreDataRepositoryTests {
         }
 
         @Test(arguments: [false, true])
+        func minSubscriptionWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = try #require(UnmanagedModel_UuidId
+                .managedFetchRequest() as? NSFetchRequest<NSManagedObject>)
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 30),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            changeTrackingRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true),
+            ]
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        try repository.minSubscription(
+                            predicate: NSPredicate(value: true),
+                            changeTrackingRequest: changeTrackingRequest,
+                            entityDesc: ManagedModel_UuidId.entity(),
+                            attributeDesc: #require(
+                                ManagedModel_UuidId.entity().attributesByName.values
+                                    .first(where: { $0.name == "decimal" })
+                            ),
+                            as: Decimal.self
+                        )
+                    }
+                } else {
+                    try repository.minSubscription(
+                        predicate: NSPredicate(value: true),
+                        changeTrackingRequest: changeTrackingRequest,
+                        entityDesc: ManagedModel_UuidId.entity(),
+                        attributeDesc: #require(
+                            ManagedModel_UuidId.entity().attributesByName.values
+                                .first(where: { $0.name == "decimal" })
+                        ),
+                        as: Decimal.self
+                    )
+                }
+                for await _min in stream {
+                    let min = try _min.get()
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(min, 10, "Result value (min) should equal number of values.")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(
+                            min,
+                            10,
+                            "Result value (min) should match expected value after deleting one value."
+                        )
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
         func minThrowingSubscription(inTransaction: Bool) async throws {
             let task = Task {
                 var resultCount = 0
@@ -703,6 +1143,71 @@ extension CoreDataRepositoryTests {
                 } else {
                     try repository.minThrowingSubscription(
                         predicate: NSPredicate(value: true),
+                        entityDesc: ManagedModel_UuidId.entity(),
+                        attributeDesc: #require(
+                            ManagedModel_UuidId.entity().attributesByName.values
+                                .first(where: { $0.name == "decimal" })
+                        ),
+                        as: Decimal.self
+                    )
+                }
+                for try await min in stream {
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(min, 10, "Result value (min) should equal number of values.")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(
+                            min,
+                            10,
+                            "Result value (min) should match expected value after deleting one value."
+                        )
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
+        func minThrowingSubscriptionWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = try #require(UnmanagedModel_UuidId
+                .managedFetchRequest() as? NSFetchRequest<NSManagedObject>)
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 30),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            changeTrackingRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true),
+            ]
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        try repository.minThrowingSubscription(
+                            predicate: NSPredicate(value: true),
+                            changeTrackingRequest: changeTrackingRequest,
+                            entityDesc: ManagedModel_UuidId.entity(),
+                            attributeDesc: #require(
+                                ManagedModel_UuidId.entity().attributesByName.values
+                                    .first(where: { $0.name == "decimal" })
+                            ),
+                            as: Decimal.self
+                        )
+                    }
+                } else {
+                    try repository.minThrowingSubscription(
+                        predicate: NSPredicate(value: true),
+                        changeTrackingRequest: changeTrackingRequest,
                         entityDesc: ManagedModel_UuidId.entity(),
                         attributeDesc: #require(
                             ManagedModel_UuidId.entity().attributesByName.values
@@ -866,6 +1371,72 @@ extension CoreDataRepositoryTests {
         }
 
         @Test(arguments: [false, true])
+        func maxSubscriptionWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = try #require(UnmanagedModel_UuidId
+                .managedFetchRequest() as? NSFetchRequest<NSManagedObject>)
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 30),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            changeTrackingRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true),
+            ]
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        try repository.maxSubscription(
+                            predicate: NSPredicate(value: true),
+                            changeTrackingRequest: changeTrackingRequest,
+                            entityDesc: ManagedModel_UuidId.entity(),
+                            attributeDesc: #require(
+                                ManagedModel_UuidId.entity().attributesByName.values
+                                    .first(where: { $0.name == "decimal" })
+                            ),
+                            as: Decimal.self
+                        )
+                    }
+                } else {
+                    try repository.maxSubscription(
+                        predicate: NSPredicate(value: true),
+                        changeTrackingRequest: changeTrackingRequest,
+                        entityDesc: ManagedModel_UuidId.entity(),
+                        attributeDesc: #require(
+                            ManagedModel_UuidId.entity().attributesByName.values
+                                .first(where: { $0.name == "decimal" })
+                        ),
+                        as: Decimal.self
+                    )
+                }
+                for await _max in stream {
+                    let max = try _max.get()
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(max, 50, "Result value (max) should equal number of values.")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(
+                            max,
+                            40,
+                            "Result value (max) should match expected value after deleting one value."
+                        )
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
         func maxThrowingSubscription(inTransaction: Bool) async throws {
             let task = Task {
                 var resultCount = 0
@@ -884,6 +1455,71 @@ extension CoreDataRepositoryTests {
                 } else {
                     try repository.maxThrowingSubscription(
                         predicate: NSPredicate(value: true),
+                        entityDesc: ManagedModel_UuidId.entity(),
+                        attributeDesc: #require(
+                            ManagedModel_UuidId.entity().attributesByName.values
+                                .first(where: { $0.name == "decimal" })
+                        ),
+                        as: Decimal.self
+                    )
+                }
+                for try await max in stream {
+                    resultCount += 1
+                    switch resultCount {
+                    case 1:
+                        expectNoDifference(max, 50, "Result value (max) should equal number of values.")
+                        try delete(managedId: #require(objectIds.last))
+                        await Task.yield()
+                    case 2:
+                        expectNoDifference(
+                            max,
+                            40,
+                            "Result value (max) should match expected value after deleting one value."
+                        )
+                        return resultCount
+                    default:
+                        Issue.record("Not expecting any values past the first two.")
+                        return resultCount
+                    }
+                }
+                return resultCount
+            }
+            let finalCount = try await task.value
+            expectNoDifference(finalCount, 2)
+        }
+
+        @Test(arguments: [false, true])
+        func maxThrowingSubscriptionWithSplitFetchRequests(inTransaction: Bool) async throws {
+            let changeTrackingRequest = try #require(UnmanagedModel_UuidId
+                .managedFetchRequest() as? NSFetchRequest<NSManagedObject>)
+            changeTrackingRequest.predicate = NSComparisonPredicate(
+                leftExpression: NSExpression(forKeyPath: \ManagedModel_UuidId.int),
+                rightExpression: NSExpression(forConstantValue: 30),
+                modifier: .direct,
+                type: .notEqualTo
+            )
+            changeTrackingRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \ManagedModel_UuidId.int, ascending: true),
+            ]
+            let task = Task {
+                var resultCount = 0
+                let stream = if inTransaction {
+                    try await repository.withTransaction { _ in
+                        try repository.maxThrowingSubscription(
+                            predicate: NSPredicate(value: true),
+                            changeTrackingRequest: changeTrackingRequest,
+                            entityDesc: ManagedModel_UuidId.entity(),
+                            attributeDesc: #require(
+                                ManagedModel_UuidId.entity().attributesByName.values
+                                    .first(where: { $0.name == "decimal" })
+                            ),
+                            as: Decimal.self
+                        )
+                    }
+                } else {
+                    try repository.maxThrowingSubscription(
+                        predicate: NSPredicate(value: true),
+                        changeTrackingRequest: changeTrackingRequest,
                         entityDesc: ManagedModel_UuidId.entity(),
                         attributeDesc: #require(
                             ManagedModel_UuidId.entity().attributesByName.values

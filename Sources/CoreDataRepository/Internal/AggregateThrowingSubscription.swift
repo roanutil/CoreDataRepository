@@ -44,7 +44,6 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
     }
 
     @usableFromInline
-    // swiftlint:disable:next function_body_length
     convenience init(
         function: CoreDataRepository.AggregateFunction,
         context: NSManagedObjectContext,
@@ -52,35 +51,17 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
         entityDesc: NSEntityDescription,
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
-        continuation: AsyncThrowingStream<Value, Error>.Continuation
+        continuation: AsyncThrowingStream<Value, any Error>.Continuation
     ) {
         let request: NSFetchRequest<NSDictionary>
         do {
-            request = try NSFetchRequest<NSDictionary>.request(
+            request = try NSFetchRequest.request(
                 function: function,
                 predicate: predicate,
                 entityDesc: entityDesc,
                 attributeDesc: attributeDesc,
                 groupBy: groupBy
             )
-        } catch let error as CoreDataError {
-            self.init(
-                fetchRequest: NSFetchRequest(),
-                fetchResultControllerRequest: NSFetchRequest(),
-                context: context,
-                continuation: continuation
-            )
-            self.fail(error)
-            return
-        } catch let error as CocoaError {
-            self.init(
-                fetchRequest: NSFetchRequest(),
-                fetchResultControllerRequest: NSFetchRequest(),
-                context: context,
-                continuation: continuation
-            )
-            self.fail(.cocoa(error))
-            return
         } catch {
             self.init(
                 fetchRequest: NSFetchRequest(),
@@ -88,7 +69,7 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
                 context: context,
                 continuation: continuation
             )
-            fail(.unknown(error as NSError))
+            fail(error)
             return
         }
         guard entityDesc == attributeDesc.entity else {
@@ -115,5 +96,66 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
             return
         }
         self.init(request: request, context: context, continuation: continuation)
+    }
+
+    @usableFromInline
+    convenience init(
+        function: CoreDataRepository.AggregateFunction,
+        context: NSManagedObjectContext,
+        predicate: NSPredicate,
+        changeTrackingRequest: NSFetchRequest<NSManagedObject>,
+        entityDesc: NSEntityDescription,
+        attributeDesc: NSAttributeDescription,
+        groupBy: NSAttributeDescription? = nil,
+        continuation: AsyncThrowingStream<Value, any Error>.Continuation
+    ) {
+        let request: NSFetchRequest<NSDictionary>
+        do {
+            request = try NSFetchRequest.request(
+                function: function,
+                predicate: predicate,
+                entityDesc: entityDesc,
+                attributeDesc: attributeDesc,
+                groupBy: groupBy
+            )
+        } catch {
+            self.init(
+                fetchRequest: NSFetchRequest(),
+                fetchResultControllerRequest: NSFetchRequest(),
+                context: context,
+                continuation: continuation
+            )
+            fail(error)
+            return
+        }
+        guard entityDesc == attributeDesc.entity else {
+            self.init(
+                fetchRequest: NSFetchRequest(),
+                fetchResultControllerRequest: NSFetchRequest(),
+                context: context,
+                continuation: continuation
+            )
+            guard let entityName = entityDesc.name ?? entityDesc.managedObjectClassName else {
+                fail(.propertyDoesNotMatchEntity(description: nil))
+                return
+            }
+            guard let attributeEntityName = attributeDesc.entity.name ?? attributeDesc.entity.managedObjectClassName
+            else {
+                fail(.propertyDoesNotMatchEntity(description: entityName))
+                return
+            }
+            fail(
+                .propertyDoesNotMatchEntity(
+                    description: "\(entityName) != \(attributeDesc.name).\(attributeEntityName)"
+                )
+            )
+            return
+        }
+        self.init(
+            fetchRequest: request,
+            fetchResultControllerRequest: changeTrackingRequest,
+            context: context,
+            continuation: continuation
+        )
     }
 }
