@@ -70,6 +70,9 @@ public protocol FetchableUnmanagedModel: Sendable {
 
     /// A description of the context from where an error is thrown
     var errorDescription: String { get }
+
+    /// A description of the context from where an error is thrown but there is no instance `self` to use
+    static var errorDescription: String { get }
 }
 
 extension FetchableUnmanagedModel {
@@ -83,6 +86,11 @@ extension FetchableUnmanagedModel {
 
     @inlinable
     public var errorDescription: String {
+        "\(Self.self)"
+    }
+
+    @inlinable
+    public static var errorDescription: String {
         "\(Self.self)"
     }
 }

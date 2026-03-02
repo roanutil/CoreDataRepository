@@ -105,10 +105,6 @@ extension IdentifiableModel_IntId: IdentifiedUnmanagedModel {
     }
 
     package nonisolated(unsafe) static let unmanagedIdExpression = NSExpression(forKeyPath: \ManagedModel_IntId.id)
-
-    package static func errorDescription(for unmanagedId: Int) -> String {
-        unmanagedId.description
-    }
 }
 
 extension IdentifiableModel_IntId: WritableUnmanagedModel {

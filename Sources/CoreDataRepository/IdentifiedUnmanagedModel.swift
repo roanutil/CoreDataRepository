@@ -32,12 +32,22 @@ extension IdentifiedUnmanagedModel {
         let fetchResult = try context.fetch(request)
         guard let managed = fetchResult.first, fetchResult.count == 1 else {
             throw CoreDataError
-                .noMatchFoundWhenReadingItem(description: "\(Self.self) -- id: \(errorDescription(for: id))")
+                .noMatchFoundWhenReadingItem(
+                    description: "\(Self.errorDescription) -- id: \(errorDescription(for: id))"
+                )
         }
         guard !managed.isDeleted else {
             throw CoreDataError
-                .fetchedObjectIsFlaggedAsDeleted(description: "\(Self.self) -- id: \(errorDescription(for: id))")
+                .fetchedObjectIsFlaggedAsDeleted(
+                    description: "\(Self.errorDescription) -- id: \(errorDescription(for: id))"
+                )
         }
         return managed
+    }
+}
+
+extension IdentifiedUnmanagedModel where UnmanagedId: CustomStringConvertible {
+    public static func errorDescription(for unmanagedId: UnmanagedId) -> String {
+        unmanagedId.description
     }
 }
