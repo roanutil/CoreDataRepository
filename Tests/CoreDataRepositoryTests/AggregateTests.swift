@@ -11,7 +11,6 @@ import Internal
 import Testing
 
 extension CoreDataRepositoryTests {
-    @Suite
     struct AggregateTests: CoreDataTestSuite, Sendable {
         let container: NSPersistentContainer
         let repositoryContext: NSManagedObjectContext
@@ -312,7 +311,7 @@ extension CoreDataRepositoryTests {
             let finalCount = try await task.value
             expectNoDifference(finalCount, 2)
         }
-        
+
         @Test
         func countSubscriptionInvalidEntityDesc() async throws {
             await #expect(throws: CoreDataError.atLeastOneAttributeDescRequired) {
@@ -328,7 +327,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func countThrowingSubscriptionInvalidEntityDesc() async throws {
             await #expect(throws: CoreDataError.atLeastOneAttributeDescRequired) {
@@ -647,7 +646,7 @@ extension CoreDataRepositoryTests {
             let finalCount = try await task.value
             expectNoDifference(finalCount, 2)
         }
-        
+
         @Test
         func sumSubscriptionInvalidEntityDesc() async throws {
             await #expect(throws: CoreDataError.noEntityNameFound) {
@@ -664,7 +663,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func sumSubscriptionInvalidAttributeDesc() async throws {
             await #expect(throws: CoreDataError.propertyDoesNotMatchEntity(description: "ManagedModel_UuidId")) {
@@ -681,7 +680,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func sumThrowingSubscriptionInvalidEntityDesc() async throws {
             await #expect(throws: CoreDataError.noEntityNameFound) {
@@ -697,7 +696,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func sumThrowingSubscriptionInvalidAttributeDesc() async throws {
             await #expect(throws: CoreDataError.propertyDoesNotMatchEntity(description: "ManagedModel_UuidId")) {
@@ -1025,7 +1024,7 @@ extension CoreDataRepositoryTests {
             let finalCount = try await task.value
             expectNoDifference(finalCount, 2)
         }
-        
+
         @Test
         func averageSubscriptionInvalidEntityDesc() async throws {
             await #expect(throws: CoreDataError.noEntityNameFound) {
@@ -1042,7 +1041,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func averageSubscriptionInvalidAttributeDesc() async throws {
             await #expect(throws: CoreDataError.propertyDoesNotMatchEntity(description: "ManagedModel_UuidId")) {
@@ -1059,7 +1058,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func averageThrowingSubscriptionInvalidEntityDesc() async throws {
             await #expect(throws: CoreDataError.noEntityNameFound) {
@@ -1075,7 +1074,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func averageThrowingSubscriptionInvalidAttributeDesc() async throws {
             await #expect(throws: CoreDataError.propertyDoesNotMatchEntity(description: "ManagedModel_UuidId")) {
@@ -1403,7 +1402,7 @@ extension CoreDataRepositoryTests {
             let finalCount = try await task.value
             expectNoDifference(finalCount, 2)
         }
-        
+
         @Test
         func minSubscriptionInvalidEntityDesc() async throws {
             await #expect(throws: CoreDataError.noEntityNameFound) {
@@ -1420,7 +1419,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func minSubscriptionInvalidAttributeDesc() async throws {
             await #expect(throws: CoreDataError.propertyDoesNotMatchEntity(description: "ManagedModel_UuidId")) {
@@ -1437,7 +1436,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func minThrowingSubscriptionInvalidEntityDesc() async throws {
             await #expect(throws: CoreDataError.noEntityNameFound) {
@@ -1453,7 +1452,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func minThrowingSubscriptionInvalidAttributeDesc() async throws {
             await #expect(throws: CoreDataError.propertyDoesNotMatchEntity(description: "ManagedModel_UuidId")) {
@@ -1781,7 +1780,7 @@ extension CoreDataRepositoryTests {
             let finalCount = try await task.value
             expectNoDifference(finalCount, 2)
         }
-        
+
         @Test
         func maxSubscriptionInvalidEntityDesc() async throws {
             await #expect(throws: CoreDataError.noEntityNameFound) {
@@ -1798,7 +1797,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func maxSubscriptionInvalidAttributeDesc() async throws {
             await #expect(throws: CoreDataError.propertyDoesNotMatchEntity(description: "ManagedModel_UuidId")) {
@@ -1815,7 +1814,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func maxThrowingSubscriptionInvalidEntityDesc() async throws {
             await #expect(throws: CoreDataError.noEntityNameFound) {
@@ -1831,7 +1830,7 @@ extension CoreDataRepositoryTests {
                 }
             }
         }
-        
+
         @Test
         func maxThrowingSubscriptionInvalidAttributeDesc() async throws {
             await #expect(throws: CoreDataError.propertyDoesNotMatchEntity(description: "ManagedModel_UuidId")) {

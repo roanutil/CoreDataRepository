@@ -11,7 +11,6 @@ import Internal
 import Testing
 
 extension CoreDataRepositoryTests {
-    @Suite
     struct Read_BatchTests: CoreDataTestSuite {
         let container: NSPersistentContainer
         let repositoryContext: NSManagedObjectContext

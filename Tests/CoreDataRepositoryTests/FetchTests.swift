@@ -11,7 +11,6 @@ import Internal
 import Testing
 
 extension CoreDataRepositoryTests {
-    @Suite
     struct FetchRepositoryTests: CoreDataTestSuite, @unchecked Sendable {
         let container: NSPersistentContainer
         let repositoryContext: NSManagedObjectContext
