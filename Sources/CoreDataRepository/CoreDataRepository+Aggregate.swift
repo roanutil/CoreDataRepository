@@ -220,6 +220,8 @@ extension CoreDataRepository {
                     .countRequest(predicate: predicate, entityDesc: entityDesc)
                 let count = try scratchPad.count(for: request)
                 return Value(exactly: count) ?? Value.zero
+            } catch let error as CoreDataError {
+                throw error
             } catch let error as CocoaError {
                 throw CoreDataError.cocoa(error)
             } catch {
