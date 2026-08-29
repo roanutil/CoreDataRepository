@@ -52,48 +52,25 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         continuation: AsyncThrowingStream<Value, any Error>.Continuation
-    ) {
-        let request: NSFetchRequest<NSDictionary>
-        do {
-            request = try NSFetchRequest.request(
-                function: function,
-                predicate: predicate,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy
-            )
-        } catch {
-            self.init(
-                fetchRequest: NSFetchRequest(),
-                fetchResultControllerRequest: NSFetchRequest(),
-                context: context,
-                continuation: continuation
-            )
-            fail(error)
-            return
-        }
+    ) throws(CoreDataError) {
+        let request: NSFetchRequest<NSDictionary> = try NSFetchRequest.request(
+            function: function,
+            predicate: predicate,
+            entityDesc: entityDesc,
+            attributeDesc: attributeDesc,
+            groupBy: groupBy
+        )
         guard entityDesc == attributeDesc.entity else {
-            self.init(
-                fetchRequest: NSFetchRequest(),
-                fetchResultControllerRequest: NSFetchRequest(),
-                context: context,
-                continuation: continuation
-            )
             guard let entityName = entityDesc.name ?? entityDesc.managedObjectClassName else {
-                fail(.propertyDoesNotMatchEntity(description: nil))
-                return
+                throw CoreDataError.propertyDoesNotMatchEntity(description: nil)
             }
             guard let attributeEntityName = attributeDesc.entity.name ?? attributeDesc.entity.managedObjectClassName
             else {
-                fail(.propertyDoesNotMatchEntity(description: entityName))
-                return
+                throw CoreDataError.propertyDoesNotMatchEntity(description: entityName)
             }
-            fail(
-                .propertyDoesNotMatchEntity(
-                    description: "\(entityName) != \(attributeDesc.name).\(attributeEntityName)"
-                )
+            throw CoreDataError.propertyDoesNotMatchEntity(
+                description: "\(entityName) != \(attributeDesc.name).\(attributeEntityName)"
             )
-            return
         }
         self.init(request: request, context: context, continuation: continuation)
     }
@@ -108,48 +85,25 @@ final class AggregateThrowingSubscription<Value: Numeric & Sendable>: ThrowingSu
         attributeDesc: NSAttributeDescription,
         groupBy: NSAttributeDescription? = nil,
         continuation: AsyncThrowingStream<Value, any Error>.Continuation
-    ) {
-        let request: NSFetchRequest<NSDictionary>
-        do {
-            request = try NSFetchRequest.request(
-                function: function,
-                predicate: predicate,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy
-            )
-        } catch {
-            self.init(
-                fetchRequest: NSFetchRequest(),
-                fetchResultControllerRequest: NSFetchRequest(),
-                context: context,
-                continuation: continuation
-            )
-            fail(error)
-            return
-        }
+    ) throws(CoreDataError) {
+        let request: NSFetchRequest<NSDictionary> = try NSFetchRequest.request(
+            function: function,
+            predicate: predicate,
+            entityDesc: entityDesc,
+            attributeDesc: attributeDesc,
+            groupBy: groupBy
+        )
         guard entityDesc == attributeDesc.entity else {
-            self.init(
-                fetchRequest: NSFetchRequest(),
-                fetchResultControllerRequest: NSFetchRequest(),
-                context: context,
-                continuation: continuation
-            )
             guard let entityName = entityDesc.name ?? entityDesc.managedObjectClassName else {
-                fail(.propertyDoesNotMatchEntity(description: nil))
-                return
+                throw CoreDataError.propertyDoesNotMatchEntity(description: nil)
             }
             guard let attributeEntityName = attributeDesc.entity.name ?? attributeDesc.entity.managedObjectClassName
             else {
-                fail(.propertyDoesNotMatchEntity(description: entityName))
-                return
+                throw CoreDataError.propertyDoesNotMatchEntity(description: entityName)
             }
-            fail(
-                .propertyDoesNotMatchEntity(
-                    description: "\(entityName) != \(attributeDesc.name).\(attributeEntityName)"
-                )
+            throw CoreDataError.propertyDoesNotMatchEntity(
+                description: "\(entityName) != \(attributeDesc.name).\(attributeEntityName)"
             )
-            return
         }
         self.init(
             fetchRequest: request,

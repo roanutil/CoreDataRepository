@@ -73,15 +73,22 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateSubscription(
-                function: .average,
-                context: context.childContext(),
-                predicate: predicate,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateSubscription<Value>
+            do throws(CoreDataError) {
+                subscription = try AggregateSubscription(
+                    function: .average,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -104,16 +111,23 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateSubscription(
-                function: .average,
-                context: context.childContext(),
-                predicate: predicate,
-                changeTrackingRequest: changeTrackingRequest,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateSubscription<Value>
+            do throws(CoreDataError) {
+                subscription = try AggregateSubscription(
+                    function: .average,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    changeTrackingRequest: changeTrackingRequest,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -131,15 +145,21 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingSubscription(
-                function: .average,
-                context: context.childContext(),
-                predicate: predicate,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateThrowingSubscription<Value>
+            do {
+                subscription = try AggregateThrowingSubscription(
+                    function: .average,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -162,16 +182,22 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingSubscription(
-                function: .average,
-                context: context.childContext(),
-                predicate: predicate,
-                changeTrackingRequest: changeTrackingRequest,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateThrowingSubscription<Value>
+            do {
+                subscription = try AggregateThrowingSubscription(
+                    function: .average,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    changeTrackingRequest: changeTrackingRequest,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -210,12 +236,19 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = CountSubscription(
-                context: context.childContext(),
-                predicate: predicate,
-                entityDesc: entityDesc,
-                continuation: continuation
-            )
+            let subscription: CountSubscription<Value>
+            do throws(CoreDataError) {
+                subscription = try CountSubscription(
+                    context: context.childContext(),
+                    predicate: predicate,
+                    entityDesc: entityDesc,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -236,13 +269,20 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = CountSubscription(
-                context: context.childContext(),
-                predicate: predicate,
-                changeTrackingRequest: changeTrackingRequest,
-                entityDesc: entityDesc,
-                continuation: continuation
-            )
+            let subscription: CountSubscription<Value>
+            do throws(CoreDataError) {
+                subscription = try CountSubscription(
+                    context: context.childContext(),
+                    predicate: predicate,
+                    changeTrackingRequest: changeTrackingRequest,
+                    entityDesc: entityDesc,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -258,12 +298,18 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = CountThrowingSubscription(
-                context: context.childContext(),
-                predicate: predicate,
-                entityDesc: entityDesc,
-                continuation: continuation
-            )
+            let subscription: CountThrowingSubscription<Value>
+            do {
+                subscription = try CountThrowingSubscription(
+                    context: context.childContext(),
+                    predicate: predicate,
+                    entityDesc: entityDesc,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -284,13 +330,19 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = CountThrowingSubscription(
-                context: context.childContext(),
-                predicate: predicate,
-                changeTrackingRequest: changeTrackingRequest,
-                entityDesc: entityDesc,
-                continuation: continuation
-            )
+            let subscription: CountThrowingSubscription<Value>
+            do {
+                subscription = try CountThrowingSubscription(
+                    context: context.childContext(),
+                    predicate: predicate,
+                    changeTrackingRequest: changeTrackingRequest,
+                    entityDesc: entityDesc,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -330,15 +382,22 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateSubscription(
-                function: .max,
-                context: context.childContext(),
-                predicate: predicate,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateSubscription<Value>
+            do throws(CoreDataError) {
+                subscription = try AggregateSubscription(
+                    function: .max,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -362,16 +421,23 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateSubscription(
-                function: .max,
-                context: context.childContext(),
-                predicate: predicate,
-                changeTrackingRequest: changeTrackingRequest,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateSubscription<Value>
+            do throws(CoreDataError) {
+                subscription = try AggregateSubscription(
+                    function: .max,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    changeTrackingRequest: changeTrackingRequest,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -390,15 +456,21 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingSubscription(
-                function: .max,
-                context: context.childContext(),
-                predicate: predicate,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateThrowingSubscription<Value>
+            do {
+                subscription = try AggregateThrowingSubscription(
+                    function: .max,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -422,16 +494,22 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingSubscription(
-                function: .max,
-                context: context.childContext(),
-                predicate: predicate,
-                changeTrackingRequest: changeTrackingRequest,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateThrowingSubscription<Value>
+            do {
+                subscription = try AggregateThrowingSubscription(
+                    function: .max,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    changeTrackingRequest: changeTrackingRequest,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -471,15 +549,22 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateSubscription(
-                function: .min,
-                context: context.childContext(),
-                predicate: predicate,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateSubscription<Value>
+            do throws(CoreDataError) {
+                subscription = try AggregateSubscription(
+                    function: .min,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -503,16 +588,23 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateSubscription(
-                function: .min,
-                context: context.childContext(),
-                predicate: predicate,
-                changeTrackingRequest: changeTrackingRequest,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateSubscription<Value>
+            do throws(CoreDataError) {
+                subscription = try AggregateSubscription(
+                    function: .min,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    changeTrackingRequest: changeTrackingRequest,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -531,15 +623,21 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingSubscription(
-                function: .min,
-                context: context.childContext(),
-                predicate: predicate,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateThrowingSubscription<Value>
+            do {
+                subscription = try AggregateThrowingSubscription(
+                    function: .min,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -563,16 +661,22 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingSubscription(
-                function: .min,
-                context: context.childContext(),
-                predicate: predicate,
-                changeTrackingRequest: changeTrackingRequest,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateThrowingSubscription<Value>
+            do {
+                subscription = try AggregateThrowingSubscription(
+                    function: .min,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    changeTrackingRequest: changeTrackingRequest,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -611,15 +715,22 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateSubscription(
-                function: .sum,
-                context: context.childContext(),
-                predicate: predicate,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateSubscription<Value>
+            do throws(CoreDataError) {
+                subscription = try AggregateSubscription(
+                    function: .sum,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -642,16 +753,23 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncStream<Result<Value, CoreDataError>> {
         AsyncStream { continuation in
-            let subscription = AggregateSubscription(
-                function: .sum,
-                context: context.childContext(),
-                predicate: predicate,
-                changeTrackingRequest: changeTrackingRequest,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateSubscription<Value>
+            do throws(CoreDataError) {
+                subscription = try AggregateSubscription(
+                    function: .sum,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    changeTrackingRequest: changeTrackingRequest,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.yield(.failure(error))
+                continuation.finish()
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -669,15 +787,21 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingSubscription(
-                function: .sum,
-                context: context.childContext(),
-                predicate: predicate,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateThrowingSubscription<Value>
+            do {
+                subscription = try AggregateThrowingSubscription(
+                    function: .sum,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
@@ -700,16 +824,22 @@ extension CoreDataRepository {
         as _: Value.Type
     ) -> AsyncThrowingStream<Value, Error> {
         AsyncThrowingStream { continuation in
-            let subscription = AggregateThrowingSubscription(
-                function: .sum,
-                context: context.childContext(),
-                predicate: predicate,
-                changeTrackingRequest: changeTrackingRequest,
-                entityDesc: entityDesc,
-                attributeDesc: attributeDesc,
-                groupBy: groupBy,
-                continuation: continuation
-            )
+            let subscription: AggregateThrowingSubscription<Value>
+            do {
+                subscription = try AggregateThrowingSubscription(
+                    function: .sum,
+                    context: context.childContext(),
+                    predicate: predicate,
+                    changeTrackingRequest: changeTrackingRequest,
+                    entityDesc: entityDesc,
+                    attributeDesc: attributeDesc,
+                    groupBy: groupBy,
+                    continuation: continuation
+                )
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             continuation.onTermination = { _ in
                 subscription.cancel()
             }
