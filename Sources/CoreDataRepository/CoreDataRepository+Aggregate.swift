@@ -897,6 +897,8 @@ extension CoreDataRepository {
                 return try Self.aggregate(context: scratchPad, request: request)
             } catch let error as CocoaError {
                 throw CoreDataError.cocoa(error)
+            } catch let error as CoreDataError {
+                throw error
             } catch {
                 throw CoreDataError.unknown(error as NSError)
             }
