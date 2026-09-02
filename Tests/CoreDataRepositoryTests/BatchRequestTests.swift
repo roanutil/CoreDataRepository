@@ -11,7 +11,6 @@ import Internal
 import Testing
 
 extension CoreDataRepositoryTests {
-    @Suite
     struct BatchRequestTests: CoreDataTestSuite, Sendable {
         let container: NSPersistentContainer
         let repositoryContext: NSManagedObjectContext

@@ -23,6 +23,14 @@ class BaseSubscription<
         fetchResultControllerRequest: NSFetchRequest<ControllerResult>,
         context: NSManagedObjectContext
     ) {
+        if fetchRequest.sortDescriptors == nil {
+            // if `sortDescriptors` is `nil`, an exception is raised and causes a runtime crash
+            fetchRequest.sortDescriptors = []
+        }
+        if fetchResultControllerRequest.sortDescriptors == nil {
+            // if `sortDescriptors` is `nil`, an exception is raised and causes a runtime crash
+            fetchResultControllerRequest.sortDescriptors = []
+        }
         request = fetchRequest
         frc = NSFetchedResultsController(
             fetchRequest: fetchResultControllerRequest,

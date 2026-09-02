@@ -39,23 +39,11 @@ final class CountThrowingSubscription<Value: Numeric & Sendable>: ThrowingSubscr
         predicate: NSPredicate,
         entityDesc: NSEntityDescription,
         continuation: AsyncThrowingStream<Value, any Error>.Continuation
-    ) {
-        let request: NSFetchRequest<NSDictionary>
-        do {
-            request = try NSFetchRequest.countRequest(
-                predicate: predicate,
-                entityDesc: entityDesc
-            )
-        } catch {
-            self.init(
-                fetchRequest: NSFetchRequest(),
-                fetchResultControllerRequest: NSFetchRequest(),
-                context: context,
-                continuation: continuation
-            )
-            fail(error)
-            return
-        }
+    ) throws(CoreDataError) {
+        let request: NSFetchRequest<NSDictionary> = try NSFetchRequest.countRequest(
+            predicate: predicate,
+            entityDesc: entityDesc
+        )
         self.init(request: request, context: context, continuation: continuation)
     }
 
@@ -66,23 +54,11 @@ final class CountThrowingSubscription<Value: Numeric & Sendable>: ThrowingSubscr
         changeTrackingRequest: NSFetchRequest<NSManagedObject>,
         entityDesc: NSEntityDescription,
         continuation: AsyncThrowingStream<Value, any Error>.Continuation
-    ) {
-        let request: NSFetchRequest<NSDictionary>
-        do {
-            request = try NSFetchRequest.countRequest(
-                predicate: predicate,
-                entityDesc: entityDesc
-            )
-        } catch {
-            self.init(
-                fetchRequest: NSFetchRequest(),
-                fetchResultControllerRequest: NSFetchRequest(),
-                context: context,
-                continuation: continuation
-            )
-            fail(error)
-            return
-        }
+    ) throws(CoreDataError) {
+        let request: NSFetchRequest<NSDictionary> = try NSFetchRequest.countRequest(
+            predicate: predicate,
+            entityDesc: entityDesc
+        )
         self.init(
             fetchRequest: request,
             fetchResultControllerRequest: changeTrackingRequest,

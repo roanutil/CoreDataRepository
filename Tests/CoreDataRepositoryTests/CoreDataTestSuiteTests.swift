@@ -10,7 +10,6 @@ import Internal
 import Testing
 
 extension CoreDataRepositoryTests {
-    @Suite
     struct CoreDataTestSuiteTests: CoreDataTestSuite {
         let container: NSPersistentContainer
         let repositoryContext: NSManagedObjectContext
